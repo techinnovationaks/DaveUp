@@ -325,5 +325,3 @@ Docker Desktop may have stopped responding, for example after the disk filled up
 
 **`daveup_test` or the `daveup_app` role is missing.**
 The init script runs only when the Postgres volume is first created. Run `npm run db:down`, remove the `pgdata` volume (this deletes local data), then run `npm run db:up` and migrate again.
-# DaveUp
-# DaveUp

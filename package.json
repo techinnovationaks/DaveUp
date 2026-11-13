@@ -1,0 +1,25 @@
+{
+  "name": "daveup",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run migrate -w @daveup/api",
+    "dev:api": "npm run dev -w @daveup/api",
+    "dev:web": "npm run dev -w @daveup/web",
+    "test": "npm test -w @daveup/shared && npm test -w @daveup/api",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "overrides": {
+    "light-my-request": {
+      "cookie": "1.0.2"
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

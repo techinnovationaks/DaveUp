@@ -1,0 +1,189 @@
+"use client";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { MAX_ACTIVE_DISCIPLES, type ChurchMemberDto } from "@daveup/shared";
+import { ConsoleScreen } from "@/components/ConsoleShell";
+import { Card, ErrorText, H1, Initials, Loading, Pill, inputClass } from "@/components/ui";
+import { useApi } from "@/lib/api";
+import { formatPhone } from "@/lib/labels";
+import { useGuard } from "@/lib/session";
+
+type Filter = "all" | "pending" | "noDiscipler" | "disciplers" | "admins";
+
+const FILTERS: { key: Filter; label: string; test: (m: ChurchMemberDto) => boolean }[] = [
+  { key: "all", label: "All", test: () => true },
+  { key: "pending", label: "Waiting for approval", test: (m) => m.status === "pending" },
+  { key: "noDiscipler", label: "No discipler", test: (m) => m.status === "approved" && !m.discipler },
+  { key: "disciplers", label: "Disciplers", test: (m) => m.disciplerStatus === "approved" },
+  { key: "admins", label: "Administrators", test: (m) => m.isAdmin },
+];
+
+const participationLabel = { grow: "Wants to grow", disciple: "Disciples others", both: "Grows and disciples" } as const;
+const joined = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+
+export default function Members() {
+  const { me, ready } = useGuard("admin");
+  const list = useApi<ChurchMemberDto[]>(ready ? "/admin/members" : null);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [q, setQ] = useState("");
+
+  // Overview links here with ?filter=pending etc.
+  useEffect(() => {
+    const f = new URLSearchParams(window.location.search).get("filter");
+    if (f && FILTERS.some((x) => x.key === f)) setFilter(f as Filter);
+  }, []);
+
+  const all = list.data ?? [];
+  const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.key, all.filter(f.test).length])) as Record<Filter, number>, [all]);
+  const shown = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    const digits = needle.replace(/\D/g, "");
+    const test = FILTERS.find((f) => f.key === filter)!.test;
+    return all.filter(
+      (m) =>
+        test(m) &&
+        (!needle ||
+          (m.fullName ?? "").toLowerCase().includes(needle) ||
+          (m.department ?? "").toLowerCase().includes(needle) ||
+          // Matches both 0803… and +234803… forms.
+          (digits.length >= 3 && (m.phone.includes(digits) || formatPhone(m.phone).replace(/\D/g, "").includes(digits)))),
+    );
+  }, [all, filter, q]);
+
+  if (!ready || list.loading) return <Loading />;
+
+  return (
+    <ConsoleScreen>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <H1 sub={`${counts.all} ${counts.all === 1 ? "person" : "people"} registered in ${me!.membership!.churchName}. Roles and connections only; assessment answers stay private.`}>Members</H1>
+      </div>
+      <ErrorText>{list.error?.message}</ErrorText>
+
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0" role="tablist" aria-label="Filter members">
+          {FILTERS.map((f) => {
+            const on = filter === f.key;
+            return (
+              <button
+                key={f.key}
+                role="tab"
+                aria-selected={on}
+                onClick={() => setFilter(f.key)}
+                className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-[14px] font-semibold transition-colors ${
+                  on ? "border-ink bg-ink text-white" : "border-surface-line bg-white text-ink hover:border-ink-faint"
+                }`}
+              >
+                {f.label}
+                <span className={`rounded-full px-1.5 text-[12px] ${on ? "bg-white/20" : f.key === "pending" && counts.pending > 0 ? "bg-brand text-white" : "bg-surface text-ink-muted"}`}>{counts[f.key]}</span>
+              </button>
+            );
+          })}
+        </div>
+        <input className={`${inputClass} lg:max-w-xs`} placeholder="Search by name, phone or department" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+
+      {shown.length === 0 ? (
+        <Card>
+          <p className="text-[15px] text-ink-muted">{all.length === 0 ? "No one has joined yet. Share your church code from the Overview." : "No members match."}</p>
+        </Card>
+      ) : (
+        <>
+          {/* Tablet and desktop */}
+          <Card className="hidden overflow-x-auto !p-0 md:block">
+            <table className="w-full min-w-[860px] text-left">
+              <thead>
+                <tr className="border-b border-surface-line text-[12px] font-bold uppercase tracking-wider text-ink-muted">
+                  <th className="px-5 py-3">Name</th>
+                  <th className="px-5 py-3">Phone</th>
+                  <th className="px-5 py-3">Role</th>
+                  <th className="px-5 py-3">Department</th>
+                  <th className="px-5 py-3">Discipler</th>
+                  <th className="px-5 py-3">Disciples</th>
+                  <th className="px-5 py-3">Joined</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-surface-line">
+                {shown.map((m) => (
+                  <tr key={m.membershipId} className={m.status === "pending" ? "bg-warn-soft/40" : "hover:bg-surface/60"}>
+                    <td className="px-5 py-3.5">
+                      <span className="flex items-center gap-3">
+                        <Initials name={m.fullName ?? ""} size={36} />
+                        <span className="min-w-0">
+                          <span className="block truncate text-[15px] font-semibold text-ink">
+                            {m.fullName ?? "No name yet"}
+                            {m.personId === me!.person.id && <span className="ml-1.5 text-[13px] font-normal text-ink-muted">(you)</span>}
+                          </span>
+                          <span className="block truncate text-[13px] text-ink-muted">{m.email ?? participationLabel[m.participation]}</span>
+                        </span>
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-5 py-3.5 text-[15px] text-ink-muted">{formatPhone(m.phone)}</td>
+                    <td className="px-5 py-3.5">
+                      <Roles m={m} />
+                    </td>
+                    <td className="px-5 py-3.5 text-[15px] text-ink-muted">{m.department ?? "None"}</td>
+                    <td className="whitespace-nowrap px-5 py-3.5 text-[15px]">{m.discipler ? <span className="text-ink">{m.discipler.fullName}</span> : <span className="text-ink-faint">Not assigned</span>}</td>
+                    <td className="px-5 py-3.5 text-[15px] text-ink-muted">{m.disciplerStatus === "approved" ? `${m.disciplesCount} of ${MAX_ACTIVE_DISCIPLES}` : "None"}</td>
+                    <td className="whitespace-nowrap px-5 py-3.5 text-[15px] text-ink-muted">{joined(m.joinedAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+
+          {/* Mobile */}
+          <div className="space-y-3 md:hidden">
+            {shown.map((m) => (
+              <Card key={m.membershipId} className="!p-4">
+                <div className="flex items-start gap-3">
+                  <Initials name={m.fullName ?? ""} size={44} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[16px] font-bold text-ink">
+                      {m.fullName ?? "No name yet"}
+                      {m.personId === me!.person.id && <span className="ml-1.5 text-[13px] font-normal text-ink-muted">(you)</span>}
+                    </p>
+                    <p className="text-[14px] text-ink-muted">
+                      {formatPhone(m.phone)}
+                      {m.department ? ` · ${m.department}` : ""}
+                    </p>
+                    <div className="mt-2">
+                      <Roles m={m} />
+                    </div>
+                    <p className="mt-2 text-[13px] text-ink-muted">
+                      {m.discipler ? `Discipled by ${m.discipler.fullName}` : "No discipler yet"}
+                      {m.disciplerStatus === "approved" ? ` · disciples ${m.disciplesCount} of ${MAX_ACTIVE_DISCIPLES}` : ""} · joined {joined(m.joinedAt)}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      {counts.pending > 0 && filter !== "pending" && (
+        <p className="mt-4 text-[14px] text-ink-muted">
+          {counts.pending} waiting for approval.{" "}
+          <Link href="/admin/approvals" className="font-semibold text-brand hover:underline">
+            Review approvals
+          </Link>
+        </p>
+      )}
+    </ConsoleScreen>
+  );
+}
+
+function Roles({ m }: { m: ChurchMemberDto }) {
+  return (
+    <span className="flex flex-wrap gap-1.5">
+      {m.status === "pending" && <Pill tone="amber">Waiting for approval</Pill>}
+      {m.isAdmin && (
+        <span className="inline-flex items-center rounded-full bg-ink px-3 py-1 text-[13px] font-semibold text-white">Administrator</span>
+      )}
+      {m.disciplerStatus === "approved" && <Pill tone="red">Discipler</Pill>}
+      {m.disciplerStatus === "requested" && <Pill tone="amber">Discipler requested</Pill>}
+      {m.status === "approved" && !m.isAdmin && m.disciplerStatus !== "approved" && <Pill>Member</Pill>}
+    </span>
+  );
+}
+

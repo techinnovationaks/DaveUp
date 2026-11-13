@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background: #f7f8fa;
+  color: #1e293b;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smallest text in the app is 12px (PRD 38.12). */
+body {
+  font-size: 16px;
+}
