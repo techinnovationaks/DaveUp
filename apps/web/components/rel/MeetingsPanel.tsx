@@ -222,7 +222,14 @@ function MeetingMode({ meeting, lastCommitment, onClose, onSaved }: { meeting: M
             return (
               <li key={s.title}>
                 <button
-                  onClick={() => setTicked((t) => (t.has(i) ? (t.delete(i), new Set(t)) : new Set(t.add(i))))}
+                  onClick={() =>
+                    setTicked((t) => {
+                      const next = new Set(t);
+                      if (next.has(i)) next.delete(i);
+                      else next.add(i);
+                      return next;
+                    })
+                  }
                   className={`flex w-full items-start gap-3 rounded-xl px-2 py-2 text-left ${on ? "bg-ok-soft" : "hover:bg-surface"}`}
                 >
                   <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${on ? "bg-ok text-white" : "bg-surface text-ink-muted"}`}>{on ? "✓" : i + 1}</span>

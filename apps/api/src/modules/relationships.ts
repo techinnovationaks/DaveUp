@@ -129,8 +129,13 @@ async function toDtos(tx: Tx, personId: string, ids?: string[]): Promise<Relatio
       discipler: r.baseline_a_id ? "submitted" : aForRel.length ? "in_progress" : "not_started",
     } as const;
 
+    const iAccepted = r.initiated_by === "church" && !!(myRole === "disciple" ? r.disciple_accepted_at : r.discipler_accepted_at);
     let awaiting: RelationshipDto["awaiting"] = null;
-    if (r.status === "requested") {
+    if (r.status === "requested" && r.initiated_by === "church") {
+      // Suggested by the church: both people accept.
+      const theyAccepted = !!(myRole === "disciple" ? r.discipler_accepted_at : r.disciple_accepted_at);
+      awaiting = !iAccepted && !theyAccepted ? "both" : !iAccepted ? "me" : "them";
+    } else if (r.status === "requested") {
       awaiting = r.initiated_by === myRole ? "them" : "me";
     } else if (r.status === "accepted_baseline_pending") {
       const mine = myRole === "disciple" ? baseline.disciple : baseline.discipler;
@@ -139,6 +144,7 @@ async function toDtos(tx: Tx, personId: string, ids?: string[]): Promise<Relatio
     }
 
     return {
+      iAccepted,
       id: r.id,
       status: r.status,
       myRole,
@@ -241,6 +247,24 @@ export async function relationshipRoutes(app: FastifyInstance) {
         throw badRequest("DISCLOSURE_REQUIRED", "Confirm you understand what your discipler will see");
       }
 
+      // A church suggestion needs both people. The first acceptance is recorded
+      // and the pairing waits; the second one goes through the checks below.
+      if (r.initiated_by === "church") {
+        const now = new Date();
+        const mine = myRole === "disciple" ? { disciple_accepted_at: now, disclosure_confirmed_at: now } : { discipler_accepted_at: now };
+        const theirs = myRole === "disciple" ? r.discipler_accepted_at : r.disciple_accepted_at;
+        if (myRole === "discipler") {
+          const st = await tx.selectFrom("discipler_status").select("status").where("person_id", "=", r.discipler_id).executeTakeFirst();
+          if (st?.status !== "approved") throw conflict("DISCIPLER_NOT_ACTIVE", "Your discipler status is not active");
+        }
+        if (!theirs) {
+          await tx.updateTable("relationship").set(mine).where("id", "=", id).execute();
+          await audit(tx, { churchId, actorId: ctx.personId, action: "relationship.suggestion_accepted", targetType: "relationship", targetId: id, data: { by: myRole } });
+          return;
+        }
+        await tx.updateTable("relationship").set(mine).where("id", "=", id).execute();
+      }
+
       // Capacity check (PRD 6.4). Lock the discipler's status row so two
       // acceptances at the same moment cannot both take the 12th place.
       const ds = await tx.selectFrom("discipler_status").select("status").where("person_id", "=", r.discipler_id).forUpdate().executeTakeFirst();
@@ -287,7 +311,7 @@ export async function relationshipRoutes(app: FastifyInstance) {
       if (r.status !== "requested") throw conflict("NOT_PENDING", "This request is no longer waiting");
       const myRole = r.discipler_id === ctx.personId ? "discipler" : "disciple";
       await tx.updateTable("relationship").set({ status: "declined", ended_at: new Date() }).where("id", "=", id).execute();
-      await audit(tx, { churchId, actorId: ctx.personId, action: r.initiated_by === myRole ? "relationship.withdrawn" : "relationship.declined", targetType: "relationship", targetId: id });
+      await audit(tx, { churchId, actorId: ctx.personId, action: r.initiated_by === myRole ? "relationship.withdrawn" : "relationship.declined", targetType: "relationship", targetId: id, data: { by: myRole } });
     });
     return { ok: true };
   });

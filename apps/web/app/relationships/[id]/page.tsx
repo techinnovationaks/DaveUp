@@ -113,18 +113,21 @@ function RequestPanel({ r, onDone }: { r: RelationshipDto; onDone: () => Promise
   const router = useRouter();
   const { busy, error, run } = useAction();
   const [agreed, setAgreed] = useState(false);
-  const mustAccept = r.awaiting === "me";
+  const mustAccept = r.awaiting === "me" || r.awaiting === "both";
   const iAmDisciple = r.myRole === "disciple";
+  const fromChurch = r.initiatedBy === "church";
 
   if (!mustAccept) {
     return (
       <Card className="mb-4">
         <p className="text-[16px] text-ink">
-          {iAmDisciple ? `Your request has been sent to ${r.other.fullName}.` : `Your invitation has been sent to ${r.other.fullName}.`} You will be told when they reply.
+          {fromChurch
+            ? `You accepted your church's suggestion. Waiting for ${r.other.fullName} to accept too.`
+            : `${iAmDisciple ? `Your request has been sent to ${r.other.fullName}.` : `Your invitation has been sent to ${r.other.fullName}.`} You will be told when they reply.`}
         </p>
         <ErrorText>{error}</ErrorText>
         <Button variant="secondary" className="mt-4" disabled={busy} onClick={() => run(async () => (await api(`/relationships/${r.id}/decline`, { method: "POST" }), router.replace("/home")))}>
-          Withdraw
+          {fromChurch ? "Decline after all" : "Withdraw"}
         </Button>
       </Card>
     );
@@ -132,8 +135,16 @@ function RequestPanel({ r, onDone }: { r: RelationshipDto; onDone: () => Promise
 
   return (
     <div className="mb-4">
-      <H1 sub={iAmDisciple ? `${r.other.fullName} has invited you to be their disciple.` : `${r.other.fullName} would like you to disciple them.`}>
-        {iAmDisciple ? "Accept this invitation?" : "Accept this request?"}
+      <H1
+        sub={
+          fromChurch
+            ? `Your church suggested ${r.other.fullName} as your ${iAmDisciple ? "discipler" : "disciple"}. It only goes ahead if you both accept.`
+            : iAmDisciple
+              ? `${r.other.fullName} has invited you to be their disciple.`
+              : `${r.other.fullName} would like you to disciple them.`
+        }
+      >
+        {fromChurch ? "Accept this suggestion?" : iAmDisciple ? "Accept this invitation?" : "Accept this request?"}
       </H1>
       {iAmDisciple && <Disclosure checked={agreed} onChange={setAgreed} disciplerName={r.other.fullName} />}
       {!iAmDisciple && (

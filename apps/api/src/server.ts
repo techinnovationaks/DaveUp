@@ -10,6 +10,7 @@ import { assessmentRoutes } from "./modules/assessments";
 import { cycleRoutes } from "./modules/cycles";
 import { planRoutes } from "./modules/plans";
 import { meetingRoutes } from "./modules/meetings";
+import { adminMemberRoutes } from "./modules/admin-members";
 import { appDb } from "./db/pool";
 import { sql } from "kysely";
 import { config } from "./config";
@@ -56,6 +57,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(cycleRoutes);
   await app.register(planRoutes);
   await app.register(meetingRoutes);
+  await app.register(adminMemberRoutes);
 
   return app;
 }

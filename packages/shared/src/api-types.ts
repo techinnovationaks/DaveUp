@@ -53,7 +53,10 @@ export interface RelationshipDto {
   myRole: "disciple" | "discipler";
   /** Who must act next to move it forward, if anyone. */
   awaiting: "me" | "them" | "both" | null;
-  initiatedBy: "disciple" | "discipler";
+  /** "church": suggested by a church administrator; both people accept. */
+  initiatedBy: "disciple" | "discipler" | "church";
+  /** For church suggestions: whether I have accepted already. */
+  iAccepted: boolean;
   other: { personId: string; fullName: string };
   baseline: BaselineStateDto;
   /** Test A id for the discipler, when started. Only returned to the discipler. */
@@ -260,4 +263,28 @@ export interface ChurchMemberDto {
 
 export interface ApiErrorBody {
   error: { code: string; message: string };
+}
+
+/** Church console: one member, with roles, connections and the history of admin actions. */
+export interface MemberDetailDto {
+  member: ChurchMemberDto;
+  disciplerStatusId: string | null;
+  /** Places used if they are a discipler (out of 12). */
+  placesFilled: number;
+  relationships: {
+    id: string;
+    role: "disciple" | "discipler";
+    other: { personId: string; fullName: string };
+    status: RelationshipStatus;
+    initiatedBy: "disciple" | "discipler" | "church";
+    since: string;
+  }[];
+  history: { at: string; action: string; actor: string | null }[];
+  /** True when they are the only administrator, so the role cannot be removed. */
+  lastAdmin: boolean;
+}
+
+export interface SuggestResultDto {
+  created: number;
+  skipped: { personId: string; fullName: string | null; reason: string }[];
 }

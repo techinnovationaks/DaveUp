@@ -88,8 +88,14 @@ export default function Home() {
 function UpNext({ rels, hub }: { rels: RelationshipDto[]; hub: AssessmentHubDto | null }) {
   const items: { key: string; href: string; title: string; sub: string; name?: string }[] = [];
   for (const r of rels) {
-    if (r.status === "requested" && r.awaiting === "me")
-      items.push({ key: `reply-${r.id}`, href: `/relationships/${r.id}`, title: `Reply to ${r.other.fullName}`, sub: r.myRole === "disciple" ? "Invited you to be their disciple" : "Wants you as their discipler", name: r.other.fullName });
+    if (r.status === "requested" && (r.awaiting === "me" || r.awaiting === "both"))
+      items.push({
+        key: `reply-${r.id}`,
+        href: `/relationships/${r.id}`,
+        title: `Reply to ${r.other.fullName}`,
+        sub: r.initiatedBy === "church" ? "Suggested by your church" : r.myRole === "disciple" ? "Invited you to be their disciple" : "Wants you as their discipler",
+        name: r.other.fullName,
+      });
   }
   const b = hub?.myTestB;
   if (b?.status === "in_progress") items.push({ key: "testb", href: `/assessments/${b.id}`, title: "Your self-assessment", sub: `${b.progress.answered} of ${b.progress.total} answered` });
@@ -154,10 +160,14 @@ function MeView({ me, rels, hub }: { me: MeDto; rels: RelationshipDto[]; hub: As
             <div className="min-w-0 flex-1">
               <p className="truncate text-[18px] font-bold text-ink">{current.other.fullName}</p>
               <p className="text-[14px] text-ink-muted">
-                {current.status === "requested" && current.awaiting === "me" ? "Invited you to be their disciple" : statusLabel[current.status]}
+                {current.status === "requested" && current.initiatedBy === "church" && current.awaiting !== "them"
+                  ? "Suggested by your church"
+                  : current.status === "requested" && current.awaiting === "me"
+                    ? "Invited you to be their disciple"
+                    : statusLabel[current.status]}
               </p>
             </div>
-            {current.awaiting === "me" && <Pill tone="red">Reply</Pill>}
+            {(current.awaiting === "me" || (current.status === "requested" && current.awaiting === "both")) && <Pill tone="red">Reply</Pill>}
           </Link>
         )}
         {current?.status === "accepted_baseline_pending" && (
@@ -260,7 +270,7 @@ function LeadView({ rels, hub }: { rels: RelationshipDto[]; hub: AssessmentHubDt
       <p className="hidden text-[15px] text-ink-muted md:block">Lead mode. You see only what people have shared with you.</p>
       <div className="grid grid-cols-3 gap-3 md:gap-4">
         <Stat n={filled} label={`of ${MAX_ACTIVE_DISCIPLES} places`} />
-        <Stat n={requests.filter((r) => r.awaiting === "me").length} label="requests" alert />
+        <Stat n={requests.filter((r) => r.awaiting === "me" || r.awaiting === "both").length} label="requests" alert />
         <Stat n={pending.length} label="baseline pending" />
       </div>
 
@@ -298,7 +308,15 @@ function LeadView({ rels, hub }: { rels: RelationshipDto[]; hub: AssessmentHubDt
               {people.map((r) => {
                 const on = selected?.id === r.id;
                 const sub =
-                  r.status === "requested" ? (r.awaiting === "me" ? "New request: wants you as their discipler" : "Invitation sent, waiting for them to accept") : statusLabel[r.status];
+                  r.status === "requested"
+                    ? r.initiatedBy === "church"
+                      ? r.awaiting === "them"
+                        ? "Church suggestion: waiting for them to accept"
+                        : "Church suggestion: please reply"
+                      : r.awaiting === "me"
+                        ? "New request: wants you as their discipler"
+                        : "Invitation sent, waiting for them to accept"
+                    : statusLabel[r.status];
                 return (
                   <Link
                     key={r.id}
@@ -312,7 +330,7 @@ function LeadView({ rels, hub }: { rels: RelationshipDto[]; hub: AssessmentHubDt
                       <span className="block truncate text-[16px] font-semibold text-ink">{r.other.fullName}</span>
                       <span className="block truncate text-[13px] text-ink-muted">{sub}</span>
                     </span>
-                    {r.awaiting === "me" && <Pill tone="red">Reply</Pill>}
+                    {r.status === "requested" && (r.awaiting === "me" || r.awaiting === "both") && <Pill tone="red">Reply</Pill>}
                     {r.status === "accepted_baseline_pending" && <Pill tone="amber">Baseline</Pill>}
                   </Link>
                 );
@@ -328,6 +346,7 @@ function LeadView({ rels, hub }: { rels: RelationshipDto[]; hub: AssessmentHubDt
 
 /** Detail pane beside the list, desktop only. */
 function DiscipleDetail({ r }: { r: RelationshipDto }) {
+  const mustReply = r.status === "requested" && (r.awaiting === "me" || r.awaiting === "both");
   const mine = r.baseline.discipler;
   const theirs = r.baseline.disciple;
   return (
@@ -336,15 +355,19 @@ function DiscipleDetail({ r }: { r: RelationshipDto }) {
         <Initials name={r.other.fullName} size={56} />
         <div className="min-w-0">
           <p className="truncate text-[22px] font-extrabold text-ink">{r.other.fullName}</p>
-          <Pill tone={r.status === "active" ? "green" : r.awaiting === "me" ? "red" : "amber"}>{statusLabel[r.status]}</Pill>
+          <Pill tone={r.status === "active" ? "green" : mustReply ? "red" : "amber"}>{statusLabel[r.status]}</Pill>
         </div>
       </div>
 
       {r.status === "requested" && (
         <p className="mb-5 text-[15px] text-ink">
-          {r.awaiting === "me"
-            ? `${firstName(r.other.fullName)} would like you to disciple them. Take time to pray about it before you reply.`
-            : `You invited ${firstName(r.other.fullName)}. They have not replied yet.`}
+          {r.initiatedBy === "church"
+            ? mustReply
+              ? `Your church suggested you disciple ${firstName(r.other.fullName)}. It only goes ahead if you both accept. Take time to pray about it.`
+              : `You accepted your church's suggestion. Waiting for ${firstName(r.other.fullName)} to accept.`
+            : mustReply
+              ? `${firstName(r.other.fullName)} would like you to disciple them. Take time to pray about it before you reply.`
+              : `You invited ${firstName(r.other.fullName)}. They have not replied yet.`}
         </p>
       )}
 
@@ -362,7 +385,7 @@ function DiscipleDetail({ r }: { r: RelationshipDto }) {
       )}
 
       <div className="flex flex-wrap gap-3">
-        {r.status === "requested" && r.awaiting === "me" && <LinkButton href={`/relationships/${r.id}`}>Reply to request</LinkButton>}
+        {mustReply && <LinkButton href={`/relationships/${r.id}`}>Reply to request</LinkButton>}
         {r.status === "accepted_baseline_pending" && mine !== "submitted" && (
           <LinkButton href={r.myAssessmentId ? `/assessments/${r.myAssessmentId}` : `/assessments?start=${r.id}`}>{mine === "not_started" ? "Start my assessment" : "Continue my assessment"}</LinkButton>
         )}

@@ -181,6 +181,7 @@ node node_modules/tsx/dist/cli.mjs apps/api/src/db/migrate.ts --reset   # drop a
 |---|---|
 | `0001_core.sql` | Tables: person, sign-in codes, sessions, churches, memberships, discipler status, relationships, assessments and answers, audit log. Also the RLS policies and grants. |
 | `0002_cycle_plan_meetings.sql` | Monthly assessment cycles, growth plans, practices and the practice log, weekly reflections, meetings and their records |
+| `0003_church_proposals.sql` | Church-suggested pairings: `initiated_by = 'church'`, plus each person's acceptance |
 
 ## Testing
 
@@ -223,7 +224,13 @@ npm run typecheck   # all workspaces
 **Church console** (administrators)
 - **Overview:** counts, what needs attention, discipleship coverage and the church code.
 - **Approvals:** new members and discipler requests.
-- **Members:** everyone registered, with roles, discipler, how many people they disciple, and when they joined. Search and filters.
+- **Members:** everyone registered, with roles, discipler, how many people they disciple, and when they joined. Search and filters. Tick members without a discipler to suggest one for all of them at once.
+- **Member page:**
+  - Edit the department and grant or remove the administrator role (the last administrator can't be removed).
+  - Suspend, reinstate or revoke discipler status.
+  - Suggest a discipler, or withdraw a suggestion.
+  - See the history of admin and discipleship decisions.
+  - Remove them from the church.
 - **Settings:** church details, the administrator's account, and sign out.
 - **Privacy:** the console shows counts and roles only, never assessment answers or reflections.
 
@@ -234,6 +241,8 @@ These are enforced in the API and the database, not only in the UI.
 | Rule | Where |
 |---|---|
 | A discipler has at most 12 places; accepted, active and paused relationships each use one | `relationships.ts` (row lock on discipler status) |
+| A church can suggest a discipler, but nobody is paired without agreeing: both people accept and the disciple confirms disclosure | `admin-members.ts`, accept route |
+| A church always keeps at least one administrator; removal ends church access only, never the account | `admin-members.ts` |
 | A disciple has one current discipler | Unique partial index `relationship_one_primary` |
 | The disciple must confirm what the discipler will see | `CreateRelationshipSchema`, accept route |
 | Answers are visible only to the person who wrote them | `requireOwnAssessment` returns 404 to anyone else |
@@ -256,7 +265,7 @@ All routes return JSON. Errors look like `{ "error": { "code": "...", "message":
 | Auth | `GET /auth/methods`, `POST /auth/phone`, `POST /auth/otp/request`, `POST /auth/otp/verify`, `POST /auth/logout` |
 | Me and church | `GET/PATCH /me`, `PATCH /me/participation`, `POST /churches`, `GET /church`, `GET /churches/lookup?code=`, `POST /churches/join`, `GET /members/search?q=` |
 | Disciplers | `POST /discipler-status/request`, `GET /disciplers` |
-| Admin | `GET /admin/overview`, `GET /admin/approvals`, `GET /admin/members`, `POST /admin/members/:id/{approve,reject}`, `POST /admin/discipler-status/:id/{approve,reject}` |
+| Admin | `GET /admin/overview`, `GET /admin/approvals`, `GET /admin/members`, `GET/PATCH /admin/members/:id`, `POST /admin/members/:id/{approve,reject,remove}`, `POST /admin/discipler-status/:id/{approve,reject,suspend,revoke,reinstate}`, `POST /admin/relationships` (suggest a discipler), `POST /admin/relationships/:id/withdraw` |
 | Relationships | `GET /relationships`, `GET /relationships/:id`, `POST /relationships`, `POST /relationships/:id/{accept,decline,end}` |
 | Assessments | `GET /assessments`, `POST /assessments`, `GET /assessments/:id`, `PUT /assessments/:id/answers/:itemId`, `POST /assessments/:id/submit`, `GET /relationships/:id/comparison` |
 | Monthly cycle | `GET /relationships/:id/progress`, `POST /cycles/:id/start` |
@@ -276,7 +285,7 @@ Request schemas and response types live in `packages/shared/src/domain.ts`, `pla
 | `/relationships/[id]` | Request, baseline, then the Results, Growth plan and Meetings tabs (`#plan`, `#meetings`) |
 | `/assessments`, `/assessments/[id]` | Assessments hub and the question flow |
 | `/account` | Member account |
-| `/admin`, `/admin/approvals`, `/admin/members`, `/admin/settings` | Church console |
+| `/admin`, `/admin/approvals`, `/admin/members`, `/admin/members/[id]`, `/admin/settings` | Church console |
 
 Administrators land in the Church console after signing in. A "Member app" link takes them to the member side if they also disciple people.
 
@@ -292,7 +301,7 @@ Breakpoints follow the desktop design guide:
 - **Sign-in codes in production:** needs a Termii account (`TERMII_API_KEY`).
 - **Reminders and background jobs:** check reminders at 3 and 7 days, telling the other person at 14 days, and the weekly brief.
 - **AI features:** plan drafts, meeting preparation and summaries, and the meeting recording pipeline.
-- **Console member management:** assign a discipler, change roles, import members, cells and departments, analytics, billing (Paystack), the audit log screen, and two-factor sign-in for admins.
+- **More console features:** member import, cells and departments as structures, analytics, billing (Paystack), a church-wide audit log screen, and two-factor sign-in for admins.
 - **Other member features:** chats, cells and groups, departments, family circle, stories, Storehouse, Bible, trainings, sermon packs and notifications.
 - **DaveUp staff console:** church verification, disputes, support and billing operations.
 - **Mobile app:** Expo.

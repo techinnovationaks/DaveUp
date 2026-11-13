@@ -1,7 +1,7 @@
 // Discipler activation (PRD 6.2) and the admin approval queue (PRD 12.2, screen 13).
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { CAPACITY_STATUSES, DecisionSchema, MAX_ACTIVE_DISCIPLES, type AdminOverviewDto, type ApprovalsDto, type ChurchMemberDto, type DisciplerCardDto } from "@daveup/shared";
+import { CAPACITY_STATUSES, DecisionSchema, MAX_ACTIVE_DISCIPLES, type AdminOverviewDto, type ApprovalsDto, type DisciplerCardDto } from "@daveup/shared";
 import { ownerDb, withTenant } from "../db/pool";
 import { audit } from "../lib/audit";
 import { requireAdmin, requireMember } from "../lib/context";
@@ -133,55 +133,6 @@ export async function disciplerRoutes(app: FastifyInstance) {
     return { church: { id: c.id, name: c.name, city: c.city, status: c.status, plan: c.plan, joinCode: c.join_code }, ...counts };
   });
 
-  /**
-   * Everyone registered in the church, for administrators (Church console, Members).
-   * Shows roles and connections only; never assessment answers or scores.
-   */
-  app.get("/admin/members", async (req): Promise<ChurchMemberDto[]> => {
-    const ctx = await requireAdmin(req);
-    return withTenant(ctx.membership.churchId, async (tx) => {
-      const members = await tx
-        .selectFrom("membership as m")
-        .innerJoin("person as p", "p.id", "m.person_id")
-        .leftJoin("discipler_status as ds", "ds.person_id", "m.person_id")
-        .select([
-          "m.id as membershipId",
-          "p.id as personId",
-          "p.full_name as fullName",
-          "p.phone",
-          "p.email",
-          "m.status",
-          "m.is_admin as isAdmin",
-          "ds.status as disciplerStatus",
-          "m.participation",
-          "m.department",
-          "m.created_at as joinedAt",
-        ])
-        .where("m.status", "in", ["pending", "approved"])
-        .orderBy("m.created_at", "desc")
-        .execute();
-
-      // Current discipler of each member, and how many each person disciples.
-      const open = await tx
-        .selectFrom("relationship as r")
-        .innerJoin("person as d", "d.id", "r.discipler_id")
-        .select(["r.disciple_id", "r.discipler_id", "d.full_name as disciplerName"])
-        .where("r.status", "in", CAPACITY_STATUSES)
-        .execute();
-      const disciplerOf = new Map(open.map((r) => [r.disciple_id, { personId: r.discipler_id, fullName: r.disciplerName }]));
-      const disciples = new Map<string, number>();
-      for (const r of open) disciples.set(r.discipler_id, (disciples.get(r.discipler_id) ?? 0) + 1);
-
-      return members.map((m) => ({
-        ...m,
-        disciplerStatus: m.disciplerStatus ?? null,
-        discipler: disciplerOf.get(m.personId) ?? null,
-        disciplesCount: disciples.get(m.personId) ?? 0,
-        joinedAt: m.joinedAt.toISOString(),
-      }));
-    });
-  });
-
   for (const decision of ["approve", "reject"] as const) {
     app.post(`/admin/members/:id/${decision}`, async (req) => {
       const ctx = await requireAdmin(req);
@@ -197,7 +148,7 @@ export async function disciplerRoutes(app: FastifyInstance) {
           .returning("person_id")
           .executeTakeFirst();
         if (!updated) throw notFound("That request is no longer waiting");
-        await audit(tx, { churchId, actorId: ctx.personId, action: `membership.${decision}d`, targetType: "person", targetId: updated.person_id });
+        await audit(tx, { churchId, actorId: ctx.personId, action: `membership.${decision === "approve" ? "approved" : "rejected"}`, targetType: "person", targetId: updated.person_id });
       });
       return { ok: true };
     });
@@ -216,7 +167,7 @@ export async function disciplerRoutes(app: FastifyInstance) {
           .returning("person_id")
           .executeTakeFirst();
         if (!updated) throw notFound("That request is no longer waiting");
-        await audit(tx, { churchId, actorId: ctx.personId, action: `discipler_status.${decision}d`, targetType: "person", targetId: updated.person_id });
+        await audit(tx, { churchId, actorId: ctx.personId, action: `discipler_status.${decision === "approve" ? "approved" : "rejected"}`, targetType: "person", targetId: updated.person_id });
       });
       return { ok: true };
     });

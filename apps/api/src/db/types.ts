@@ -75,7 +75,10 @@ export interface RelationshipTable {
   discipler_id: string;
   disciple_id: string;
   status: "requested" | "accepted_baseline_pending" | "active" | "paused" | "ended" | "declined";
-  initiated_by: "disciple" | "discipler";
+  initiated_by: "disciple" | "discipler" | "church";
+  proposed_by: string | null;
+  discipler_accepted_at: NullableTimestamp;
+  disciple_accepted_at: NullableTimestamp;
   disclosure_confirmed_at: NullableTimestamp;
   baseline_a_id: string | null;
   baseline_b_id: string | null;

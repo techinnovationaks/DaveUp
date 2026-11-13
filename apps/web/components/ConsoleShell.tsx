@@ -72,7 +72,7 @@ function ConsoleRail() {
 
       <nav className="mt-10 flex flex-col gap-3" aria-label="Church console">
         {NAV.map((it) => {
-          const active = path === it.href;
+          const active = path === it.href || (it.href !== "/admin" && path.startsWith(it.href + "/"));
           return (
             <Link key={it.href} href={it.href} title={it.label} aria-current={active ? "page" : undefined} className={`${item} ${active ? "bg-brand-soft text-brand" : "text-ink-muted hover:bg-surface hover:text-ink"}`}>
               <Icon size={22}>{it.icon}</Icon>
@@ -109,7 +109,7 @@ function ConsoleBottomNav() {
     <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-surface-line bg-white/95 backdrop-blur md:hidden">
       <div className="mx-auto flex max-w-md">
         {NAV.map((it) => {
-          const active = path === it.href;
+          const active = path === it.href || (it.href !== "/admin" && path.startsWith(it.href + "/"));
           return (
             <Link key={it.href} href={it.href} className={`flex flex-1 flex-col items-center gap-1 pb-4 pt-2.5 text-[12px] font-semibold ${active ? "text-brand" : "text-ink-muted"}`}>
               <span className={`mb-0.5 h-[3px] w-8 rounded-full ${active ? "bg-brand" : "bg-transparent"}`} />
@@ -139,7 +139,7 @@ export function ConsoleScreen({ children, narrow = false }: { children: ReactNod
           <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">Administrator</span>
         </header>
         <header className="sticky top-0 z-10 hidden h-16 items-center justify-between border-b border-surface-line bg-white/90 px-8 backdrop-blur md:flex">
-          <p className="text-[17px] font-bold text-ink">{TITLES[path] ?? "Church console"}</p>
+          <p className="text-[17px] font-bold text-ink">{TITLES[path] ?? (path.startsWith("/admin/members/") ? "Member" : "Church console")}</p>
           {me?.membership && <p className="text-[14px] text-ink-muted">{me.membership.churchName}, {me.membership.churchCity}</p>}
         </header>
         <main className={`mx-auto w-full px-4 pb-28 pt-6 md:px-8 md:pb-12 md:pt-8 ${narrow ? "max-w-md md:max-w-2xl" : "max-w-md md:max-w-none lg:max-w-[80vw]"}`}>{children}</main>

@@ -1,9 +1,11 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { MAX_ACTIVE_DISCIPLES, type ChurchMemberDto } from "@daveup/shared";
+import { DisciplerPicker, suggestSummary } from "@/components/console/DisciplerPicker";
 import { ConsoleScreen } from "@/components/ConsoleShell";
-import { Card, ErrorText, H1, Initials, Loading, Pill, inputClass } from "@/components/ui";
+import { Button, Card, ErrorText, H1, Initials, Loading, Pill, inputClass } from "@/components/ui";
 import { useApi } from "@/lib/api";
 import { formatPhone } from "@/lib/labels";
 import { useGuard } from "@/lib/session";
@@ -26,6 +28,20 @@ export default function Members() {
   const list = useApi<ChurchMemberDto[]>(ready ? "/admin/members" : null);
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
+  const router = useRouter();
+  // Bulk "suggest a discipler" (PRD 34.3): approved members without a discipler.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [picking, setPicking] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const selectable = (m: ChurchMemberDto) => m.status === "approved" && !m.discipler;
+  // Build a new set; never change the previous one (React may run updaters twice).
+  const toggle = (id: string) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   // Overview links here with ?filter=pending etc.
   useEffect(() => {
@@ -55,9 +71,36 @@ export default function Members() {
   return (
     <ConsoleScreen>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <H1 sub={`${counts.all} ${counts.all === 1 ? "person" : "people"} registered in ${me!.membership!.churchName}. Roles and connections only; assessment answers stay private.`}>Members</H1>
+        <H1 sub={`${counts.all} ${counts.all === 1 ? "person" : "people"} registered in ${me!.membership!.churchName}. Open someone to change their role or department, or tick members without a discipler to suggest one.`}>Members</H1>
       </div>
       <ErrorText>{list.error?.message}</ErrorText>
+      {notice && <p className="mb-4 rounded-xl bg-ok-soft px-4 py-3 text-[14px] text-ok">{notice}</p>}
+      {picking && (
+        <div className="mb-4">
+          <DisciplerPicker
+            forPeople={all.filter((m) => selected.has(m.personId)).map((m) => ({ personId: m.personId, fullName: m.fullName }))}
+            onDone={(r) => {
+              setPicking(false);
+              if (r) {
+                setNotice(suggestSummary(r));
+                setSelected(new Set());
+                void list.reload();
+              }
+            }}
+          />
+        </div>
+      )}
+      {selected.size > 0 && !picking && (
+        <div className="sticky top-16 z-[5] mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-brand-line bg-brand-soft px-4 py-3">
+          <p className="flex-1 text-[15px] font-semibold text-ink">{selected.size} selected</p>
+          <Button onClick={() => (setNotice(null), setPicking(true))} className="!min-h-[40px]">
+            Suggest a discipler
+          </Button>
+          <button onClick={() => setSelected(new Set())} className="text-[14px] font-semibold text-ink-muted hover:text-ink">
+            Clear
+          </button>
+        </div>
+      )}
 
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0" role="tablist" aria-label="Filter members">
@@ -93,6 +136,9 @@ export default function Members() {
             <table className="w-full min-w-[860px] text-left">
               <thead>
                 <tr className="border-b border-surface-line text-[12px] font-bold uppercase tracking-wider text-ink-muted">
+                  <th className="w-10 py-3 pl-5">
+                    <span className="sr-only">Select</span>
+                  </th>
                   <th className="px-5 py-3">Name</th>
                   <th className="px-5 py-3">Phone</th>
                   <th className="px-5 py-3">Role</th>
@@ -104,7 +150,22 @@ export default function Members() {
               </thead>
               <tbody className="divide-y divide-surface-line">
                 {shown.map((m) => (
-                  <tr key={m.membershipId} className={m.status === "pending" ? "bg-warn-soft/40" : "hover:bg-surface/60"}>
+                  <tr
+                    key={m.membershipId}
+                    onClick={() => router.push(`/admin/members/${m.membershipId}`)}
+                    className={`cursor-pointer ${m.status === "pending" ? "bg-warn-soft/40" : selected.has(m.personId) ? "bg-brand-soft/60" : "hover:bg-surface/60"}`}
+                  >
+                    <td className="py-3.5 pl-5" onClick={(e) => e.stopPropagation()}>
+                      {selectable(m) && (
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${m.fullName ?? "member"}`}
+                          className="h-5 w-5 accent-[#D71920]"
+                          checked={selected.has(m.personId)}
+                          onChange={() => toggle(m.personId)}
+                        />
+                      )}
+                    </td>
                     <td className="px-5 py-3.5">
                       <span className="flex items-center gap-3">
                         <Initials name={m.fullName ?? ""} size={36} />
@@ -136,6 +197,16 @@ export default function Members() {
             {shown.map((m) => (
               <Card key={m.membershipId} className="!p-4">
                 <div className="flex items-start gap-3">
+                  {selectable(m) && (
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${m.fullName ?? "member"}`}
+                      className="mt-3 h-5 w-5 shrink-0 accent-[#D71920]"
+                      checked={selected.has(m.personId)}
+                      onChange={() => toggle(m.personId)}
+                    />
+                  )}
+                  <Link href={`/admin/members/${m.membershipId}`} className="flex min-w-0 flex-1 items-start gap-3">
                   <Initials name={m.fullName ?? ""} size={44} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[16px] font-bold text-ink">
@@ -154,6 +225,7 @@ export default function Members() {
                       {m.disciplerStatus === "approved" ? ` · disciples ${m.disciplesCount} of ${MAX_ACTIVE_DISCIPLES}` : ""} · joined {joined(m.joinedAt)}
                     </p>
                   </div>
+                  </Link>
                 </div>
               </Card>
             ))}

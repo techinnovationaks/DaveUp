@@ -473,3 +473,106 @@ describe("monthly cycle, growth plan and meetings", () => {
     expect((await call(lead.token, "POST", `/meetings/${held}/record`, { tookPlace: false })).body.error.code).toBe("RECORD_LOCKED");
   });
 });
+
+describe("church console member management", () => {
+  let admin: { token: string; personId: string };
+  let b: { token: string; personId: string };
+  let c: { token: string; personId: string };
+  let d: { token: string; personId: string };
+  let code: string;
+  const membershipOf = async (personId: string) => (await call(admin.token, "GET", "/admin/members")).body.find((m: any) => m.personId === personId).membershipId;
+
+  it("sets up a church with three approved members", async () => {
+    admin = await signIn("Console Admin");
+    code = (await call(admin.token, "POST", "/churches", { name: "Console Church", city: "Ikot Ekpene", participation: "both" })).body.church.joinCode;
+    b = await signIn("Bola Discipler");
+    c = await signIn("Chidi Member");
+    d = await signIn("Dayo Member");
+    for (const p of [b, c, d]) await call(p.token, "POST", "/churches/join", { code, participation: "both" });
+    for (const m of (await call(admin.token, "GET", "/admin/approvals")).body.members) await call(admin.token, "POST", `/admin/members/${m.membershipId}/approve`, {});
+    expect((await call(admin.token, "GET", "/admin/members")).body).toHaveLength(4);
+  });
+
+  it("changes department and the administrator role, never leaving the church without one", async () => {
+    const cId = await membershipOf(c.personId);
+    let r = await call(admin.token, "PATCH", `/admin/members/${cId}`, { department: "Media" });
+    expect(r.body.member.department).toBe("Media");
+    expect(r.body.history[0].action).toBe("member.department_changed");
+
+    const aId = await membershipOf(admin.personId);
+    expect((await call(admin.token, "GET", `/admin/members/${aId}`)).body.lastAdmin).toBe(true);
+    expect((await call(admin.token, "PATCH", `/admin/members/${aId}`, { isAdmin: false })).body.error.code).toBe("LAST_ADMIN");
+
+    const bId = await membershipOf(b.personId);
+    r = await call(admin.token, "PATCH", `/admin/members/${bId}`, { isAdmin: true });
+    expect(r.body.member.isAdmin).toBe(true);
+    expect((await call(b.token, "GET", "/admin/overview")).status).toBe(200);
+    r = await call(admin.token, "PATCH", `/admin/members/${bId}`, { isAdmin: false });
+    expect(r.body.member.isAdmin).toBe(false);
+    expect((await call(b.token, "GET", "/admin/overview")).status).toBe(403);
+
+    // Members cannot use any of this.
+    expect((await call(c.token, "PATCH", `/admin/members/${bId}`, { isAdmin: true })).status).toBe(403);
+    expect((await call(c.token, "GET", `/admin/members/${bId}`)).status).toBe(403);
+  });
+
+  it("suspends and reinstates discipler status without touching the account", async () => {
+    await call(b.token, "POST", "/discipler-status/request");
+    const reqId = (await call(admin.token, "GET", "/admin/approvals")).body.disciplerRequests[0].id;
+    await call(admin.token, "POST", `/admin/discipler-status/${reqId}/approve`, {});
+    expect((await call(c.token, "GET", "/disciplers")).body.map((x: any) => x.personId)).toContain(b.personId);
+
+    expect((await call(admin.token, "POST", `/admin/discipler-status/${reqId}/reinstate`)).body.error.code).toBe("BAD_STATUS");
+    await call(admin.token, "POST", `/admin/discipler-status/${reqId}/suspend`);
+    expect((await call(c.token, "GET", "/disciplers")).body).toEqual([]);
+    expect((await call(c.token, "POST", "/relationships", { disciplerId: b.personId, disclosureConfirmed: true })).status).toBe(404);
+    expect((await call(b.token, "GET", "/me")).body.disciplerStatus).toBe("suspended");
+    await call(admin.token, "POST", `/admin/discipler-status/${reqId}/reinstate`);
+    expect((await call(c.token, "GET", "/disciplers")).body.map((x: any) => x.personId)).toContain(b.personId);
+  });
+
+  it("suggests a discipler; both people must accept and the disciple confirms disclosure", async () => {
+    const s = await call(admin.token, "POST", "/admin/relationships", { disciplerId: b.personId, discipleIds: [c.personId, d.personId, b.personId] });
+    expect(s.status).toBe(201);
+    expect(s.body.created).toBe(2);
+    expect(s.body.skipped).toEqual([expect.objectContaining({ personId: b.personId, reason: "Cannot disciple themselves" })]);
+    // A second suggestion for the same pair is skipped, not duplicated.
+    expect((await call(admin.token, "POST", "/admin/relationships", { disciplerId: b.personId, discipleIds: [c.personId] })).body.skipped[0].reason).toMatch(/already waiting/);
+
+    const relC = (await call(c.token, "GET", "/relationships")).body[0];
+    expect(relC).toMatchObject({ initiatedBy: "church", status: "requested", awaiting: "both", iAccepted: false });
+    expect((await call(c.token, "POST", `/relationships/${relC.id}/accept`, {})).body.error.code).toBe("DISCLOSURE_REQUIRED");
+    let after = await call(c.token, "POST", `/relationships/${relC.id}/accept`, { disclosureConfirmed: true });
+    expect(after.body).toMatchObject({ status: "requested", awaiting: "them", iAccepted: true });
+    after = await call(b.token, "POST", `/relationships/${relC.id}/accept`, {});
+    expect(after.body.status).toBe("accepted_baseline_pending");
+
+    const relD = (await call(d.token, "GET", "/relationships")).body[0];
+    expect((await call(admin.token, "POST", `/admin/relationships/${relD.id}/withdraw`)).status).toBe(200);
+    expect((await call(d.token, "GET", "/relationships")).body[0].status).toBe("declined");
+
+    const detail = await call(admin.token, "GET", `/admin/members/${await membershipOf(c.personId)}`);
+    expect(detail.body.member.discipler.personId).toBe(b.personId);
+    expect(detail.body.relationships[0]).toMatchObject({ role: "disciple", initiatedBy: "church", status: "accepted_baseline_pending" });
+    expect(detail.body.history.map((h: any) => h.action)).toEqual(expect.arrayContaining(["relationship.suggested", "relationship.accepted"]));
+    expect(JSON.stringify(detail.body)).not.toMatch(/assessment|answer|reflection/i);
+  });
+
+  it("removes a member from the church; they can join again later", async () => {
+    const aId = await membershipOf(admin.personId);
+    expect((await call(admin.token, "POST", `/admin/members/${aId}/remove`)).body.error.code).toBe("REMOVE_SELF");
+
+    const cId = await membershipOf(c.personId);
+    expect((await call(admin.token, "POST", `/admin/members/${cId}/remove`)).status).toBe(200);
+    expect((await call(c.token, "GET", "/me")).body.membership).toBeNull();
+    expect((await call(c.token, "GET", "/relationships")).status).toBe(403);
+    expect((await call(admin.token, "GET", "/admin/members")).body.map((m: any) => m.personId)).not.toContain(c.personId);
+    const bDetail = await call(admin.token, "GET", `/admin/members/${await membershipOf(b.personId)}`);
+    expect(bDetail.body.placesFilled).toBe(0);
+    expect(bDetail.body.relationships.find((r: any) => r.other.personId === c.personId).status).toBe("ended");
+
+    const rejoin = await call(c.token, "POST", "/churches/join", { code, participation: "grow" });
+    expect(rejoin.status).toBe(201);
+    expect(rejoin.body.membership.status).toBe("pending");
+  });
+});

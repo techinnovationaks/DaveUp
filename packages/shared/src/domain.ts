@@ -94,3 +94,18 @@ export const AnswerSchema = z
   .refine((a) => a.noOccasion || a.value !== null, { message: "Choose an answer or No occasion yet" });
 
 export const DecisionSchema = z.object({ note: z.string().max(500).optional() });
+
+// ---- Church console: member management (PRD 33.9, 34.3) ----
+
+export const AdminMemberUpdateSchema = z
+  .object({
+    department: z.string().trim().max(80).nullable().optional(),
+    isAdmin: z.boolean().optional(),
+  })
+  .refine((v) => v.department !== undefined || v.isAdmin !== undefined, "Nothing to change");
+
+/** Suggest one discipler for one or more members. Each pairing still needs both people to accept. */
+export const SuggestDisciplerSchema = z.object({
+  disciplerId: z.string().uuid(),
+  discipleIds: z.array(z.string().uuid()).min(1, "Choose at least one member").max(MAX_ACTIVE_DISCIPLES),
+});

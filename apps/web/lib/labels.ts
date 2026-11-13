@@ -57,3 +57,33 @@ export function dueText(due: DueState): string {
       return `${due.daysLate} days late. Your discipleship stays active.`;
   }
 }
+
+/** Plain words for admin history entries. Unknown actions fall back to the code. */
+const HISTORY: Record<string, string> = {
+  "membership.approved": "Approved as a member",
+  "membership.rejected": "Membership declined",
+  "membership.removed": "Removed from the church",
+  "member.made_admin": "Made an administrator",
+  "member.admin_removed": "Administrator role removed",
+  "member.department_changed": "Department changed",
+  "discipler_status.requested": "Asked for discipler status",
+  "discipler_status.approved": "Discipler status approved",
+  "discipler_status.rejected": "Discipler status declined",
+  "discipler_status.suspended": "Discipler status suspended",
+  "discipler_status.revoked": "Discipler status revoked",
+  "discipler_status.reinstated": "Discipler status reinstated",
+  "relationship.requested": "Discipleship request sent",
+  "relationship.invited": "Discipleship invitation sent",
+  "relationship.suggested": "Discipler suggested by the church",
+  "relationship.suggestion_accepted": "Accepted the church's suggestion",
+  "relationship.suggestion_withdrawn": "Church suggestion withdrawn",
+  "relationship.accepted": "Discipleship accepted",
+  "relationship.declined": "Discipleship declined",
+  "relationship.withdrawn": "Request withdrawn",
+  "relationship.activated": "Discipleship became active",
+  "relationship.ended": "Discipleship ended",
+  "relationship.ended_with_concern": "Discipleship ended with a concern raised",
+  "membership.requested": "Asked to join the church",
+  "church.registered": "Registered the church",
+};
+export const historyLabel = (action: string) => HISTORY[action] ?? action;
