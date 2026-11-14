@@ -1,0 +1,14 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "watchPatterns": ["apps/api/**", "packages/shared/**", "package.json", "package-lock.json"]
+  },
+  "deploy": {
+    "preDeployCommand": "npm run migrate -w @daveup/api",
+    "startCommand": "npm run start -w @daveup/api",
+    "healthcheckPath": "/ready",
+    "healthcheckTimeout": 120,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
+}
