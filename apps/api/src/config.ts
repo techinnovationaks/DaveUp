@@ -48,19 +48,30 @@ export const config = {
     provider: (env.OTP_PROVIDER ?? (env.TERMII_API_KEY ? "termii" : isTest ? "console" : "none")) as "termii" | "console" | "none",
     termiiApiKey: env.TERMII_API_KEY ?? "",
     termiiSenderId: env.TERMII_SENDER_ID ?? "DaveUp",
-    termiiBaseUrl: env.TERMII_BASE_URL ?? "https://api.ng.termii.com",
+    termiiBaseUrl: (env.TERMII_BASE_URL || "https://api.ng.termii.com").replace(/\/+$/, ""),
     /** Termii channel: "dnd" (transactional SMS), "whatsapp" or "generic". */
     termiiChannel: env.TERMII_CHANNEL ?? "dnd",
   },
   email: {
     /**
-     * "brevo" sends real email (default when BREVO_API_KEY is set).
-     * "console" prints emails, including sign-in codes, to the API log.
-     * Local development only; refused in production.
+     * "brevo": Brevo's API (default when BREVO_API_KEY is set).
+     * "smtp": any SMTP server through Nodemailer (default when SMTP_HOST is set).
+     *   With no SMTP_HOST in development it uses a free Ethereal test mailbox and
+     *   logs a link to view each email.
+     * "console": prints emails, including sign-in codes, to the API log.
+     * Ethereal and console are for development only; refused in production.
      */
-    provider: (env.EMAIL_PROVIDER || (env.BREVO_API_KEY ? "brevo" : "console")) as "brevo" | "console",
+    provider: (env.EMAIL_PROVIDER || (env.BREVO_API_KEY ? "brevo" : env.SMTP_HOST ? "smtp" : "console")) as "brevo" | "smtp" | "console",
+    smtp: {
+      host: env.SMTP_HOST || "",
+      port: Number(env.SMTP_PORT || 587),
+      /** true for port 465 (TLS from the start); false uses STARTTLS on 587. */
+      secure: (env.SMTP_SECURE || (env.SMTP_PORT === "465" ? "true" : "false")) === "true",
+      user: env.SMTP_USER || "",
+      pass: env.SMTP_PASS || "",
+    },
     brevoApiKey: env.BREVO_API_KEY || "",
-    brevoBaseUrl: env.BREVO_BASE_URL || "https://api.brevo.com",
+    brevoBaseUrl: (env.BREVO_BASE_URL || "https://api.brevo.com").replace(/\/+$/, ""),
     /** Must be a sender address verified in your Brevo account. */
     from: env.EMAIL_FROM || "no-reply@daveup.local",
     fromName: env.EMAIL_FROM_NAME || "DaveUp",
@@ -73,8 +84,11 @@ export const config = {
   notificationWorker: env.NOTIFICATION_WORKER !== "off",
 } as const;
 
-if (isProd && (config.email.provider !== "brevo" || !config.email.brevoApiKey || !env.EMAIL_FROM)) {
-  throw new Error("Email sign-in needs Brevo in production: set BREVO_API_KEY and EMAIL_FROM (a verified Brevo sender)");
+if (isProd) {
+  const ok = (config.email.provider === "brevo" && config.email.brevoApiKey) || (config.email.provider === "smtp" && config.email.smtp.host);
+  if (!ok || !env.EMAIL_FROM) {
+    throw new Error("Email sign-in needs a real email service in production: set BREVO_API_KEY (or SMTP_HOST, SMTP_USER, SMTP_PASS) and EMAIL_FROM");
+  }
 }
 if (isProd && !env.APP_URL) throw new Error("Set APP_URL to the public web address so email links work");
 

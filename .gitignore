@@ -6,3 +6,10 @@ dist/
 *.tsbuildinfo
 .DS_Store
 coverage/
+
+# Original full-size photos (about 40 MB). The site uses the web-sized copies in
+# apps/web/public/images/home/ instead; see apps/web/lib/site-images.ts.
+apps/web/public/bg1.jpg
+apps/web/public/bg2.jpg
+apps/web/public/front-view-friends-checking-menu.jpg
+apps/web/public/people-meeting-support-group.jpg

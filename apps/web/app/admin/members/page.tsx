@@ -161,7 +161,7 @@ export default function Members() {
                         <input
                           type="checkbox"
                           aria-label={`Select ${m.fullName ?? "member"}`}
-                          className="h-5 w-5 accent-[#D71920]"
+                          className="h-5 w-5 accent-brand"
                           checked={selected.has(m.personId)}
                           onChange={() => toggle(m.personId)}
                         />
@@ -202,7 +202,7 @@ export default function Members() {
                     <input
                       type="checkbox"
                       aria-label={`Select ${m.fullName ?? "member"}`}
-                      className="mt-3 h-5 w-5 shrink-0 accent-[#D71920]"
+                      className="mt-3 h-5 w-5 shrink-0 accent-brand"
                       checked={selected.has(m.personId)}
                       onChange={() => toggle(m.personId)}
                     />

@@ -112,7 +112,7 @@ export function NotifyToggle({ me }: { me: MeDto }) {
         <input
           type="checkbox"
           role="switch"
-          className="mt-1 h-5 w-5 shrink-0 accent-[#D71920]"
+          className="mt-1 h-5 w-5 shrink-0 accent-brand"
           checked={on}
           disabled={busy}
           onChange={(e) => void change(e.target.checked)}

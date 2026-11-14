@@ -1,9 +1,12 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useSession } from "@/lib/session";
 import { BottomNav } from "./BottomNav";
+import { IntroSlides } from "./IntroSlides";
+import { SITE_IMAGES } from "@/lib/site-images";
 import { Icon, accountItem, adminNav, isActive, mainNav, titleFor } from "./nav";
 
 /** Heart-and-cross mark from the design boards. */
@@ -12,8 +15,8 @@ export function Logo({ size = 36, light = false, markOnly = false }: { size?: nu
     <span className="flex items-center gap-2.5">
       <span style={{ width: size, height: size }} className={`flex items-center justify-center rounded-xl ${light ? "bg-white" : "bg-brand"}`}>
         <svg width={size * 0.62} height={size * 0.58} viewBox="0 0 24 22" aria-hidden>
-          <path d="M12 21s-9-5.6-11-11.2C-.3 5.5 2.7 1 7 1c2.2 0 3.9 1.2 5 2.8C13.1 2.2 14.8 1 17 1c4.3 0 7.3 4.5 6 8.8C21 15.4 12 21 12 21z" fill={light ? "#D71920" : "#fff"} />
-          <path d="M12 6v9M8.8 9.4h6.4" stroke={light ? "#fff" : "#D71920"} strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M12 21s-9-5.6-11-11.2C-.3 5.5 2.7 1 7 1c2.2 0 3.9 1.2 5 2.8C13.1 2.2 14.8 1 17 1c4.3 0 7.3 4.5 6 8.8C21 15.4 12 21 12 21z" fill={light ? "#1E3A8A" : "#fff"} />
+          <path d="M12 6v9M8.8 9.4h6.4" stroke={light ? "#fff" : "#1E3A8A"} strokeWidth="2.2" strokeLinecap="round" />
         </svg>
       </span>
       {!markOnly && <span className={`text-[20px] font-extrabold tracking-tight ${light ? "text-white" : "text-ink"}`}>DaveUp</span>}
@@ -125,29 +128,27 @@ export function AppShell({ children, nav = false, aside, narrow = false }: { chi
   );
 }
 
-const STEPS = ["Take the 12-area assessment", "Meet regularly and follow a growth plan", "Grow, then help someone else grow"];
-
 /** Brand panel beside sign-in and onboarding on tablet and desktop. */
+/**
+ * Photo of people reading together under a navy tint, so white text stays
+ * readable over any part of the image. Decorative: empty alt text.
+ */
+export function AuthPhoto({ priority = false, sizes }: { priority?: boolean; sizes: string }) {
+  return (
+    <>
+      <Image src={SITE_IMAGES.reading.src ?? "/images/home/reading-together.jpg"} alt="" fill priority={priority} sizes={sizes} className="object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-br from-brand/90 via-brand-deep/80 to-brand-deep/90" aria-hidden />
+    </>
+  );
+}
+
 export function BrandPanel({ className = "" }: { className?: string }) {
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-br from-brand to-[#8E0F14] text-white ${className}`}>
-      <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white/10" />
-      <div className="absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-white/10" />
+    <div className={`relative overflow-hidden bg-brand-deep text-white ${className}`}>
+      <AuthPhoto priority sizes="(min-width: 1024px) calc(100vw - 560px), 50vw" />
       <div className="relative flex h-full flex-col justify-between p-10 lg:p-14">
         <span />
-        <div className="max-w-md">
-          <span className="mb-5 inline-block rounded-full bg-white/15 px-4 py-1.5 text-[13px] font-extrabold uppercase tracking-widest">Discipleship</span>
-          <h2 className="text-[40px] font-extrabold leading-[1.08] tracking-tight lg:text-[48px]">Walk with someone. Make disciples.</h2>
-          <p className="mt-4 text-[18px] text-white/85">One discipler, one clear next step, together.</p>
-          <ol className="mt-8 space-y-4">
-            {STEPS.map((t, i) => (
-              <li key={t} className="flex items-center gap-3 text-[17px]">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[15px] font-bold text-brand">{i + 1}</span>
-                {t}
-              </li>
-            ))}
-          </ol>
-        </div>
+        <IntroSlides onDark />
         <p className="text-[14px] text-white/75">Provided through your church.</p>
       </div>
     </div>
@@ -158,6 +159,13 @@ export function BrandPanel({ className = "" }: { className?: string }) {
 export function AuthShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh md:grid md:grid-cols-2 lg:grid-cols-[minmax(480px,560px)_1fr]">
+      {/* Phones: the same photo as a banner, since the side panel is hidden. */}
+      <div className="relative h-36 overflow-hidden bg-brand-deep md:hidden">
+        <AuthPhoto priority sizes="100vw" />
+        <div className="relative flex h-full items-end px-4 pb-4">
+          <Logo light />
+        </div>
+      </div>
       <main className="mx-auto flex w-full max-w-md flex-col px-4 pb-10 pt-6 md:max-w-none md:px-10 md:py-10 lg:px-16">
         <div className="mb-10 hidden md:block">
           <Logo />

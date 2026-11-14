@@ -622,6 +622,17 @@ describe("email sign-in and notifications", () => {
     expect((await call(null, "POST", "/auth/email/request", { email: "not-an-email" })).status).toBe(400);
   });
 
+  it("says plainly when email cannot be sent, without a server error", async () => {
+    setEmailSender({ send: async () => { throw new Error("Brevo: unauthorised IP"); } });
+    try {
+      const r = await call(null, "POST", "/auth/email/request", { email: "down@example.com" });
+      expect(r.status).toBe(503);
+      expect(r.body.error).toEqual({ code: "EMAIL_UNAVAILABLE", message: expect.stringMatching(/could not send/) });
+    } finally {
+      setEmailSender({ send: async (m) => void emails.push(m) });
+    }
+  });
+
   it("never lets an unverified profile email take over the real owner's sign-in", async () => {
     // A phone account that typed someone else's address before email sign-in existed.
     const squatter = await signIn("Phone Person");

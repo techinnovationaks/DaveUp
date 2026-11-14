@@ -64,7 +64,7 @@ export function Button({ variant = "primary", full, className = "", children, ..
     primary: "bg-brand text-white hover:bg-brand-dark disabled:bg-brand/50",
     secondary: "border border-surface-line bg-white text-ink hover:bg-surface disabled:opacity-50",
     ghost: "text-brand hover:bg-brand-soft disabled:opacity-50",
-    danger: "border border-brand-line bg-brand-soft text-brand-dark hover:bg-brand-line/40 disabled:opacity-50",
+    danger: "border border-danger-line bg-danger-soft text-danger-dark hover:bg-danger-line/40 disabled:opacity-50",
   };
   return (
     <button className={`min-h-[52px] rounded-2xl px-6 text-[16px] font-bold transition-colors md:min-h-[48px] ${widthClass(full, ctx)} ${styles[variant]} ${className}`} {...rest}>
@@ -79,7 +79,7 @@ export function LinkButton({ href, children, variant = "primary", full }: { href
     primary: "bg-brand text-white hover:bg-brand-dark",
     secondary: "border border-surface-line bg-white text-ink hover:bg-surface",
     ghost: "text-brand hover:bg-brand-soft",
-    danger: "border border-brand-line bg-brand-soft text-brand-dark",
+    danger: "border border-danger-line bg-danger-soft text-danger-dark",
   };
   return (
     <Link href={href} className={`flex min-h-[52px] items-center justify-center rounded-2xl px-6 text-[16px] font-bold transition-colors md:inline-flex md:min-h-[48px] ${widthClass(full, ctx)} ${styles[variant]}`}>
@@ -123,7 +123,7 @@ export const inputClass =
 export function ErrorText({ children }: { children: ReactNode }) {
   if (!children) return null;
   return (
-    <p role="alert" className="mb-4 rounded-xl bg-brand-soft px-4 py-3 text-[14px] text-brand-dark">
+    <p role="alert" className="mb-4 rounded-xl bg-danger-soft px-4 py-3 text-[14px] text-danger-dark">
       {children}
     </p>
   );

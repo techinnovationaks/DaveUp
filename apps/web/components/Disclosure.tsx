@@ -12,7 +12,7 @@ export function Disclosure({ checked, onChange, disciplerName }: { checked: bool
       </ul>
       <p className="mt-2 text-[14px] text-ink-muted">You can end the relationship or raise a concern at any time.</p>
       <label className="mt-3 flex items-start gap-3 text-[15px] text-ink">
-        <input type="checkbox" className="mt-1 h-5 w-5 accent-[#D71920]" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+        <input type="checkbox" className="mt-1 h-5 w-5 accent-brand" checked={checked} onChange={(e) => onChange(e.target.checked)} />
         I understand and agree
       </label>
     </div>

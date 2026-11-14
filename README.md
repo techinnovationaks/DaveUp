@@ -148,12 +148,13 @@ cp apps/web/.env.example apps/web/.env.local
 | `APP_DATABASE_URL` | `postgres://daveup_app:daveup_app_dev@localhost:5433/daveup` | Required in production. All church-scoped requests. Subject to RLS. |
 | `AUTH_SECRET` | `local-dev-secret-not-for-production` | Required in production. Hashes sign-in codes and session tokens. |
 | `SESSION_DAYS` | `30` | Session lifetime |
-| `BREVO_API_KEY` | (unset) | Brevo transactional email. Required in production. Without it, development prints emails (and sign-in codes) in the API terminal. |
+| `BREVO_API_KEY` | (unset) | Brevo transactional email. Production needs Brevo or an SMTP server. Without either, development prints emails (and sign-in codes) in the API terminal. |
 | `EMAIL_FROM` | `no-reply@daveup.local` | Required in production. Must be a sender verified in Brevo. |
 | `EMAIL_FROM_NAME` | `DaveUp` | |
 | `APP_URL` | `http://localhost:3000` | Required in production. Public web address, used for links in emails. |
 | `APP_TIMEZONE` | `Africa/Lagos` | Time zone for dates written in emails |
-| `EMAIL_PROVIDER` | `brevo` if a key is set, else `console` | `console` is refused in production |
+| `EMAIL_PROVIDER` | `brevo` if a key is set, else `smtp` if `SMTP_HOST` is set, else `console` | `brevo`, `smtp` (Nodemailer) or `console`. `console` is refused in production. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | (unset), `587` | Any SMTP server through Nodemailer, for example Gmail with an app password (`smtp.gmail.com`, port `465`). With no host in development, a free Ethereal test mailbox is used and the API terminal prints a link to view each email. |
 | `NOTIFICATION_WORKER` | `on` | `off` when a separate worker process sends the email queue |
 | `OTP_PROVIDER` | `none` (or `termii` if `TERMII_API_KEY` is set) | Phone codes: `termii`, `console` or `none`. See [Sign-in modes](#sign-in-modes). |
 | `TERMII_API_KEY` | (unset) | Setting it switches sign-in codes on |
@@ -347,6 +348,17 @@ Breakpoints follow the desktop design guide:
 - 768–1023px: icon-only rail
 - below 768px: phone layout with a bottom tab bar
 - 1280px and up: a right-hand context column on some screens
+
+## Homepage and pictures
+
+The public homepage is `apps/web/app/page.tsx`. Its copy describes only what DaveUp does today, and the features still being built are listed under "Coming next".
+
+Every picture on it is listed in **`apps/web/lib/site-images.ts`**, one entry per slot. To add or replace a picture:
+
+1. Save a web-sized copy in `apps/web/public/images/home/`: about 2000px wide and under 1 MB. On a Mac: `sips -Z 2000 -s formatOptions 74 photo.jpg --out apps/web/public/images/home/photo.jpg`.
+2. Set that slot's `src`, and describe the picture in `alt` for screen readers.
+
+Slots with `src: null` (church team, family, app preview) show a navy panel with an icon until a picture is added. Next.js serves smaller versions of each picture per screen size automatically.
 
 ## Not built yet
 

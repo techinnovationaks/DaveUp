@@ -291,7 +291,7 @@ function Bar({ label, value, tone }: { label?: string; value: number | null; ton
     <div className={`flex items-center gap-3 text-[15px] ${label ? "mb-2" : ""}`}>
       {label && <span className="w-16 shrink-0 truncate text-ink-muted">{label}</span>}
       <div className="h-2.5 flex-1 rounded-full bg-surface-line">
-        {value !== null && <div className={`h-2.5 rounded-full ${tone === "dark" ? "bg-ink" : "bg-brand"}`} style={{ width: `${(value / 20) * 100}%` }} />}
+        {value !== null && <div className={`h-2.5 rounded-full ${tone === "dark" ? "bg-sky-500" : "bg-brand"}`} style={{ width: `${(value / 20) * 100}%` }} />}
       </div>
       <span className="w-14 shrink-0 text-right font-bold text-ink">{value === null ? "n/a" : `${value}/20`}</span>
     </div>
@@ -329,7 +329,7 @@ function EndPanel({ r, onDone }: { r: RelationshipDto; onDone: () => Promise<voi
       <div className="mt-4 space-y-2">
         {END_REASONS.map((k) => (
           <label key={k} className="flex items-center gap-3 text-[15px] text-ink">
-            <input type="radio" name="reason" className="h-5 w-5 accent-[#D71920]" checked={reason === k} onChange={() => setReason(k)} />
+            <input type="radio" name="reason" className="h-5 w-5 accent-brand" checked={reason === k} onChange={() => setReason(k)} />
             {reasonLabel[k]}
           </label>
         ))}

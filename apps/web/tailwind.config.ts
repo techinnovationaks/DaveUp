@@ -6,7 +6,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: { DEFAULT: "#D71920", dark: "#B3141A", soft: "#FDF1F1", line: "#F5C9CB" },
+        // Dark navy on white.
+        brand: { DEFAULT: "#1E3A8A", dark: "#172C69", deep: "#0F1F4D", soft: "#EEF2FA", line: "#C9D4EE" },
+        // Errors and destructive actions stay red so they are never mistaken for normal actions.
+        danger: { DEFAULT: "#B42318", dark: "#912018", soft: "#FEF3F2", line: "#FECDCA" },
         ink: { DEFAULT: "#1E293B", muted: "#64748B", faint: "#94A3B8" },
         surface: { DEFAULT: "#F7F8FA", card: "#FFFFFF", line: "#E5E7EB" },
         ok: { DEFAULT: "#15803D", soft: "#ECFDF3" },

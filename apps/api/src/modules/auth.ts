@@ -7,7 +7,7 @@ import { config } from "../config";
 import { ownerDb, type Tx } from "../db/pool";
 import { consumeCode, issueCode } from "../lib/codes";
 import { hmac, newSessionToken } from "../lib/crypto";
-import { badRequest, parse } from "../lib/errors";
+import { AppError, badRequest, parse } from "../lib/errors";
 import { getEmailSender, renderEmail } from "../lib/email";
 import { getOtpSender } from "../lib/otp-sender";
 import { clearSessionCookie, requireAuth, setSessionCookie } from "../lib/context";
@@ -55,6 +55,16 @@ function finishSignIn(reply: FastifyReply, token: string, result: Awaited<Return
 
 export async function sendEmailCode(email: string, code: string, ttlSeconds: number, purpose: "signin" | "change_email") {
   const minutes = Math.round(ttlSeconds / 60);
+  try {
+    await sendCodeEmail(email, code, minutes, purpose);
+  } catch (err) {
+    // Log the provider's reason for the operator; tell the person plainly.
+    console.error("[email] could not send a code:", err instanceof Error ? err.message : err);
+    throw new AppError(503, "EMAIL_UNAVAILABLE", "We could not send the email right now. Please try again in a few minutes.");
+  }
+}
+
+async function sendCodeEmail(email: string, code: string, minutes: number, purpose: "signin" | "change_email") {
   await getEmailSender().send({
     to: email,
     ...renderEmail({
