@@ -7,7 +7,7 @@ import { ConsoleScreen } from "@/components/ConsoleShell";
 import { DisciplerPicker, suggestSummary } from "@/components/console/DisciplerPicker";
 import { Button, Card, ErrorText, Eyebrow, Initials, Loading, Pill, inputClass } from "@/components/ui";
 import { api, useAction, useApi } from "@/lib/api";
-import { fmtDay, formatPhone, historyLabel, statusLabel } from "@/lib/labels";
+import { contactsOf, fmtDay, historyLabel, statusLabel } from "@/lib/labels";
 import { useGuard } from "@/lib/session";
 
 const participationLabel = { grow: "Wants to grow", disciple: "Disciples others", both: "Grows and disciples" } as const;
@@ -60,8 +60,7 @@ export default function MemberDetail({ params }: { params: Promise<{ id: string 
             {isMe && <span className="ml-2 text-[16px] font-normal text-ink-muted">(you)</span>}
           </h1>
           <p className="text-[15px] text-ink-muted">
-            {formatPhone(m.phone)}
-            {m.email ? ` · ${m.email}` : ""}
+            {contactsOf(m)}
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {m.isAdmin && <span className="inline-flex items-center rounded-full bg-ink px-3 py-1 text-[13px] font-semibold text-white">Administrator</span>}

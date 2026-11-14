@@ -7,7 +7,7 @@ import { DisciplerPicker, suggestSummary } from "@/components/console/DisciplerP
 import { ConsoleScreen } from "@/components/ConsoleShell";
 import { Button, Card, ErrorText, H1, Initials, Loading, Pill, inputClass } from "@/components/ui";
 import { useApi } from "@/lib/api";
-import { formatPhone } from "@/lib/labels";
+import { contactOf, formatPhone } from "@/lib/labels";
 import { useGuard } from "@/lib/session";
 
 type Filter = "all" | "pending" | "noDiscipler" | "disciplers" | "admins";
@@ -62,7 +62,8 @@ export default function Members() {
           (m.fullName ?? "").toLowerCase().includes(needle) ||
           (m.department ?? "").toLowerCase().includes(needle) ||
           // Matches both 0803… and +234803… forms.
-          (digits.length >= 3 && (m.phone.includes(digits) || formatPhone(m.phone).replace(/\D/g, "").includes(digits)))),
+          (digits.length >= 3 && ((m.phone ?? "").includes(digits) || formatPhone(m.phone).replace(/\D/g, "").includes(digits))) ||
+          (m.email ?? "").includes(needle)),
     );
   }, [all, filter, q]);
 
@@ -122,7 +123,7 @@ export default function Members() {
             );
           })}
         </div>
-        <input className={`${inputClass} lg:max-w-xs`} placeholder="Search by name, phone or department" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className={`${inputClass} lg:max-w-xs`} placeholder="Search by name, email, phone or department" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
       {shown.length === 0 ? (
@@ -140,7 +141,7 @@ export default function Members() {
                     <span className="sr-only">Select</span>
                   </th>
                   <th className="px-5 py-3">Name</th>
-                  <th className="px-5 py-3">Phone</th>
+                  <th className="px-5 py-3">Contact</th>
                   <th className="px-5 py-3">Role</th>
                   <th className="px-5 py-3">Department</th>
                   <th className="px-5 py-3">Discipler</th>
@@ -174,11 +175,11 @@ export default function Members() {
                             {m.fullName ?? "No name yet"}
                             {m.personId === me!.person.id && <span className="ml-1.5 text-[13px] font-normal text-ink-muted">(you)</span>}
                           </span>
-                          <span className="block truncate text-[13px] text-ink-muted">{m.email ?? participationLabel[m.participation]}</span>
+                          <span className="block truncate text-[13px] text-ink-muted">{participationLabel[m.participation]}</span>
                         </span>
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-5 py-3.5 text-[15px] text-ink-muted">{formatPhone(m.phone)}</td>
+                    <td className="max-w-[220px] truncate whitespace-nowrap px-5 py-3.5 text-[15px] text-ink-muted">{contactOf(m)}</td>
                     <td className="px-5 py-3.5">
                       <Roles m={m} />
                     </td>
@@ -214,7 +215,7 @@ export default function Members() {
                       {m.personId === me!.person.id && <span className="ml-1.5 text-[13px] font-normal text-ink-muted">(you)</span>}
                     </p>
                     <p className="text-[14px] text-ink-muted">
-                      {formatPhone(m.phone)}
+                      {contactOf(m)}
                       {m.department ? ` · ${m.department}` : ""}
                     </p>
                     <div className="mt-2">

@@ -1,5 +1,13 @@
 // Configuration from the environment, with local-dev connection defaults.
 // In production every value must come from the environment / secret store.
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+// Load apps/api/.env when it exists (copy .env.example to start). Variables
+// already set in the environment always win over the file. Tests never read
+// it, so they always use the separate daveup_test database.
+const ENV_FILE = fileURLToPath(new URL("../.env", import.meta.url));
+if (process.env.NODE_ENV !== "test" && existsSync(ENV_FILE)) process.loadEnvFile(ENV_FILE);
 
 const env = process.env;
 const isProd = env.NODE_ENV === "production";
@@ -44,7 +52,31 @@ export const config = {
     /** Termii channel: "dnd" (transactional SMS), "whatsapp" or "generic". */
     termiiChannel: env.TERMII_CHANNEL ?? "dnd",
   },
+  email: {
+    /**
+     * "brevo" sends real email (default when BREVO_API_KEY is set).
+     * "console" prints emails, including sign-in codes, to the API log.
+     * Local development only; refused in production.
+     */
+    provider: (env.EMAIL_PROVIDER || (env.BREVO_API_KEY ? "brevo" : "console")) as "brevo" | "console",
+    brevoApiKey: env.BREVO_API_KEY || "",
+    brevoBaseUrl: env.BREVO_BASE_URL || "https://api.brevo.com",
+    /** Must be a sender address verified in your Brevo account. */
+    from: env.EMAIL_FROM || "no-reply@daveup.local",
+    fromName: env.EMAIL_FROM_NAME || "DaveUp",
+  },
+  /** Public address of the web app, for links in emails. */
+  appUrl: (env.APP_URL || "http://localhost:3000").replace(/\/$/, ""),
+  /** Time zone used for dates and times written in emails. */
+  timeZone: env.APP_TIMEZONE || "Africa/Lagos",
+  /** The background sender runs inside the API process unless turned off (e.g. when a separate worker runs it). */
+  notificationWorker: env.NOTIFICATION_WORKER !== "off",
 } as const;
+
+if (isProd && (config.email.provider !== "brevo" || !config.email.brevoApiKey || !env.EMAIL_FROM)) {
+  throw new Error("Email sign-in needs Brevo in production: set BREVO_API_KEY and EMAIL_FROM (a verified Brevo sender)");
+}
+if (isProd && !env.APP_URL) throw new Error("Set APP_URL to the public web address so email links work");
 
 if (isProd && config.otp.provider === "console") {
   throw new Error("OTP_PROVIDER=console is for local development only");

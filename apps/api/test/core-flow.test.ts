@@ -8,14 +8,27 @@ import { migrate } from "../src/db/migrate";
 import { buildServer } from "../src/server";
 import { closeDbs, ownerDb, withTenant } from "../src/db/pool";
 import { setOtpSender } from "../src/lib/otp-sender";
+import { setEmailSender, type EmailMessage } from "../src/lib/email";
+import { deliverPending } from "../src/lib/notify";
 
 let app: FastifyInstance;
 const sentCodes = new Map<string, string>();
+const emails: EmailMessage[] = [];
+/** The last 6-digit code emailed to an address. */
+const codeFor = (email: string) => [...emails].reverse().find((m) => m.to === email)?.text.match(/\b(\d{6})\b/)?.[1];
+/** Send everything queued (several rounds, since earlier tests queue a lot). */
+async function drain() {
+  for (;;) {
+    const r = await deliverPending(100);
+    if (r.sent + r.skipped + r.failed === 0) return;
+  }
+}
 let phoneSeq = 0;
 
 beforeAll(async () => {
   await migrate({ reset: true });
   setOtpSender({ send: async (phone, code) => void sentCodes.set(phone, code) });
+  setEmailSender({ send: async (m) => void emails.push(m) });
   app = await buildServer();
 });
 
@@ -69,7 +82,7 @@ describe("auth", () => {
   });
 
   it("refuses phone-only sign-in while codes are on", async () => {
-    expect((await call(null, "GET", "/auth/methods")).body).toEqual({ otp: true });
+    expect((await call(null, "GET", "/auth/methods")).body).toEqual({ email: true, phone: true, phoneOtp: true });
     const r = await call(null, "POST", "/auth/phone", { phone: "08039999998" });
     expect(r.status).toBe(400);
     expect(r.body.error.code).toBe("OTP_REQUIRED");
@@ -79,7 +92,7 @@ describe("auth", () => {
     const capture = { send: async (phone: string, code: string) => void sentCodes.set(phone, code) };
     setOtpSender(null);
     try {
-      expect((await call(null, "GET", "/auth/methods")).body).toEqual({ otp: false });
+      expect((await call(null, "GET", "/auth/methods")).body).toEqual({ email: true, phone: true, phoneOtp: false });
       expect((await call(null, "POST", "/auth/otp/request", { phone: "08039999997" })).body.error.code).toBe("OTP_DISABLED");
 
       const first = await call(null, "POST", "/auth/phone", { phone: "0803 999 9997" });
@@ -574,5 +587,127 @@ describe("church console member management", () => {
     const rejoin = await call(c.token, "POST", "/churches/join", { code, participation: "grow" });
     expect(rejoin.status).toBe(201);
     expect(rejoin.body.membership.status).toBe("pending");
+  });
+});
+
+describe("email sign-in and notifications", () => {
+  let ada: { token: string; personId: string };
+  let ben: { token: string; personId: string };
+
+  async function emailSignIn(email: string, name?: string) {
+    const req = await call(null, "POST", "/auth/email/request", { email });
+    expect(req.status).toBe(200);
+    expect(JSON.stringify(req.body)).not.toMatch(/\d{6}/); // the code never comes back over HTTP
+    const code = codeFor(email.toLowerCase())!;
+    const v = await call(null, "POST", "/auth/email/verify", { email, code });
+    expect(v.status).toBe(200);
+    if (name) await call(v.body.token, "PATCH", "/me", { fullName: name });
+    return v.body as { token: string; personId: string; isNew: boolean };
+  }
+
+  it("signs up and signs in with an emailed code", async () => {
+    const first = await emailSignIn("ada@example.com", "Ada Obi");
+    expect(first.isNew).toBe(true);
+    ada = first;
+    const me = (await call(ada.token, "GET", "/me")).body;
+    expect(me.person).toMatchObject({ email: "ada@example.com", emailVerified: true, phone: null, notifyEmail: true });
+
+    // Same address, any case: the same account.
+    const again = await emailSignIn("ADA@Example.com");
+    expect(again).toMatchObject({ personId: ada.personId, isNew: false });
+
+    await call(null, "POST", "/auth/email/request", { email: "ada@example.com" });
+    const wrong = await call(null, "POST", "/auth/email/verify", { email: "ada@example.com", code: codeFor("ada@example.com") === "000000" ? "111111" : "000000" });
+    expect(wrong.body.error.code).toBe("OTP_WRONG");
+    expect((await call(null, "POST", "/auth/email/request", { email: "not-an-email" })).status).toBe(400);
+  });
+
+  it("never lets an unverified profile email take over the real owner's sign-in", async () => {
+    // A phone account that typed someone else's address before email sign-in existed.
+    const squatter = await signIn("Phone Person");
+    await ownerDb.updateTable("person").set({ email: "chi@example.com" }).where("id", "=", squatter.personId).execute();
+    const owner = await emailSignIn("chi@example.com", "Chi Real");
+    expect(owner.personId).not.toBe(squatter.personId);
+    expect((await call(squatter.token, "GET", "/me")).body.person.email).toBeNull();
+  });
+
+  it("changes email only with a code sent to the new address", async () => {
+    ben = await emailSignIn("ben@example.com", "Ben Udo");
+    // Taken by Ada: refused after the code.
+    await call(ben.token, "POST", "/me/email/request", { email: "ada@example.com" });
+    const taken = await call(ben.token, "POST", "/me/email/verify", { email: "ada@example.com", code: codeFor("ada@example.com") });
+    expect(taken.body.error.code).toBe("EMAIL_TAKEN");
+
+    await call(ben.token, "POST", "/me/email/request", { email: "ben.udo@example.com" });
+    const changeCode = codeFor("ben.udo@example.com")!;
+    // A change code cannot be used to sign in.
+    expect((await call(null, "POST", "/auth/email/verify", { email: "ben.udo@example.com", code: changeCode })).body.error.code).toBe("OTP_EXPIRED");
+    const ok = await call(ben.token, "POST", "/me/email/verify", { email: "ben.udo@example.com", code: changeCode });
+    expect(ok.body.person).toMatchObject({ email: "ben.udo@example.com", emailVerified: true });
+    // Profile edits no longer accept an email directly.
+    expect((await call(ben.token, "PATCH", "/me", { email: "x@example.com" })).status).toBe(400);
+  });
+
+  it("queues notifications with the change and delivers them by email", async () => {
+    await drain();
+    emails.length = 0;
+    const code = (await call(ada.token, "POST", "/churches", { name: "Email Church", city: "Abuja", participation: "both" })).body.church.joinCode;
+    await call(ben.token, "POST", "/churches/join", { code, participation: "grow" });
+    expect(emails).toHaveLength(0); // queued, not sent during the request
+    await drain();
+    expect(emails.map((m) => [m.to, m.subject])).toEqual([["ada@example.com", "Ben Udo asked to join"]]);
+    expect(emails[0]!.html).toContain("/admin/approvals");
+
+    const m = (await call(ada.token, "GET", "/admin/approvals")).body.members[0];
+    expect(m).toMatchObject({ email: "ben.udo@example.com", phone: null });
+    await call(ada.token, "POST", `/admin/members/${m.membershipId}/approve`, {});
+    await drain();
+    expect(emails.at(-1)).toMatchObject({ to: "ben.udo@example.com", subject: "You're in: Email Church" });
+
+    // Turned off: skipped, not sent.
+    await call(ben.token, "PATCH", "/me", { notifyEmail: false });
+    await call(ada.token, "POST", "/discipler-status/request");
+    const reqId = (await call(ada.token, "GET", "/admin/approvals")).body.disciplerRequests[0].id;
+    await call(ada.token, "POST", `/admin/discipler-status/${reqId}/approve`, {});
+    const before = emails.length;
+    await call(ben.token, "POST", "/relationships", { disciplerId: ada.personId, disclosureConfirmed: true });
+    const rel = (await call(ada.token, "GET", "/relationships")).body[0];
+    await call(ada.token, "POST", `/relationships/${rel.id}/accept`, {});
+    await drain();
+    const sent = emails.slice(before);
+    expect(sent.map((x) => x.subject)).toEqual(["Ben Udo would like you to disciple them"]); // Ben's "accepted" email skipped
+    const skipped = await ownerDb.selectFrom("notification").select(["kind", "status"]).where("person_id", "=", ben.personId).where("kind", "=", "relationship.accepted").executeTakeFirstOrThrow();
+    expect(skipped.status).toBe("skipped");
+  });
+
+  it("retries a failed send, then gives up after the last attempt", async () => {
+    await drain();
+    let fail = true;
+    setEmailSender({ send: async (m) => { if (fail) throw new Error("Brevo down"); emails.push(m); } });
+    try {
+      await call(ada.token, "PATCH", "/me", { notifyEmail: true });
+      const n = await ownerDb
+        .insertInto("notification")
+        .values({ person_id: ada.personId, kind: "discipler.approved", data: "{}" })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      expect((await deliverPending()).failed).toBe(1);
+      let row = await ownerDb.selectFrom("notification").selectAll().where("id", "=", n.id).executeTakeFirstOrThrow();
+      expect(row).toMatchObject({ status: "pending", attempts: 1, last_error: "Brevo down" });
+      expect(row.next_attempt_at.getTime()).toBeGreaterThan(Date.now());
+
+      fail = false;
+      await ownerDb.updateTable("notification").set({ next_attempt_at: new Date() }).where("id", "=", n.id).execute();
+      await deliverPending();
+      row = await ownerDb.selectFrom("notification").selectAll().where("id", "=", n.id).executeTakeFirstOrThrow();
+      expect(row.status).toBe("sent");
+    } finally {
+      setEmailSender({ send: async (m) => void emails.push(m) });
+    }
+  });
+
+  it("never puts scores or answers in an email", async () => {
+    await drain();
+    for (const m of emails) expect(`${m.subject} ${m.text}`).not.toMatch(/\/20|score|answer|reflection/i);
   });
 });

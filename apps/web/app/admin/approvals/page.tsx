@@ -4,7 +4,7 @@ import { Card, ErrorText, Eyebrow, H1, Initials, Loading } from "@/components/ui
 import { ConsoleScreen } from "@/components/ConsoleShell";
 import { api, useAction, useApi } from "@/lib/api";
 import { useGuard } from "@/lib/session";
-import { formatPhone } from "@/lib/labels";
+import { contactOf } from "@/lib/labels";
 
 const participationLabel = { grow: "Wants to grow", disciple: "Disciples others", both: "Both" } as const;
 const shortDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
@@ -70,13 +70,13 @@ export default function Approvals() {
 
       {members.length > 0 && (
         <Section title={`New members (${members.length})`}>
-          <Table head={["New member", "Phone", "Department", "How they will use DaveUp", "Decision"]}>
+          <Table head={["New member", "Contact", "Department", "How they will use DaveUp", "Decision"]}>
             {members.map((m) => (
               <tr key={m.membershipId}>
                 <Td>
                   <Person name={m.fullName ?? "No name yet"} />
                 </Td>
-                <Td muted>{formatPhone(m.phone)}</Td>
+                <Td muted>{contactOf(m)}</Td>
                 <Td muted>{m.department ?? "None"}</Td>
                 <Td muted>{participationLabel[m.participation]}</Td>
                 <Td>
@@ -90,7 +90,7 @@ export default function Approvals() {
               <div key={m.membershipId} className="py-3">
                 <p className="text-[16px] font-bold text-ink">{m.fullName ?? "No name yet"}</p>
                 <p className="text-[14px] text-ink-muted">
-                  {formatPhone(m.phone)}
+                  {contactOf(m)}
                   {m.department ? ` · ${m.department}` : ""} · {participationLabel[m.participation]}
                 </p>
                 <Decision disabled={busy} onApprove={() => decide(`/admin/members/${m.membershipId}/approve`)} onDecline={() => decide(`/admin/members/${m.membershipId}/reject`)} />

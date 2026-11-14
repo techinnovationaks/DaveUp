@@ -124,6 +124,23 @@ There is no seed data. Everything is created through the app:
 
 The API reads its settings from environment variables. Local development works with no variables set. In production, every value marked "required in production" must be set, or the server refuses to start.
 
+**Env files**
+
+- **API:** copy `apps/api/.env.example` to `apps/api/.env`. The API loads it on start, including for migrations.
+- **Web app:** copy `apps/web/.env.example` to `apps/web/.env.local`. Next.js loads it on start.
+- **Restart** the server after editing either file.
+
+How they behave:
+
+- **Precedence:** variables already set in your shell or on the host always win over the file.
+- **Tests:** they never read `.env`, so they always use the `daveup_test` database.
+- **Git:** the real files are ignored; only the `.example` files are committed.
+
+```sh
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
+```
+
 | Variable | Default (development) | Notes |
 |---|---|---|
 | `PORT` | `4000` | API port |
@@ -131,7 +148,14 @@ The API reads its settings from environment variables. Local development works w
 | `APP_DATABASE_URL` | `postgres://daveup_app:daveup_app_dev@localhost:5433/daveup` | Required in production. All church-scoped requests. Subject to RLS. |
 | `AUTH_SECRET` | `local-dev-secret-not-for-production` | Required in production. Hashes sign-in codes and session tokens. |
 | `SESSION_DAYS` | `30` | Session lifetime |
-| `OTP_PROVIDER` | `none` (or `termii` if `TERMII_API_KEY` is set) | `termii`, `console` or `none`. See [Sign-in modes](#sign-in-modes). |
+| `BREVO_API_KEY` | (unset) | Brevo transactional email. Required in production. Without it, development prints emails (and sign-in codes) in the API terminal. |
+| `EMAIL_FROM` | `no-reply@daveup.local` | Required in production. Must be a sender verified in Brevo. |
+| `EMAIL_FROM_NAME` | `DaveUp` | |
+| `APP_URL` | `http://localhost:3000` | Required in production. Public web address, used for links in emails. |
+| `APP_TIMEZONE` | `Africa/Lagos` | Time zone for dates written in emails |
+| `EMAIL_PROVIDER` | `brevo` if a key is set, else `console` | `console` is refused in production |
+| `NOTIFICATION_WORKER` | `on` | `off` when a separate worker process sends the email queue |
+| `OTP_PROVIDER` | `none` (or `termii` if `TERMII_API_KEY` is set) | Phone codes: `termii`, `console` or `none`. See [Sign-in modes](#sign-in-modes). |
 | `TERMII_API_KEY` | (unset) | Setting it switches sign-in codes on |
 | `TERMII_SENDER_ID` | `DaveUp` | |
 | `TERMII_BASE_URL` | `https://api.ng.termii.com` | |
@@ -147,7 +171,14 @@ The web app has one setting:
 
 ## Sign-in modes
 
-Sign-in is by phone number. Nigerian numbers are accepted as `0803 000 0000`, `+234803...` or `234803...` and stored in E.164 form.
+**Email (primary).**
+
+- **How it works:** enter your email and receive a 6-digit code (valid 10 minutes). The same step creates the account the first time. There are no passwords.
+- **Codes:** stored hashed, 5 attempts allowed, and limited to 5 requests per 15 minutes per address.
+- **Verified emails only:** only an email proven with a code identifies an account. Changing your email in the profile needs a code sent to the new address.
+- **Sending:** codes go through Brevo, or the API terminal in development.
+
+**Phone (alternative).** Nigerian numbers are accepted as `0803 000 0000`, `+234803...` or `234803...` and stored in E.164 form.
 
 | Mode | When | Behaviour |
 |---|---|---|
@@ -182,6 +213,7 @@ node node_modules/tsx/dist/cli.mjs apps/api/src/db/migrate.ts --reset   # drop a
 | `0001_core.sql` | Tables: person, sign-in codes, sessions, churches, memberships, discipler status, relationships, assessments and answers, audit log. Also the RLS policies and grants. |
 | `0002_cycle_plan_meetings.sql` | Monthly assessment cycles, growth plans, practices and the practice log, weekly reflections, meetings and their records |
 | `0003_church_proposals.sql` | Church-suggested pairings: `initiated_by = 'church'`, plus each person's acceptance |
+| `0004_email_and_notifications.sql` | Email sign-in (phone optional, verified unique email), email codes, and the `notification` outbox |
 
 ## Testing
 
@@ -234,6 +266,26 @@ npm run typecheck   # all workspaces
 - **Settings:** church details, the administrator's account, and sign out.
 - **Privacy:** the console shows counts and roles only, never assessment answers or reflections.
 
+## Email notifications
+
+Events queue a row in the `notification` table **in the same transaction** as the change, so nothing is lost and nothing is sent for a change that rolled back. A background sender in the API process (`lib/notify.ts`) delivers the queue through Brevo:
+
+- **Timing:** it runs every 5 seconds.
+- **Scaling:** rows are claimed with `SKIP LOCKED`, so several API servers can share the queue.
+- **Retries:** after 1, 5, 30 and 120 minutes, then the row is marked `failed`.
+- **Skipping:** people with no verified email, or with notifications turned off, are skipped.
+
+| Event | Who gets it |
+|---|---|
+| Someone asks to join / asks for discipler status | Church administrators |
+| Membership approved, discipler status decided | That person |
+| Discipleship request, invitation or church suggestion | The person asked (both for a suggestion) |
+| Accepted, results ready, plan proposed / started | The other person / both |
+| Meeting scheduled, monthly check open | The other person / both |
+| Relationship ended | The other person (never the reason or a concern) |
+
+Emails contain names and a link only. They never include scores, answers, reflections or meeting notes. People switch them off under Account settings.
+
 ## Key product rules
 
 These are enforced in the API and the database, not only in the UI.
@@ -262,8 +314,8 @@ All routes return JSON. Errors look like `{ "error": { "code": "...", "message":
 | Area | Routes |
 |---|---|
 | Health | `GET /health`, `GET /ready` |
-| Auth | `GET /auth/methods`, `POST /auth/phone`, `POST /auth/otp/request`, `POST /auth/otp/verify`, `POST /auth/logout` |
-| Me and church | `GET/PATCH /me`, `PATCH /me/participation`, `POST /churches`, `GET /church`, `GET /churches/lookup?code=`, `POST /churches/join`, `GET /members/search?q=` |
+| Auth | `GET /auth/methods`, `POST /auth/email/request`, `POST /auth/email/verify`, `POST /auth/phone`, `POST /auth/otp/request`, `POST /auth/otp/verify`, `POST /auth/logout` |
+| Me and church | `GET/PATCH /me` (name, `notifyEmail`), `POST /me/email/request`, `POST /me/email/verify`, `PATCH /me/participation`, `POST /churches`, `GET /church`, `GET /churches/lookup?code=`, `POST /churches/join`, `GET /members/search?q=` |
 | Disciplers | `POST /discipler-status/request`, `GET /disciplers` |
 | Admin | `GET /admin/overview`, `GET /admin/approvals`, `GET /admin/members`, `GET/PATCH /admin/members/:id`, `POST /admin/members/:id/{approve,reject,remove}`, `POST /admin/discipler-status/:id/{approve,reject,suspend,revoke,reinstate}`, `POST /admin/relationships` (suggest a discipler), `POST /admin/relationships/:id/withdraw` |
 | Relationships | `GET /relationships`, `GET /relationships/:id`, `POST /relationships`, `POST /relationships/:id/{accept,decline,end}` |
@@ -298,7 +350,7 @@ Breakpoints follow the desktop design guide:
 
 ## Not built yet
 
-- **Sign-in codes in production:** needs a Termii account (`TERMII_API_KEY`).
+- **Brevo account:** set `BREVO_API_KEY` and a verified `EMAIL_FROM` before real users. SMS codes for phone sign-in still need a Termii account.
 - **Reminders and background jobs:** check reminders at 3 and 7 days, telling the other person at 14 days, and the weekly brief.
 - **AI features:** plan drafts, meeting preparation and summaries, and the meeting recording pipeline.
 - **More console features:** member import, cells and departments as structures, analytics, billing (Paystack), a church-wide audit log screen, and two-factor sign-in for admins.

@@ -15,6 +15,7 @@ import {
 } from "@daveup/shared";
 import { withTenant, type Tx } from "../db/pool";
 import { audit } from "../lib/audit";
+import { notify } from "../lib/notify";
 import { requireAdmin } from "../lib/context";
 import { badRequest, conflict, notFound, parse } from "../lib/errors";
 
@@ -252,6 +253,9 @@ export async function adminMemberRoutes(app: FastifyInstance) {
           .returning("id")
           .executeTakeFirstOrThrow();
         await audit(tx, { churchId, actorId: ctx.personId, action: "relationship.suggested", targetType: "relationship", targetId: r.id, data: { disciplerId: body.disciplerId, discipleId: personId } });
+        const disciplerName = (await tx.selectFrom("person").select("full_name").where("id", "=", body.disciplerId).executeTakeFirst())?.full_name ?? "a discipler";
+        await notify(tx, churchId, [personId], "relationship.suggested", { otherName: disciplerName, relationshipId: r.id, role: "disciple" });
+        await notify(tx, churchId, [body.disciplerId], "relationship.suggested", { otherName: pr.full_name ?? "a member", relationshipId: r.id, role: "discipler" });
         result.created += 1;
         open -= 1;
       }

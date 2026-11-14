@@ -4,8 +4,9 @@ import type { AdminOverviewDto } from "@daveup/shared";
 import { ConsoleScreen, useSignOut } from "@/components/ConsoleShell";
 import { Button, Card, ErrorText, Eyebrow, H1, Loading, Row } from "@/components/ui";
 import { useAction, useApi } from "@/lib/api";
-import { formatPhone } from "@/lib/labels";
+import { contactsOf } from "@/lib/labels";
 import { useGuard } from "@/lib/session";
+import { NotifyToggle } from "@/components/EmailSettings";
 
 export default function Settings() {
   const { me, ready } = useGuard("admin");
@@ -36,8 +37,11 @@ export default function Settings() {
       <Card className="mb-4">
         <Eyebrow className="mb-1">Your account</Eyebrow>
         <div className="divide-y divide-surface-line">
-          <Row href="/profile" title={me!.person.fullName} sub={me!.person.email ? `${formatPhone(me!.person.phone)} · ${me!.person.email}` : formatPhone(me!.person.phone)} />
+          <Row href="/profile" title={me!.person.fullName} sub={contactsOf(me!.person)} />
           <Row title="Role" sub="Administrator" />
+        </div>
+        <div className="mt-3 border-t border-surface-line pt-4">
+          <NotifyToggle me={me!} />
         </div>
       </Card>
 

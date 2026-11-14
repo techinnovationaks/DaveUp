@@ -27,9 +27,20 @@ export function greeting(now = new Date()): string {
 export const OPEN_STATUSES: RelationshipDto["status"][] = ["requested", "accepted_baseline_pending", "active", "paused"];
 
 /** +2348031234567 -> 0803 123 4567 for Nigerian numbers; other numbers unchanged. */
-export function formatPhone(e164: string): string {
+export function formatPhone(e164: string | null | undefined): string {
+  if (!e164) return "";
   const m = /^\+234(\d{3})(\d{3})(\d{4})$/.exec(e164);
   return m ? `0${m[1]} ${m[2]} ${m[3]}` : e164;
+}
+
+/** How to reach someone: their phone if they have one, else their email. */
+export function contactOf(p: { phone: string | null; email: string | null }): string {
+  return p.phone ? formatPhone(p.phone) : (p.email ?? "");
+}
+
+/** Both, for detail views: "0803 000 0000 · ada@example.com". */
+export function contactsOf(p: { phone: string | null; email: string | null }): string {
+  return [formatPhone(p.phone), p.email].filter(Boolean).join(" · ");
 }
 
 /** "Thu 20 Nov, 6:00 pm" in the viewer's time zone. */

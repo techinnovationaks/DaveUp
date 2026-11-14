@@ -6,16 +6,21 @@ type NullableTimestamp = ColumnType<Date | null, Date | string | null | undefine
 
 export interface PersonTable {
   id: Generated<string>;
-  phone: string;
+  phone: string | null;
   full_name: string | null;
   email: string | null;
+  email_verified_at: NullableTimestamp;
+  notify_email: Generated<boolean>;
   created_at: Timestamp;
   updated_at: Timestamp;
 }
 
 export interface OtpChallengeTable {
   id: Generated<string>;
-  phone: string;
+  phone: string | null;
+  email: string | null;
+  purpose: Generated<"signin" | "change_email">;
+  person_id: string | null;
   code_hash: string;
   expires_at: Timestamp;
   attempts: Generated<number>;
@@ -209,6 +214,20 @@ export interface AuditLogTable {
   created_at: Timestamp;
 }
 
+export interface NotificationTable {
+  id: Generated<string>;
+  person_id: string;
+  church_id: string | null;
+  kind: string;
+  data: ColumnType<Record<string, unknown>, string | undefined, string>;
+  status: Generated<"pending" | "sent" | "skipped" | "failed">;
+  attempts: Generated<number>;
+  next_attempt_at: Timestamp;
+  last_error: string | null;
+  created_at: Timestamp;
+  sent_at: NullableTimestamp;
+}
+
 export interface DB {
   person: PersonTable;
   otp_challenge: OtpChallengeTable;
@@ -226,4 +245,5 @@ export interface DB {
   practice_log: PracticeLogTable;
   reflection: ReflectionTable;
   meeting: MeetingTable;
+  notification: NotificationTable;
 }

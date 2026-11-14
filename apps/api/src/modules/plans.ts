@@ -17,6 +17,7 @@ import {
 } from "@daveup/shared";
 import { withTenant, type Tx } from "../db/pool";
 import { audit } from "../lib/audit";
+import { notify } from "../lib/notify";
 import { requireMember } from "../lib/context";
 import { badRequest, conflict, forbidden, notFound, parse } from "../lib/errors";
 import { progressPoints } from "./cycles";
@@ -156,6 +157,8 @@ export async function planRoutes(app: FastifyInstance) {
         )
         .execute();
       await audit(tx, { churchId, actorId: ctx.personId, action: "plan.drafted", targetType: "relationship", targetId: r.id });
+      const myName = (r.myRole === "disciple" ? r.disciple_name : r.discipler_name) ?? "Someone";
+      await notify(tx, churchId, [r.otherId], "plan.to_confirm", { otherName: myName, relationshipId: r.id });
       return planState(tx, r, ctx.personId);
     });
   });
@@ -185,6 +188,8 @@ export async function planRoutes(app: FastifyInstance) {
         .where("id", "=", d.id)
         .execute();
       await audit(tx, { churchId, actorId: ctx.personId, action: "plan.activated", targetType: "relationship", targetId: r.id });
+      await notify(tx, churchId, [r.disciple_id], "plan.active", { otherName: r.discipler_name ?? "your discipler", relationshipId: r.id });
+      await notify(tx, churchId, [r.discipler_id], "plan.active", { otherName: r.disciple_name ?? "your disciple", relationshipId: r.id });
       return planState(tx, r, ctx.personId);
     });
   });

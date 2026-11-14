@@ -2,6 +2,8 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
+  EmailRequestSchema,
+  EmailVerifySchema,
   JoinChurchSchema,
   ProfileUpdateSchema,
   RegisterChurchSchema,
@@ -14,9 +16,12 @@ import { audit } from "../lib/audit";
 import { newJoinCode } from "../lib/crypto";
 import { currentMembership, requireAuth, requireMember } from "../lib/context";
 import { badRequest, conflict, isUniqueViolation, notFound, parse } from "../lib/errors";
+import { consumeCode, issueCode } from "../lib/codes";
+import { churchAdminIds, notify } from "../lib/notify";
+import { sendEmailCode } from "./auth";
 
 async function loadMe(personId: string): Promise<MeDto> {
-  const person = await ownerDb.selectFrom("person").select(["id", "full_name", "phone", "email"]).where("id", "=", personId).executeTakeFirstOrThrow();
+  const person = await ownerDb.selectFrom("person").select(["id", "full_name", "phone", "email", "email_verified_at", "notify_email"]).where("id", "=", personId).executeTakeFirstOrThrow();
   const m = await currentMembership(personId);
   let membership: MeDto["membership"] = null;
   let disciplerStatus: MeDto["disciplerStatus"] = null;
@@ -37,7 +42,18 @@ async function loadMe(personId: string): Promise<MeDto> {
     );
     disciplerStatus = ds?.status ?? null;
   }
-  return { person: { id: person.id, fullName: person.full_name, phone: person.phone, email: person.email }, membership, disciplerStatus };
+  return {
+    person: {
+      id: person.id,
+      fullName: person.full_name,
+      phone: person.phone,
+      email: person.email,
+      emailVerified: !!person.email_verified_at,
+      notifyEmail: person.notify_email,
+    },
+    membership,
+    disciplerStatus,
+  };
 }
 
 async function requireProfileName(personId: string): Promise<void> {
@@ -59,11 +75,40 @@ export async function churchRoutes(app: FastifyInstance) {
       .updateTable("person")
       .set({
         ...(body.fullName !== undefined ? { full_name: body.fullName } : {}),
-        ...(body.email !== undefined ? { email: body.email || null } : {}),
+        ...(body.notifyEmail !== undefined ? { notify_email: body.notifyEmail } : {}),
         updated_at: new Date(),
       })
       .where("id", "=", personId)
       .execute();
+    return loadMe(personId);
+  });
+
+  /**
+   * Add or change your email: a code goes to the new address, and the email
+   * only changes once that code is entered (so nobody can claim an address
+   * they do not own).
+   */
+  app.post("/me/email/request", async (req) => {
+    const { personId } = requireAuth(req);
+    const { email } = parse(EmailRequestSchema, req.body);
+    const { code, ttlSeconds } = await issueCode({ email }, "change_email", personId);
+    await sendEmailCode(email, code, ttlSeconds, "change_email");
+    return { sent: true, expiresInSeconds: ttlSeconds };
+  });
+
+  app.post("/me/email/verify", async (req) => {
+    const { personId } = requireAuth(req);
+    const { email, code } = parse(EmailVerifySchema, req.body);
+    await ownerDb.transaction().execute(async (tx) => {
+      await consumeCode(tx, { email }, code, "change_email", personId);
+      const holder = await tx.selectFrom("person").select(["id", "email_verified_at", "phone"]).where("email", "=", email).forUpdate().executeTakeFirst();
+      if (holder && holder.id !== personId) {
+        if (holder.email_verified_at || !holder.phone) throw conflict("EMAIL_TAKEN", "That email is already used by another account");
+        // An unverified claim by someone else gives way to the proven owner.
+        await tx.updateTable("person").set({ email: null, updated_at: new Date() }).where("id", "=", holder.id).execute();
+      }
+      await tx.updateTable("person").set({ email, email_verified_at: new Date(), updated_at: new Date() }).where("id", "=", personId).execute();
+    });
     return loadMe(personId);
   });
 
@@ -149,12 +194,14 @@ export async function churchRoutes(app: FastifyInstance) {
     const church = await ownerDb.selectFrom("church").select(["id"]).where("join_code", "=", body.code).where("status", "!=", "suspended").executeTakeFirst();
     if (!church) throw notFound("No church found with that code. Check with your church office.");
 
+    const me = await ownerDb.selectFrom("person").select("full_name").where("id", "=", personId).executeTakeFirstOrThrow();
     await withTenant(church.id, async (tx) => {
       await tx
         .insertInto("membership")
         .values({ church_id: church.id, person_id: personId, status: "pending", participation: body.participation, department: body.department ?? null })
         .execute();
       await audit(tx, { churchId: church.id, actorId: personId, action: "membership.requested", targetType: "person", targetId: personId });
+      await notify(tx, church.id, await churchAdminIds(tx), "admin.member_waiting", { name: me.full_name ?? "Someone" });
     });
     reply.code(201);
     return loadMe(personId);

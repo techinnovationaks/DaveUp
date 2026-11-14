@@ -7,8 +7,21 @@ import type { AreaPoint, AssessmentKind, DueState, ProgressSummary } from "./cyc
 export interface PersonDto {
   id: string;
   fullName: string | null;
-  phone: string;
+  /** Null for people who signed up with email only. */
+  phone: string | null;
   email: string | null;
+  /** True once the person proved they own the email with a code. */
+  emailVerified: boolean;
+  /** Email notifications on or off (Account settings). */
+  notifyEmail: boolean;
+}
+
+/** Which sign-in methods the API offers right now. */
+export interface AuthMethodsDto {
+  email: boolean;
+  phone: boolean;
+  /** Phone sign-in needs a code (SMS service configured). */
+  phoneOtp: boolean;
 }
 
 export interface MembershipDto {
@@ -222,7 +235,7 @@ export interface ComparisonDto extends Comparison {
 }
 
 export interface ApprovalsDto {
-  members: { membershipId: string; personId: string; fullName: string | null; phone: string; participation: Participation; department: string | null; requestedAt: string }[];
+  members: { membershipId: string; personId: string; fullName: string | null; phone: string | null; email: string | null; participation: Participation; department: string | null; requestedAt: string }[];
   disciplerRequests: { id: string; personId: string; fullName: string | null; department: string | null; requestedAt: string }[];
 }
 
@@ -246,7 +259,7 @@ export interface ChurchMemberDto {
   membershipId: string;
   personId: string;
   fullName: string | null;
-  phone: string;
+  phone: string | null;
   email: string | null;
   status: MembershipStatus;
   isAdmin: boolean;

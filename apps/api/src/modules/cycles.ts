@@ -20,6 +20,7 @@ import {
 } from "@daveup/shared";
 import { withTenant, type Tx } from "../db/pool";
 import { audit } from "../lib/audit";
+import { notify } from "../lib/notify";
 import { requireMember } from "../lib/context";
 import { conflict, notFound, parse } from "../lib/errors";
 import { itemSetOf, loadAnswers, strip, summary } from "./assessment-data";
@@ -28,7 +29,7 @@ import { requireActive, requireParty } from "./party";
 const IdParam = z.object({ id: z.string().uuid() });
 const DAY = 86_400_000;
 
-type RelRow = { id: string; church_id: string; status: string; activated_at: Date | null };
+type RelRow = { id: string; church_id: string; status: string; activated_at: Date | null; discipler_id: string; disciple_id: string };
 
 /**
  * The relationship's open cycle, opening the next one when it is within a week
@@ -46,11 +47,20 @@ export async function ensureOpenCycle(tx: Tx, rel: RelRow, now: Date = new Date(
   const due = cycleDueOn(rel.activated_at, number);
   if (due.getTime() - CYCLE_OPENS_DAYS_BEFORE * DAY > now.getTime()) return null;
 
-  await tx
+  const created = await tx
     .insertInto("assessment_cycle")
     .values({ church_id: rel.church_id, relationship_id: rel.id, number, kind: cycleKind(number), item_index: cycleItemIndex(number), due_on: isoDay(due) })
     .onConflict((oc) => oc.columns(["relationship_id", "number"]).doNothing())
-    .execute();
+    .returning("id")
+    .executeTakeFirst();
+  if (created) {
+    // Tell both people once, when the check opens.
+    const names = await tx.selectFrom("person").select(["id", "full_name"]).where("id", "in", [rel.discipler_id, rel.disciple_id]).execute();
+    const nameOf = (id: string) => names.find((n) => n.id === id)?.full_name ?? "the other person";
+    const base = { relationshipId: rel.id, full: cycleKind(number) === "full", dueOn: isoDay(due) };
+    await notify(tx, rel.church_id, [rel.disciple_id], "check.open", { ...base, otherName: nameOf(rel.discipler_id) });
+    await notify(tx, rel.church_id, [rel.discipler_id], "check.open", { ...base, otherName: nameOf(rel.disciple_id) });
+  }
   return tx.selectFrom("assessment_cycle").selectAll().where("relationship_id", "=", rel.id).where("number", "=", number).executeTakeFirstOrThrow();
 }
 

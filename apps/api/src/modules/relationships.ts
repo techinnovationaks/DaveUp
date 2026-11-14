@@ -17,10 +17,17 @@ import {
 } from "@daveup/shared";
 import { withTenant, type Tx } from "../db/pool";
 import { audit } from "../lib/audit";
+import { notify } from "../lib/notify";
 import { requireMember } from "../lib/context";
 import { badRequest, conflict, forbidden, isUniqueViolation, notFound, parse } from "../lib/errors";
 
 const IdParam = z.object({ id: z.string().uuid() });
+
+/** Full names for notifications, by person id. */
+async function nameOf(tx: Tx, personId: string): Promise<string> {
+  const p = await tx.selectFrom("person").select("full_name").where("id", "=", personId).executeTakeFirst();
+  return p?.full_name ?? "Someone";
+}
 
 async function isApprovedDiscipler(tx: Tx, personId: string): Promise<boolean> {
   const r = await tx.selectFrom("discipler_status").select("status").where("person_id", "=", personId).executeTakeFirst();
@@ -89,6 +96,8 @@ export async function linkBaselinesAndActivate(tx: Tx, churchId: string, opts: {
         .execute();
       if (activate) {
         await audit(tx, { churchId, actorId, action: "relationship.activated", targetType: "relationship", targetId: r.id });
+        await notify(tx, churchId, [r.disciple_id], "relationship.active", { otherName: await nameOf(tx, r.discipler_id), relationshipId: r.id });
+        await notify(tx, churchId, [r.discipler_id], "relationship.active", { otherName: await nameOf(tx, r.disciple_id), relationshipId: r.id });
       }
     }
   }
@@ -220,6 +229,10 @@ export async function relationshipRoutes(app: FastifyInstance) {
           .returning("id")
           .executeTakeFirstOrThrow();
         await audit(tx, { churchId, actorId: ctx.personId, action: `relationship.${initiatedBy === "disciple" ? "requested" : "invited"}`, targetType: "relationship", targetId: r.id, data: { disciplerId, discipleId } });
+        await notify(tx, churchId, [initiatedBy === "disciple" ? disciplerId : discipleId], initiatedBy === "disciple" ? "relationship.requested" : "relationship.invited", {
+          otherName: await nameOf(tx, ctx.personId),
+          relationshipId: r.id,
+        });
         return r.id;
       } catch (err) {
         if (isUniqueViolation(err, "relationship_one_open_request")) throw conflict("ALREADY_REQUESTED", "A request between you is already waiting");
@@ -294,6 +307,8 @@ export async function relationshipRoutes(app: FastifyInstance) {
         throw err;
       }
       await audit(tx, { churchId, actorId: ctx.personId, action: "relationship.accepted", targetType: "relationship", targetId: id, data: { placesFilledBefore: Number(n) } });
+      const other = myRole === "disciple" ? r.discipler_id : r.disciple_id;
+      await notify(tx, churchId, [other], "relationship.accepted", { otherName: await nameOf(tx, ctx.personId), relationshipId: id });
       await linkBaselinesAndActivate(tx, churchId, { relationshipId: id }, ctx.personId);
     });
     const [dto] = await withTenant(churchId, (tx) => toDtos(tx, ctx.personId, [id]));
@@ -340,6 +355,9 @@ export async function relationshipRoutes(app: FastifyInstance) {
         // The note is kept only on concerns, for the administrator's review.
         data: { reason, endedBy: r.discipler_id === ctx.personId ? "discipler" : "disciple", ...(reason === "concern" && note ? { note } : {}) },
       });
+      // The other person is told it ended, never the reason or any concern.
+      const other = r.discipler_id === ctx.personId ? r.disciple_id : r.discipler_id;
+      await notify(tx, churchId, [other], "relationship.ended", { otherName: await nameOf(tx, ctx.personId) });
     });
     return { ok: true };
   });

@@ -54,7 +54,7 @@ export default function Welcome() {
 
           <div className="hidden md:block">
             <h1 className="text-[36px] font-extrabold leading-tight tracking-tight text-ink">Welcome to DaveUp</h1>
-            <p className="mt-3 text-[17px] text-ink-muted">Sign in with your phone number to continue.</p>
+            <p className="mt-3 text-[17px] text-ink-muted">Sign in or create your account with your email.</p>
           </div>
 
           <div className="mt-auto space-y-3 pt-8 md:mt-0">

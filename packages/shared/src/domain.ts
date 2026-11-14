@@ -4,6 +4,8 @@ import { z } from "zod";
 export const MAX_ACTIVE_DISCIPLES = 12; // 6.4: the discipler is additional to the 12
 export const TEST_B_REUSE_DAYS = 30; // 6.7 rule 10 (church-configurable later)
 export const OTP_TTL_SECONDS = 300;
+/** Email codes live longer: inbox delivery can take a minute or two. */
+export const EMAIL_OTP_TTL_SECONDS = 600;
 export const OTP_MAX_ATTEMPTS = 5;
 
 export const PARTICIPATION = ["grow", "disciple", "both"] as const;
@@ -53,10 +55,19 @@ export const PhoneSchema = z.string().transform((v, ctx) => {
 export const OtpRequestSchema = z.object({ phone: PhoneSchema });
 export const OtpVerifySchema = z.object({ phone: PhoneSchema, code: z.string().regex(/^\d{6}$/) });
 
-export const ProfileUpdateSchema = z.object({
-  fullName: z.string().trim().min(2).max(120).optional(),
-  email: z.string().trim().email().max(200).optional().or(z.literal("")),
-});
+/** Email addresses are compared and stored lower-case. */
+export const EmailSchema = z.string().trim().toLowerCase().email("Enter a valid email address").max(200);
+const CodeSchema = z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code");
+export const EmailRequestSchema = z.object({ email: EmailSchema });
+export const EmailVerifySchema = z.object({ email: EmailSchema, code: CodeSchema });
+
+/** Name and email preferences. Changing the email itself needs a code (EmailRequestSchema on /me/email). */
+export const ProfileUpdateSchema = z
+  .object({
+    fullName: z.string().trim().min(2).max(120).optional(),
+    notifyEmail: z.boolean().optional(),
+  })
+  .refine((v) => v.fullName !== undefined || v.notifyEmail !== undefined, "Nothing to change");
 
 export const RegisterChurchSchema = z.object({
   name: z.string().trim().min(3).max(120),

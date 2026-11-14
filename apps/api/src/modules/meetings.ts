@@ -5,6 +5,7 @@ import { z } from "zod";
 import { MeetingCreateSchema, MeetingRecordSchema, RECORD_EDIT_HOURS, type MeetingDto, type MeetingsDto } from "@daveup/shared";
 import { withTenant, type Tx } from "../db/pool";
 import { audit } from "../lib/audit";
+import { notify } from "../lib/notify";
 import { requireMember } from "../lib/context";
 import { badRequest, conflict, notFound, parse } from "../lib/errors";
 import { requireOpen, requireParty } from "./party";
@@ -100,6 +101,10 @@ export async function meetingRoutes(app: FastifyInstance) {
         .values({ church_id: churchId, relationship_id: r.id, scheduled_at: new Date(body.scheduledAt), place: body.place || null, agenda: body.agenda || null, created_by: ctx.personId })
         .execute();
       await audit(tx, { churchId, actorId: ctx.personId, action: "meeting.scheduled", targetType: "relationship", targetId: r.id });
+      if (new Date(body.scheduledAt).getTime() > Date.now()) {
+        const myName = (r.myRole === "disciple" ? r.disciple_name : r.discipler_name) ?? "Someone";
+        await notify(tx, churchId, [r.otherId], "meeting.scheduled", { otherName: myName, relationshipId: r.id, at: body.scheduledAt, place: body.place || null });
+      }
       return meetingsOf(tx, r.id);
     });
     reply.code(201);
@@ -139,6 +144,8 @@ export async function meetingRoutes(app: FastifyInstance) {
         const already = await tx.selectFrom("meeting").select("id").where("relationship_id", "=", r.id).where("status", "=", "scheduled").where("scheduled_at", "=", new Date(body.nextMeetingAt)).executeTakeFirst();
         if (!already) {
           await tx.insertInto("meeting").values({ church_id: churchId, relationship_id: r.id, scheduled_at: new Date(body.nextMeetingAt), created_by: ctx.personId }).execute();
+          const myName = (r.myRole === "disciple" ? r.disciple_name : r.discipler_name) ?? "Someone";
+          await notify(tx, churchId, [r.otherId], "meeting.scheduled", { otherName: myName, relationshipId: r.id, at: body.nextMeetingAt, place: null });
         }
       }
       await audit(tx, { churchId, actorId: ctx.personId, action: body.tookPlace ? "meeting.held" : "meeting.missed", targetType: "relationship", targetId: r.id });
