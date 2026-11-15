@@ -26,14 +26,17 @@ export const SITE_IMAGES = {
   fellowship: { src: "/images/home/fellowship.jpg", alt: "Friends sitting together at a table, sharing and laughing", icon: "people" },
   /** Behind the final call to action. */
   reading: { src: "/images/home/reading-together.jpg", alt: "People reading books together around a table", icon: "book" },
+  /** "For churches": a church gathering. */
+  churchTeam: { src: "/images/home/church-gathering.jpg", alt: "People seated at a church gathering, a woman holding an open Bible", icon: "church" },
+  /** "Coming next", first tile: small groups. */
+  prayerCircle: { src: "/images/home/prayer-circle.jpg", alt: "Four people seated in a circle holding hands in prayer", icon: "people" },
+  /** "Coming next", second tile. */
+  openBibles: { src: "/images/home/open-bibles.jpg", alt: "A row of people with open Bibles on their laps", icon: "book" },
 
-  // ---- Slots waiting for pictures ----
-  /** "For churches": a pastor or church team. */
-  churchTeam: { src: null, alt: "A church leadership team", icon: "church" },
-  /** "Coming next": families praying together. */
-  family: { src: null, alt: "A family praying together at home", icon: "family" },
-  /** "In your pocket": a screenshot or photo of the app on a phone. */
-  appPreview: { src: null, alt: "The DaveUp app on a phone", icon: "phone" },
+  // ---- Photo strip under "Why DaveUp" ----
+  bibleReading: { src: "/images/home/bible-reading.jpg", alt: "A young man reading his Bible during a church service", icon: "book" },
+  worshipAtHome: { src: "/images/home/worship-at-home.jpg", alt: "Young people worshipping together in a living room with a guitar", icon: "people" },
+  friendsTogether: { src: "/images/home/friends-together.jpg", alt: "Four friends sitting together on a sofa, talking and laughing", icon: "people" },
 } satisfies Record<string, SiteImage>;
 
 export type SiteImageKey = keyof typeof SITE_IMAGES;
