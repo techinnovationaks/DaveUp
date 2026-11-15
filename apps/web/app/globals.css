@@ -38,6 +38,15 @@ body {
   animation: du-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
   animation-delay: var(--d, 0ms);
 }
+/* Hero carousel (components/site/HeroCarousel.tsx): each photo zooms out
+   slowly while it shows, restarting each time it comes back. */
+@keyframes du-slide-zoom {
+  from { transform: scale(1.1); }
+  to { transform: scale(1); }
+}
+.motion-ok .hero-slide-zoom {
+  animation: du-slide-zoom 9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
 .motion-ok .hero-zoom {
   animation: du-zoom 14s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
@@ -51,9 +60,25 @@ body {
   opacity: 1;
   transform: none;
 }
+/* Typewriter headline (components/site/Typewriter.tsx): hidden until typing
+   starts, so the full text never flashes first. The caret only shows while
+   typing is in play. */
+@keyframes du-blink {
+  50% { opacity: 0; }
+}
+.motion-ok [data-typewriter="idle"] .tw-typed {
+  visibility: hidden;
+}
+[data-typewriter="idle"] .tw-caret {
+  display: none;
+}
+.tw-caret {
+  animation: du-blink 1s steps(1) infinite;
+}
 @media (prefers-reduced-motion: reduce) {
   .motion-ok .hero-rise,
   .motion-ok .hero-zoom,
+  .motion-ok .hero-slide-zoom,
   .motion-ok [data-reveal] {
     opacity: 1 !important;
     transform: none !important;

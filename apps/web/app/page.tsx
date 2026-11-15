@@ -5,6 +5,15 @@ import { Logo } from "@/components/Shell";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteImage } from "@/components/site/SiteImage";
 import { RevealOnScroll } from "@/components/site/RevealOnScroll";
+import { Typewriter } from "@/components/site/Typewriter";
+import { HeroCarousel } from "@/components/site/HeroCarousel";
+import type { SiteImageKey } from "@/lib/site-images";
+
+/** Photos behind the hero, in order (slot names from lib/site-images.ts). */
+const HERO_SLIDES: SiteImageKey[] = ["hero", "churchTeam", "bibleReading", "fellowship"];
+
+/** Hero headline, typed out one line at a time. */
+const HEADLINE = ["Walk with someone.", "Make disciples."];
 
 /** Animation delay for staggered entrances (see globals.css). */
 const delay = (ms: number) => ({ "--d": `${ms}ms` }) as React.CSSProperties;
@@ -117,13 +126,14 @@ export default function HomePage() {
       <main>
         {/* ---- Hero ---- */}
         <section className="relative flex min-h-[640px] items-end overflow-hidden px-4 pb-20 pt-32 md:min-h-[760px] md:items-center md:px-8 md:pb-24">
-          <SiteImage slot="hero" sizes="100vw" priority className="hero-zoom" />
+          <HeroCarousel slides={HERO_SLIDES} />
           <div className="absolute inset-0 bg-gradient-to-r from-brand-deep/95 via-brand-deep/75 to-brand/40" aria-hidden />
           <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-brand-deep/60 to-transparent" aria-hidden />
           <div className="relative mx-auto w-full max-w-6xl min-[1440px]:max-w-[80vw]">
             <div className="max-w-2xl text-white">
-              <span style={delay(100)} className="hero-rise mb-6 inline-block rounded-[8px] bg-white/15 px-4 py-1.5 text-[13px] font-extrabold uppercase tracking-widest backdrop-blur">Discipleship for your church</span>
-              <h1 style={delay(220)} className="hero-rise text-[42px] font-extrabold leading-[1.05] tracking-tight md:text-[64px]">Walk with someone. Make disciples.</h1>
+              <h1 className="text-[42px] font-extrabold leading-[1.05] tracking-tight md:text-[64px]">
+                <Typewriter lines={HEADLINE} startDelay={400} />
+              </h1>
               <p style={delay(380)} className="hero-rise mt-6 max-w-xl text-[18px] leading-relaxed text-white/90 md:text-[20px]">
                 DaveUp helps your church move from attendance to intentional discipleship: one discipler, one clear next step, and growth you can actually see.
               </p>
@@ -157,6 +167,13 @@ export default function HomePage() {
                 never replaces it.
               </p>
             </div>
+          </div>
+          <div className="mt-14 grid gap-4 sm:grid-cols-3 md:mt-20">
+            {(["bibleReading", "worshipAtHome", "friendsTogether"] as const).map((slot, i) => (
+              <div key={slot} data-reveal style={delay(i * 120)} className={`group relative aspect-[4/3] overflow-hidden rounded-[8px] shadow-lg ${i === 1 ? "sm:mt-10" : ""}`}>
+                <SiteImage slot={slot} sizes="(min-width: 640px) 33vw, 100vw" className="transition-transform duration-700 group-hover:scale-105" />
+              </div>
+            ))}
           </div>
         </Section>
 
@@ -298,10 +315,10 @@ export default function HomePage() {
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
             <div className="grid grid-cols-2 gap-4">
               <div data-reveal className="relative aspect-[3/4] overflow-hidden rounded-[8px]">
-                <SiteImage slot="family" sizes="(min-width: 1024px) 25vw, 50vw" />
+                <SiteImage slot="prayerCircle" sizes="(min-width: 1024px) 25vw, 50vw" />
               </div>
               <div data-reveal style={delay(160)} className="relative mt-10 aspect-[3/4] overflow-hidden rounded-[8px]">
-                <SiteImage slot="appPreview" sizes="(min-width: 1024px) 25vw, 50vw" />
+                <SiteImage slot="openBibles" sizes="(min-width: 1024px) 25vw, 50vw" />
               </div>
             </div>
             <div>
