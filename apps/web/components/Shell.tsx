@@ -7,7 +7,19 @@ import { useSession } from "@/lib/session";
 import { BottomNav } from "./BottomNav";
 import { IntroSlides } from "./IntroSlides";
 import { SITE_IMAGES } from "@/lib/site-images";
-import { Icon, accountItem, adminNav, isActive, mainNav, titleFor } from "./nav";
+import { Icon, accountItem, adminNav, isActive, mainNav, staffNav, titleFor } from "./nav";
+import { useRealtime } from "@/lib/realtime";
+
+/** Unread count on the Messages item. */
+export function NavBadge({ count, dot = false }: { count: number; dot?: boolean }) {
+  if (count <= 0) return null;
+  if (dot) return <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-danger ring-2 ring-white lg:hidden" aria-hidden />;
+  return (
+    <span className="ml-auto min-w-[24px] rounded-full bg-danger px-1.5 py-0.5 text-center text-[12px] font-bold text-white" aria-label={`${count} unread`}>
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 /** Heart-and-cross mark from the design boards. */
 export function Logo({ size = 36, light = false, markOnly = false }: { size?: number; light?: boolean; markOnly?: boolean }) {
@@ -40,22 +52,28 @@ function initialsOf(name: string | null | undefined) {
 function SideRail() {
   const path = usePathname();
   const { me } = useSession();
+  const { unread } = useRealtime();
   const items = mainNav();
-  const admin = adminNav(me);
+  const admin = [...adminNav(me), ...staffNav(me)];
   const link = (it: (typeof items)[number]) => {
     const active = isActive(path, it);
+    const badge = it.href === "/messages" ? unread : 0;
     return (
       <Link
         key={it.href}
         href={it.href}
         title={it.label}
         aria-current={active ? "page" : undefined}
-        className={`flex h-[52px] items-center justify-center gap-4 rounded-xl text-[16px] font-semibold transition-colors lg:justify-start lg:px-4 ${
+        className={`relative flex h-[52px] items-center justify-center gap-4 rounded-xl text-[16px] font-semibold transition-colors lg:justify-start lg:px-4 ${
           active ? "bg-brand-soft text-brand" : "text-ink-muted hover:bg-surface hover:text-ink"
         }`}
       >
         <Icon size={22}>{it.icon}</Icon>
         <span className="hidden lg:inline">{it.label}</span>
+        <NavBadge count={badge} dot />
+        <span className="hidden lg:contents">
+          <NavBadge count={badge} />
+        </span>
       </Link>
     );
   };
@@ -101,8 +119,23 @@ function SideRail() {
  * - `aside`: context column, shown beside the content at 1280 and up.
  * - `narrow`: cap the content for forms and single-task screens.
  */
-export function AppShell({ children, nav = false, aside, narrow = false }: { children: ReactNode; nav?: boolean; aside?: ReactNode; narrow?: boolean }) {
+export function AppShell({ children, nav = false, aside, narrow = false, fill = false }: { children: ReactNode; nav?: boolean; aside?: ReactNode; narrow?: boolean; fill?: boolean }) {
   const path = usePathname();
+  if (fill) {
+    // Full-height screens (chat): no page padding; the screen scrolls inside itself.
+    return (
+      <div className="flex h-dvh md:flex">
+        <SideRail />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="hidden h-16 shrink-0 items-center border-b border-surface-line bg-white px-8 md:flex">
+            <p className="text-[17px] font-bold text-ink">{titleFor(path)}</p>
+          </header>
+          <main className={`min-h-0 flex-1 ${nav ? "pb-[76px] md:pb-0" : ""}`}>{children}</main>
+        </div>
+        {nav && <BottomNav />}
+      </div>
+    );
+  }
   return (
     <div className="min-h-dvh md:flex">
       <SideRail />

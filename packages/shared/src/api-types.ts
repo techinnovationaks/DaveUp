@@ -14,6 +14,8 @@ export interface PersonDto {
   emailVerified: boolean;
   /** Email notifications on or off (Account settings). */
   notifyEmail: boolean;
+  /** DaveUp staff: can open the staff console. */
+  isSuperAdmin: boolean;
 }
 
 /** Which sign-in methods the API offers right now. */
@@ -33,6 +35,8 @@ export interface MembershipDto {
   participation: Participation;
   department: string | null;
   isAdmin: boolean;
+  /** "suspended": DaveUp staff paused this church; members cannot use the app. */
+  churchStatus: "unverified" | "verified" | "suspended";
 }
 
 export interface MeDto {

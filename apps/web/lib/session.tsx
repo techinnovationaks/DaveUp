@@ -26,13 +26,25 @@ export function useSession() {
 export function nextStep(me: MeDto | null): string {
   if (!me) return "/signin";
   if (!me.person.fullName) return "/profile";
-  if (!me.membership) return "/start";
-  if (me.membership.status === "pending") return "/pending";
+  // DaveUp staff who do not belong to a church go straight to the staff console.
+  if (!me.membership) return me.person.isSuperAdmin ? "/staff" : "/start";
+  if (me.membership.status === "pending" || me.membership.churchStatus === "suspended") return "/pending";
   return me.membership.isAdmin ? "/admin" : "/home";
 }
 
 function isApprovedMember(me: MeDto | null): boolean {
-  return !!me?.person.fullName && me.membership?.status === "approved";
+  return !!me?.person.fullName && me.membership?.status === "approved" && me.membership.churchStatus !== "suspended";
+}
+
+/** Guard for the DaveUp staff console. */
+export function useStaffGuard() {
+  const { me, loading } = useSession();
+  const router = useRouter();
+  const ok = !!me?.person.isSuperAdmin;
+  useEffect(() => {
+    if (!loading && !ok) router.replace(nextStep(me));
+  }, [loading, ok, me, router]);
+  return { me: ok ? me! : null, ready: !loading && ok };
 }
 
 /**

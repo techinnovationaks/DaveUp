@@ -26,6 +26,10 @@ type Data = {
   "plan.active": { otherName: string; relationshipId: string };
   "meeting.scheduled": { otherName: string; relationshipId: string; at: string; place: string | null };
   "check.open": { otherName: string; relationshipId: string; full: boolean; dueOn: string };
+  "cell.added": { cellName: string; conversationId: string; addedBy: string };
+  "church.verified": { churchName: string };
+  "church.suspended": { churchName: string };
+  "church.reinstated": { churchName: string };
 };
 export type NotificationKind = keyof Data;
 
@@ -103,6 +107,33 @@ export function contentFor(kind: string, d: Record<string, any>, recipientName: 
         title: d.full ? "Time for the full assessment" : "Time for your monthly check",
         lines: [hi, `${d.full ? "All 60 questions, as at the baseline." : "Twelve questions, one from each area, about 4 minutes."} It is due ${day(d.dueOn)}. You and ${d.otherName} answer separately and see the change together.`],
         cta: rel("Start"),
+      };
+    case "cell.added":
+      return {
+        subject: `You were added to ${d.cellName}`,
+        title: `Welcome to ${d.cellName}`,
+        lines: [hi, `${d.addedBy} added you to the cell ${d.cellName} on DaveUp. You can now chat, share files and join calls with the cell.`],
+        cta: { label: "Open the cell", path: `/messages/${d.conversationId}` },
+      };
+    case "church.verified":
+      return {
+        subject: `${d.churchName} is verified on DaveUp`,
+        title: "Your church is verified",
+        lines: [hi, `DaveUp has verified ${d.churchName}. Your church now shows as verified to members who join.`],
+        cta: { label: "Open the Church console", path: "/admin" },
+      };
+    case "church.suspended":
+      return {
+        subject: `${d.churchName}'s DaveUp access is paused`,
+        title: "Your church's access is paused",
+        lines: [hi, `DaveUp has paused access for ${d.churchName}. Members cannot use the app until access is restored. Please reply to this email or contact DaveUp support to resolve it.`],
+      };
+    case "church.reinstated":
+      return {
+        subject: `${d.churchName}'s DaveUp access is restored`,
+        title: "Your church's access is restored",
+        lines: [hi, `Access for ${d.churchName} is restored. Members can use DaveUp again.`],
+        cta: { label: "Open DaveUp", path: "/admin" },
       };
     default:
       return null;

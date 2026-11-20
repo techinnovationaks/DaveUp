@@ -8,9 +8,9 @@ import { AppShell, AuthShell } from "./Shell";
 const FullWidth = createContext(false);
 
 /** Signed-in screen. See AppShell for `nav`, `aside` and `narrow`. */
-export function Screen({ children, nav = false, aside, narrow }: { children: ReactNode; nav?: boolean; aside?: ReactNode; narrow?: boolean }) {
+export function Screen({ children, nav = false, aside, narrow, fill }: { children: ReactNode; nav?: boolean; aside?: ReactNode; narrow?: boolean; fill?: boolean }) {
   return (
-    <AppShell nav={nav} aside={aside} narrow={narrow}>
+    <AppShell nav={nav} aside={aside} narrow={narrow} fill={fill}>
       {children}
     </AppShell>
   );

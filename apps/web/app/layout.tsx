@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { SessionProvider } from "@/lib/session";
+import { RealtimeProvider } from "@/lib/realtime";
+import { CallProvider } from "@/components/call/CallProvider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -27,7 +29,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="font-sans antialiased">
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <RealtimeProvider>
+            <CallProvider>{children}</CallProvider>
+          </RealtimeProvider>
+        </SessionProvider>
       </body>
     </html>
   );
