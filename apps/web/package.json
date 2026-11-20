@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@daveup/shared": "*",
+    "livekit-client": "2.25.0",
     "next": "15.1.12",
     "react": "19.0.9",
     "react-dom": "19.0.9"

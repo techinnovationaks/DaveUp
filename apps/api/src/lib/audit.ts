@@ -3,7 +3,7 @@ import type { DB } from "../db/types";
 
 export async function audit(
   db: Kysely<DB> | Transaction<DB>,
-  entry: { churchId: string; actorId: string | null; action: string; targetType: string; targetId?: string | null; data?: Record<string, unknown> },
+  entry: { churchId: string | null; actorId: string | null; action: string; targetType: string; targetId?: string | null; data?: Record<string, unknown> },
 ): Promise<void> {
   await db
     .insertInto("audit_log")

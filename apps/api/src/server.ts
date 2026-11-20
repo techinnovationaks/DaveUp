@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import cookie from "@fastify/cookie";
+import websocket from "@fastify/websocket";
 import { AppError } from "./lib/errors";
 import { resolveAuth } from "./lib/context";
 import { authRoutes } from "./modules/auth";
@@ -11,6 +12,12 @@ import { cycleRoutes } from "./modules/cycles";
 import { planRoutes } from "./modules/plans";
 import { meetingRoutes } from "./modules/meetings";
 import { adminMemberRoutes } from "./modules/admin-members";
+import { chatRoutes } from "./modules/chat";
+import { cellRoutes } from "./modules/cells";
+import { fileRoutes } from "./modules/files";
+import { callRoutes } from "./modules/calls";
+import { staffRoutes } from "./modules/staff";
+import { realtimeRoutes } from "./lib/realtime";
 import { appDb } from "./db/pool";
 import { sql } from "kysely";
 import { config } from "./config";
@@ -23,6 +30,8 @@ export async function buildServer(): Promise<FastifyInstance> {
   });
 
   await app.register(cookie);
+  // Small frames only: the browser sends typing and ping events, nothing else.
+  await app.register(websocket, { options: { maxPayload: 4096 } });
   app.decorateRequest("auth", null);
   app.addHook("onRequest", resolveAuth);
 
@@ -58,6 +67,12 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(planRoutes);
   await app.register(meetingRoutes);
   await app.register(adminMemberRoutes);
+  await app.register(realtimeRoutes);
+  await app.register(chatRoutes);
+  await app.register(cellRoutes);
+  await app.register(fileRoutes);
+  await app.register(callRoutes);
+  await app.register(staffRoutes);
 
   return app;
 }

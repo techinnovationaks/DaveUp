@@ -82,6 +82,38 @@ export const config = {
   timeZone: env.APP_TIMEZONE || "Africa/Lagos",
   /** The background sender runs inside the API process unless turned off (e.g. when a separate worker runs it). */
   notificationWorker: env.NOTIFICATION_WORKER !== "off",
+  /**
+   * DaveUp staff (super administrators): comma-separated emails. A person whose
+   * VERIFIED email is listed can open the staff console. Staff can then give
+   * others access in the console.
+   */
+  superAdminEmails: (env.SUPER_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
+  /** Audio and video calls through LiveKit (cloud.livekit.io or self-hosted). Calls are off until all three are set. */
+  livekit: {
+    url: env.LIVEKIT_URL || "",
+    apiKey: env.LIVEKIT_API_KEY || "",
+    apiSecret: env.LIVEKIT_API_SECRET || "",
+  },
+  /**
+   * Shared files. "s3": any S3-compatible bucket (Cloudflare R2, AWS S3,
+   * Backblaze B2), used when S3_BUCKET is set. "local": a folder on this
+   * machine, for development only (refused in production).
+   */
+  storage: {
+    provider: (env.STORAGE_PROVIDER || (env.S3_BUCKET ? "s3" : isProd ? "none" : "local")) as "s3" | "local" | "none",
+    localDir: env.LOCAL_STORAGE_DIR || fileURLToPath(new URL("../.uploads", import.meta.url)),
+    s3: {
+      /** e.g. https://<account id>.r2.cloudflarestorage.com or https://s3.eu-west-1.amazonaws.com */
+      endpoint: (env.S3_ENDPOINT || "").replace(/\/+$/, ""),
+      region: env.S3_REGION || "auto",
+      bucket: env.S3_BUCKET || "",
+      accessKeyId: env.S3_ACCESS_KEY_ID || "",
+      secretAccessKey: env.S3_SECRET_ACCESS_KEY || "",
+    },
+  },
 } as const;
 
 if (isProd) {
@@ -91,6 +123,16 @@ if (isProd) {
   }
 }
 if (isProd && !env.APP_URL) throw new Error("Set APP_URL to the public web address so email links work");
+
+if (isProd && config.storage.provider === "local") {
+  throw new Error("STORAGE_PROVIDER=local is for development only; set S3_BUCKET, S3_ENDPOINT, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY");
+}
+if (config.storage.provider === "s3") {
+  const s3 = config.storage.s3;
+  if (!s3.bucket || !s3.endpoint || !s3.accessKeyId || !s3.secretAccessKey) {
+    throw new Error("File storage needs S3_BUCKET, S3_ENDPOINT, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY");
+  }
+}
 
 if (isProd && config.otp.provider === "console") {
   throw new Error("OTP_PROVIDER=console is for local development only");

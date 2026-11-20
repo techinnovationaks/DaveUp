@@ -14,14 +14,14 @@ import {
 import { ownerDb, withTenant } from "../db/pool";
 import { audit } from "../lib/audit";
 import { newJoinCode } from "../lib/crypto";
-import { currentMembership, requireAuth, requireMember } from "../lib/context";
+import { currentMembership, isConfigSuperAdmin, requireAuth, requireMember } from "../lib/context";
 import { badRequest, conflict, isUniqueViolation, notFound, parse } from "../lib/errors";
 import { consumeCode, issueCode } from "../lib/codes";
 import { churchAdminIds, notify } from "../lib/notify";
 import { sendEmailCode } from "./auth";
 
 async function loadMe(personId: string): Promise<MeDto> {
-  const person = await ownerDb.selectFrom("person").select(["id", "full_name", "phone", "email", "email_verified_at", "notify_email"]).where("id", "=", personId).executeTakeFirstOrThrow();
+  const person = await ownerDb.selectFrom("person").select(["id", "full_name", "phone", "email", "email_verified_at", "notify_email", "is_super_admin"]).where("id", "=", personId).executeTakeFirstOrThrow();
   const m = await currentMembership(personId);
   let membership: MeDto["membership"] = null;
   let disciplerStatus: MeDto["disciplerStatus"] = null;
@@ -36,6 +36,7 @@ async function loadMe(personId: string): Promise<MeDto> {
       participation: m.participation,
       department: m.department,
       isAdmin: m.isAdmin,
+      churchStatus: m.churchStatus,
     };
     const ds = await withTenant(m.churchId, (tx) =>
       tx.selectFrom("discipler_status").select("status").where("person_id", "=", personId).executeTakeFirst(),
@@ -50,6 +51,7 @@ async function loadMe(personId: string): Promise<MeDto> {
       email: person.email,
       emailVerified: !!person.email_verified_at,
       notifyEmail: person.notify_email,
+      isSuperAdmin: person.is_super_admin || isConfigSuperAdmin(person.email, person.email_verified_at),
     },
     membership,
     disciplerStatus,

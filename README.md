@@ -18,6 +18,8 @@ Churches register on DaveUp and approve their own members and disciplers. Each c
 - [Database](#database)
 - [Testing](#testing)
 - [What is built](#what-is-built)
+- [Chat, cells, calls and files](#chat-cells-calls-and-files)
+- [DaveUp staff console](#daveup-staff-console)
 - [Key product rules](#key-product-rules)
 - [API overview](#api-overview)
 - [Web app](#web-app)
@@ -162,13 +164,18 @@ cp apps/web/.env.example apps/web/.env.local
 | `TERMII_BASE_URL` | `https://api.ng.termii.com` | |
 | `TERMII_CHANNEL` | `dnd` | `dnd` (SMS), `whatsapp` or `generic` |
 | `ALLOW_PHONE_ONLY_SIGNIN` | (unset) | Must be `true` to run production without sign-in codes |
+| `SUPER_ADMIN_EMAILS` | (unset) | Comma-separated emails of DaveUp staff. A person whose **verified** email is listed can open the staff console. See [DaveUp staff console](#daveup-staff-console). |
+| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | (unset) | Audio and video calls. Calls are off (buttons hidden) until all three are set. See [Calls](#calls). |
+| `STORAGE_PROVIDER` | `s3` if `S3_BUCKET` is set, else `local` in development | Where shared files are kept: `s3` or `local`. `local` is refused in production; with no bucket in production, file sharing is off. |
+| `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | (unset), `auto` | Any S3-compatible bucket: Cloudflare R2, AWS S3, Backblaze B2. See [Files](#files). |
+| `LOCAL_STORAGE_DIR` | `apps/api/.uploads` | Development only: folder for shared files |
 | `NODE_ENV` | | `test` switches to the `daveup_test` database; `production` enables secure cookies and the checks above |
 
 The web app has one setting:
 
 | Variable | Default | Notes |
 |---|---|---|
-| `API_ORIGIN` | `http://localhost:4000` | Where `/api/*` is forwarded. Read when the Next server starts. |
+| `API_ORIGIN` | `http://localhost:4000` | Where `/api/*` (including the `/api/realtime` WebSocket) is forwarded. Read by `next dev`, and **baked in at `next build`** for `next start`: set it before building. |
 
 ## Sign-in modes
 
@@ -265,7 +272,72 @@ npm run typecheck   # all workspaces
   - See the history of admin and discipleship decisions.
   - Remove them from the church.
 - **Settings:** church details, the administrator's account, and sign out.
+- **Cells:** create cells, choose their leaders and members, archive or reopen them. See [Chat, cells, calls and files](#chat-cells-calls-and-files).
 - **Privacy:** the console shows counts and roles only, never assessment answers or reflections.
+
+**Messages and cells** (everyone): direct chats, cell chats, shared files and documents, voice and video calls. See [Chat, cells, calls and files](#chat-cells-calls-and-files).
+
+**DaveUp staff console** (super administrators): verify, suspend and reinstate churches, change plans, find people, grant staff access. See [DaveUp staff console](#daveup-staff-console).
+
+## Chat, cells, calls and files
+
+**Who can talk to whom**
+- **Direct chats:** any approved member can message any other approved member of the **same church**. Never across churches (row-level security enforces it, like everything else).
+- **Cells** are small groups with their own chat, shared files and group calls. Church administrators create cells and choose their leaders. Leaders and administrators add and remove members, rename the cell and make other leaders. Members can leave. A cell always keeps at least one leader.
+- **Administrators** manage any cell from the Church console, but can only read a cell's messages and files if they are in it (they can add themselves).
+- **Archived cells** stay readable but nobody can post or call.
+
+**Messages**
+- Text up to 4,000 characters, links made clickable, editable by the sender for 24 hours.
+- The sender can delete their own message; in a cell, leaders and administrators can delete any message. Deleting erases the text (and the file) for good.
+- Unread counts per conversation and in the navigation. People added to a cell start "caught up" and can scroll back through the history.
+- People added to a cell get an email (if they have email notifications on).
+
+**Realtime.** Each browser tab keeps one WebSocket to `/api/realtime` (forwarded by Next.js like the rest of `/api`, so the session cookie works). The API publishes events with Postgres `NOTIFY`, inside the transaction that made the change, so nothing is announced for a change that rolled back. Every API instance `LISTEN`s and forwards events to the people connected to it, so it scales across instances with no Redis. Events carry ids and names only: clients fetch content over HTTP, where access is checked.
+
+### Calls
+
+Voice and video calls in any direct chat or cell, through [LiveKit](https://livekit.io): up to 50 people, screen sharing on desktop, mute and camera controls, and a minimised view so people can keep chatting.
+
+- Starting a call posts a call message and rings the other members. A one-to-one call stops ringing after 45 seconds, and ends when either person hangs up or the other declines.
+- A cell call carries on until everyone has left. The API checks LiveKit every 30 seconds, so a call ends even if someone just closes the tab.
+- The API signs a short-lived LiveKit token per person (no LiveKit SDK on the server). The browser downloads the LiveKit client only when a call starts.
+
+**Set up:** create a project at [cloud.livekit.io](https://cloud.livekit.io) (free tier) or self-host LiveKit, then set `LIVEKIT_URL` (`wss://…`), `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` on the API.
+
+**Local development:** run a LiveKit dev server with `livekit-server --dev --bind 127.0.0.1 --node-ip 127.0.0.1`, then set `LIVEKIT_URL=ws://localhost:7880`, `LIVEKIT_API_KEY=devkey` and `LIVEKIT_API_SECRET=secret`. On a Mac, run the native binary (`brew install livekit`), not Docker: Docker Desktop's networking breaks WebRTC media between the browser and the container.
+
+### Files
+
+Share files and documents (up to 50 MB each) in any chat or cell: attach, drag and drop, or paste. Images show in the chat. PDFs, video and audio open in the browser; anything else downloads. HTML, SVG and other active content is always downloaded, never shown. Each conversation's **Files** tab lists everything shared there.
+
+- The browser uploads straight to the bucket with a signed link valid for 15 minutes. The API then checks the stored size before posting the file.
+- Downloads go through `/api/files/:id/download`, which checks that the person is in the conversation, then redirects to a signed link valid for 5 minutes.
+- Object keys are made from ids only (`church/conversation/file`). Uploads that are never confirmed are removed after a day.
+
+**Set up (Cloudflare R2 example):**
+1. Create a bucket and an R2 API token with read and write access to it.
+2. Set `S3_ENDPOINT=https://<account id>.r2.cloudflarestorage.com`, `S3_REGION=auto`, `S3_BUCKET`, `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` on the API.
+3. Add a CORS rule to the bucket so browsers can upload from your site:
+
+```json
+[{ "AllowedOrigins": ["https://daveup.app"], "AllowedMethods": ["PUT", "GET", "HEAD"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
+```
+
+For AWS S3 use `S3_ENDPOINT=https://s3.<region>.amazonaws.com` and the bucket's region. In development, files go to `apps/api/.uploads` (ignored by Git).
+
+## DaveUp staff console
+
+The staff console (`/staff`) is for DaveUp's own team, not churches.
+
+- **Overview:** churches by status, people, members, cells, and messages, calls and storage used.
+- **Churches:** search and filter. Verify a new church, suspend it (a reason is required), or reinstate it. A suspended church's members see "Access paused" and the API refuses their requests; nothing is deleted. The church's administrators are emailed on verify, suspend and reinstate. Change the plan.
+- **People & staff:** find anyone by name, email or phone, and give or remove staff access. Staff need a verified email.
+- **Activity:** every staff action, newest first. Everything is in the audit log.
+
+Staff see who belongs where and how much DaveUp is used. They never see message text, files, assessment answers, reflections or meeting notes.
+
+**The first staff member:** set `SUPER_ADMIN_EMAILS=you@example.org` on the API and sign in with that email. Staff named there can't be removed from inside the app; others can be added and removed in the console. Staff who are not in a church land in the staff console after signing in; staff who are church members reach it from the sidebar or Account settings.
 
 ## Email notifications
 
@@ -324,8 +396,14 @@ All routes return JSON. Errors look like `{ "error": { "code": "...", "message":
 | Monthly cycle | `GET /relationships/:id/progress`, `POST /cycles/:id/start` |
 | Growth plan | `GET /relationships/:id/plan`, `PUT /relationships/:id/plan/draft`, `POST /relationships/:id/plan/draft/confirm`, `DELETE /relationships/:id/plan/draft`, `PUT /practices/:id/days/:day`, `PUT /relationships/:id/reflection` |
 | Meetings | `GET /relationships/:id/meetings`, `POST /relationships/:id/meetings`, `POST /meetings/:id/record`, `POST /meetings/:id/cancel` |
+| Chat | `GET /chat/features`, `GET /people/directory?q=`, `GET /conversations`, `GET /conversations/unread`, `POST /conversations/direct`, `GET /conversations/:id`, `GET/POST /conversations/:id/messages` (`?before=` / `?after=` seq), `POST /conversations/:id/read`, `GET/PATCH/DELETE /messages/:id` |
+| Cells | `GET/POST /cells` (admins), `PATCH /cells/:id`, `POST /cells/:id/{archive,unarchive}`, `POST /cells/:id/members`, `PATCH/DELETE /cells/:id/members/:personId` |
+| Files | `POST /conversations/:id/files` (upload ticket), `PUT /files/:id/content` (local storage only), `POST /files/:id/complete`, `GET /files/:id/download?inline=1`, `GET /conversations/:id/files` |
+| Calls | `POST /conversations/:id/calls` (start or join), `GET /conversations/:id/call`, `POST /calls/:id/{join,leave,decline}` |
+| Realtime | `GET /realtime` (WebSocket) |
+| Staff | `GET /staff/overview`, `GET /staff/churches?status=&q=`, `GET /staff/churches/:id`, `POST /staff/churches/:id/{status,plan}`, `GET /staff/people?q=` (`?staff=1` lists staff), `POST /staff/super-admins`, `GET /staff/audit` |
 
-Request schemas and response types live in `packages/shared/src/domain.ts`, `plans.ts` and `api-types.ts`.
+Request schemas and response types live in `packages/shared/src/domain.ts`, `plans.ts`, `api-types.ts` and `chat.ts`.
 
 ## Web app
 
@@ -338,7 +416,9 @@ Request schemas and response types live in `packages/shared/src/domain.ts`, `pla
 | `/relationships/[id]` | Request, baseline, then the Results, Growth plan and Meetings tabs (`#plan`, `#meetings`) |
 | `/assessments`, `/assessments/[id]` | Assessments hub and the question flow |
 | `/account` | Member account |
-| `/admin`, `/admin/approvals`, `/admin/members`, `/admin/members/[id]`, `/admin/settings` | Church console |
+| `/messages`, `/messages/[id]` | Messages and cells: the list beside the open conversation (phones show one at a time) |
+| `/admin`, `/admin/approvals`, `/admin/members`, `/admin/members/[id]`, `/admin/cells`, `/admin/cells/[id]`, `/admin/settings` | Church console |
+| `/staff`, `/staff/churches`, `/staff/churches/[id]`, `/staff/people`, `/staff/activity` | DaveUp staff console |
 
 Administrators land in the Church console after signing in. A "Member app" link takes them to the member side if they also disciple people.
 
@@ -365,9 +445,9 @@ Slots with `src: null` (church team, family, app preview) show a navy panel with
 - **Brevo account:** set `BREVO_API_KEY` and a verified `EMAIL_FROM` before real users. SMS codes for phone sign-in still need a Termii account.
 - **Reminders and background jobs:** check reminders at 3 and 7 days, telling the other person at 14 days, and the weekly brief.
 - **AI features:** plan drafts, meeting preparation and summaries, and the meeting recording pipeline.
-- **More console features:** member import, cells and departments as structures, analytics, billing (Paystack), a church-wide audit log screen, and two-factor sign-in for admins.
-- **Other member features:** chats, cells and groups, departments, family circle, stories, Storehouse, Bible, trainings, sermon packs and notifications.
-- **DaveUp staff console:** church verification, disputes, support and billing operations.
+- **More console features:** member import, departments as structures, analytics, billing (Paystack), a church-wide audit log screen, and two-factor sign-in for admins.
+- **Other member features:** departments, family circle, stories, Storehouse, Bible, trainings, sermon packs, push notifications, and email digests of unread messages.
+- **DaveUp staff console:** disputes, support and billing operations.
 - **Mobile app:** Expo.
 - **Infrastructure:** CI, deployment, backups and monitoring.
 

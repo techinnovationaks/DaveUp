@@ -18,6 +18,8 @@ const icons = {
   assess: <path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 8h6M9 12h6M9 16h3" />,
   church: <path d="M3 21h18M5 21V10l7-5 7 5v11M10 21v-5h4v5" />,
   me: <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0" />,
+  chat: <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 20.5l1.5-4.6A8.4 8.4 0 0 1 3 11.5 8.6 8.6 0 0 1 12 3a8.6 8.6 0 0 1 9 8.5z" />,
+  staff: <path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3zM9 12l2 2 4-4" />,
 };
 
 export function Icon({ children, size = 24 }: { children: ReactNode; size?: number }) {
@@ -33,7 +35,14 @@ export function mainNav(): NavItem[] {
   return [
     { href: "/home", label: "Discipleship", short: "Home", icon: icons.home, also: ["/relationships", "/disciplers", "/invite", "/discipler-request"] },
     { href: "/assessments", label: "Assessments", short: "Assessments", icon: icons.assess },
+    { href: "/messages", label: "Messages & cells", short: "Messages", icon: icons.chat },
   ];
+}
+
+/** DaveUp staff (super administrators): the staff console. */
+export function staffNav(me: MeDto | null): NavItem[] {
+  if (!me?.person.isSuperAdmin) return [];
+  return [{ href: "/staff", label: "DaveUp staff", short: "Staff", icon: icons.staff }];
 }
 
 export function isAdmin(me: MeDto | null): boolean {
@@ -66,5 +75,6 @@ export function titleFor(path: string): string {
   if (path.startsWith("/invite")) return "Invite someone";
   if (path.startsWith("/discipler-request")) return "Discipler status";
   if (path.startsWith("/account")) return "Account settings";
+  if (path.startsWith("/messages")) return "Messages & cells";
   return "Discipleship";
 }

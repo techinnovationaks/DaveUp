@@ -11,6 +11,7 @@ export interface PersonTable {
   email: string | null;
   email_verified_at: NullableTimestamp;
   notify_email: Generated<boolean>;
+  is_super_admin: Generated<boolean>;
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -205,7 +206,7 @@ export interface AssessmentAnswerTable {
 
 export interface AuditLogTable {
   id: Generated<string>;
-  church_id: string;
+  church_id: string | null;
   actor_id: string | null;
   action: string;
   target_type: string;
@@ -228,6 +229,83 @@ export interface NotificationTable {
   sent_at: NullableTimestamp;
 }
 
+type Json = ColumnType<Record<string, unknown>, string | undefined, string>;
+
+export interface ConversationTable {
+  id: Generated<string>;
+  church_id: string;
+  kind: "direct" | "cell";
+  name: string | null;
+  description: string | null;
+  direct_key: string | null;
+  created_by: string;
+  created_at: Timestamp;
+  last_message_at: Timestamp;
+  archived_at: NullableTimestamp;
+}
+
+export interface ConversationMemberTable {
+  conversation_id: string;
+  church_id: string;
+  person_id: string;
+  role: Generated<"leader" | "member">;
+  /** bigint: pg returns it as a string. */
+  last_read_seq: ColumnType<string, string | number | undefined, string | number>;
+  added_by: string | null;
+  added_at: Timestamp;
+}
+
+export interface SharedFileTable {
+  id: Generated<string>;
+  church_id: string;
+  conversation_id: string;
+  uploader_id: string;
+  name: string;
+  mime: string;
+  size_bytes: ColumnType<string, string | number, string | number>;
+  storage_key: string;
+  status: Generated<"pending" | "ready" | "deleted">;
+  created_at: Timestamp;
+  ready_at: NullableTimestamp;
+  deleted_at: NullableTimestamp;
+}
+
+export interface CallSessionTable {
+  id: Generated<string>;
+  church_id: string;
+  conversation_id: string;
+  started_by: string;
+  media: "audio" | "video";
+  room_name: string;
+  started_at: Timestamp;
+  answered_at: NullableTimestamp;
+  ended_at: NullableTimestamp;
+}
+
+export interface CallParticipantTable {
+  call_id: string;
+  church_id: string;
+  person_id: string;
+  joined_at: Timestamp;
+  left_at: NullableTimestamp;
+}
+
+export interface MessageTable {
+  id: Generated<string>;
+  seq: ColumnType<string, never, never>;
+  church_id: string;
+  conversation_id: string;
+  sender_id: string | null;
+  kind: Generated<"text" | "file" | "call" | "system">;
+  body: string | null;
+  file_id: string | null;
+  call_id: string | null;
+  data: Json;
+  created_at: Timestamp;
+  edited_at: NullableTimestamp;
+  deleted_at: NullableTimestamp;
+}
+
 export interface DB {
   person: PersonTable;
   otp_challenge: OtpChallengeTable;
@@ -246,4 +324,10 @@ export interface DB {
   reflection: ReflectionTable;
   meeting: MeetingTable;
   notification: NotificationTable;
+  conversation: ConversationTable;
+  conversation_member: ConversationMemberTable;
+  shared_file: SharedFileTable;
+  call_session: CallSessionTable;
+  call_participant: CallParticipantTable;
+  message: MessageTable;
 }

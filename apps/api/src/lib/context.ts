@@ -2,7 +2,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { config } from "../config";
 import { ownerDb } from "../db/pool";
-import { forbidden, unauthorized } from "./errors";
+import { AppError, forbidden, unauthorized } from "./errors";
 import { hmac } from "./crypto";
 
 export const SESSION_COOKIE = "daveup_session";
@@ -14,6 +14,7 @@ export interface Membership {
   isAdmin: boolean;
   participation: "grow" | "disciple" | "both";
   department: string | null;
+  churchStatus: "unverified" | "verified" | "suspended";
 }
 
 export interface Auth {
@@ -56,9 +57,10 @@ export function requireAuth(req: FastifyRequest): Auth {
 export async function currentMembership(personId: string): Promise<Membership | null> {
   const m = await ownerDb
     .selectFrom("membership")
-    .select(["id", "church_id", "status", "is_admin", "participation", "department"])
-    .where("person_id", "=", personId)
-    .where("status", "in", ["pending", "approved"])
+    .innerJoin("church", "church.id", "membership.church_id")
+    .select(["membership.id", "membership.church_id", "membership.status", "membership.is_admin", "membership.participation", "membership.department", "church.status as church_status"])
+    .where("membership.person_id", "=", personId)
+    .where("membership.status", "in", ["pending", "approved"])
     .executeTakeFirst();
   if (!m) return null;
   return {
@@ -68,6 +70,7 @@ export async function currentMembership(personId: string): Promise<Membership | 
     isAdmin: m.is_admin,
     participation: m.participation,
     department: m.department,
+    churchStatus: m.church_status,
   };
 }
 
@@ -77,7 +80,27 @@ export async function requireMember(req: FastifyRequest): Promise<Auth & { membe
   const membership = await currentMembership(auth.personId);
   if (!membership) throw forbidden("Join your church first");
   if (membership.status !== "approved") throw forbidden("Your church has not approved your membership yet");
+  if (membership.churchStatus === "suspended") {
+    throw new AppError(403, "CHURCH_SUSPENDED", "Your church's DaveUp access is paused. Please contact your church administrator.");
+  }
   return { ...auth, membership };
+}
+
+/** DaveUp staff: flagged in the database, or named by verified email in SUPER_ADMIN_EMAILS. */
+export async function isSuperAdmin(personId: string): Promise<boolean> {
+  const p = await ownerDb.selectFrom("person").select(["is_super_admin", "email", "email_verified_at"]).where("id", "=", personId).executeTakeFirst();
+  if (!p) return false;
+  return p.is_super_admin || isConfigSuperAdmin(p.email, p.email_verified_at);
+}
+
+export function isConfigSuperAdmin(email: string | null, verifiedAt: Date | null): boolean {
+  return !!email && !!verifiedAt && config.superAdminEmails.includes(email.toLowerCase());
+}
+
+export async function requireSuperAdmin(req: FastifyRequest): Promise<Auth> {
+  const auth = requireAuth(req);
+  if (!(await isSuperAdmin(auth.personId))) throw forbidden("Only DaveUp staff can do this");
+  return auth;
 }
 
 export async function requireAdmin(req: FastifyRequest): Promise<Auth & { membership: Membership }> {

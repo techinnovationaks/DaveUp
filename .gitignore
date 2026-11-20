@@ -16,3 +16,6 @@ apps/web/public/people-meeting-support-group.jpg
 apps/web/public/images/home/full-shot-young-people-hostel.jpg
 apps/web/public/images/home/people-sharing-feelings-emotions-group-therapy-session.jpg
 apps/web/public/images/home/pexels-*.jpg
+
+# Shared files saved locally in development
+apps/api/.uploads/
