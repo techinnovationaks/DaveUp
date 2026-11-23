@@ -7,6 +7,7 @@ import { z } from "zod";
 import { AddCellMembersSchema, CellRoleSchema, CreateCellSchema, UpdateCellSchema, type CellAdminDto, type ConversationDetailDto } from "@daveup/shared";
 import { withTenant, type Tx } from "../db/pool";
 import { audit } from "../lib/audit";
+import { assertRoom } from "../lib/limits";
 import { canManageCell, detail, loadConversation, namesList, personName, systemMessage } from "../lib/chat";
 import { requireAdmin, requireMember } from "../lib/context";
 import { badRequest, conflict, forbidden, notFound, parse } from "../lib/errors";
@@ -84,6 +85,7 @@ export async function cellRoutes(app: FastifyInstance) {
     const churchId = ctx.membership.churchId;
     const memberIds = body.memberIds.filter((id) => !body.leaderIds.includes(id));
     const out = await withTenant(churchId, async (tx) => {
+      await assertRoom(tx, churchId, "cells");
       const names = await approvedMembers(tx, [...body.leaderIds, ...memberIds]);
       const cell = await tx
         .insertInto("conversation")

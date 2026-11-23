@@ -4,6 +4,7 @@ import { z } from "zod";
 import { CAPACITY_STATUSES, DecisionSchema, MAX_ACTIVE_DISCIPLES, type AdminOverviewDto, type ApprovalsDto, type DisciplerCardDto } from "@daveup/shared";
 import { ownerDb, withTenant } from "../db/pool";
 import { audit } from "../lib/audit";
+import { assertRoom } from "../lib/limits";
 import { churchAdminIds, notify } from "../lib/notify";
 import { requireAdmin, requireMember } from "../lib/context";
 import { conflict, notFound, parse } from "../lib/errors";
@@ -167,6 +168,7 @@ export async function disciplerRoutes(app: FastifyInstance) {
       const { note } = parse(DecisionSchema, req.body ?? {});
       const churchId = ctx.membership.churchId;
       await withTenant(churchId, async (tx) => {
+        if (decision === "approve") await assertRoom(tx, churchId, "disciplers");
         const updated = await tx
           .updateTable("discipler_status")
           .set({ status: decision === "approve" ? "approved" : "rejected", decided_at: new Date(), decided_by: ctx.personId, note: note ?? null })

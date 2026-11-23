@@ -15,6 +15,7 @@ import {
 } from "@daveup/shared";
 import { withTenant, type Tx } from "../db/pool";
 import { audit } from "../lib/audit";
+import { assertRoom } from "../lib/limits";
 import { notify } from "../lib/notify";
 import { requireAdmin } from "../lib/context";
 import { badRequest, conflict, notFound, parse } from "../lib/errors";
@@ -200,6 +201,7 @@ export async function adminMemberRoutes(app: FastifyInstance) {
         const ds = await tx.selectFrom("discipler_status").selectAll().where("id", "=", id).forUpdate().executeTakeFirst();
         if (!ds) throw notFound();
         if (!(t.from as readonly string[]).includes(ds.status)) throw conflict("BAD_STATUS", `Discipler status is ${ds.status}; it cannot be changed that way`);
+        if (t.to === "approved") await assertRoom(tx, churchId, "disciplers");
         await tx.updateTable("discipler_status").set({ status: t.to, decided_at: new Date(), decided_by: ctx.personId }).where("id", "=", id).execute();
         await audit(tx, { churchId, actorId: ctx.personId, action: `discipler_status.${t.to === "approved" ? "reinstated" : t.to}`, targetType: "person", targetId: ds.person_id });
       });
