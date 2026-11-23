@@ -9,7 +9,6 @@ import type { FastifyInstance } from "fastify";
 import { sql } from "kysely";
 import { z } from "zod";
 import {
-  ChurchPlanSchema,
   ChurchStatusSchema,
   SuperAdminSchema,
   type StaffAuditDto,
@@ -173,19 +172,6 @@ export async function staffRoutes(app: FastifyInstance) {
       if (status === "suspended") await notify(tx, id, admins, "church.suspended", { churchName: c.name });
       else if (c.status === "suspended") await notify(tx, id, admins, "church.reinstated", { churchName: c.name });
       else if (status === "verified") await notify(tx, id, admins, "church.verified", { churchName: c.name });
-    });
-    return (await churchRows({ id }))[0]!;
-  });
-
-  app.post("/staff/churches/:id/plan", async (req): Promise<StaffChurchDto> => {
-    const auth = await requireSuperAdmin(req);
-    const { id } = parse(IdParam, req.params);
-    const { plan } = parse(ChurchPlanSchema, req.body);
-    await ownerDb.transaction().execute(async (tx) => {
-      const c = await tx.selectFrom("church").select("plan").where("id", "=", id).forUpdate().executeTakeFirst();
-      if (!c) throw notFound("Church not found");
-      await tx.updateTable("church").set({ plan }).where("id", "=", id).execute();
-      await audit(tx, { churchId: id, actorId: auth.personId, action: "staff.church_plan", targetType: "church", targetId: id, data: { from: c.plan, to: plan } });
     });
     return (await churchRows({ id }))[0]!;
   });

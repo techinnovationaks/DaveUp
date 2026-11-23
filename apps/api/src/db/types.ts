@@ -48,6 +48,7 @@ export interface ChurchTable {
   verified_at: NullableTimestamp;
   created_by: string;
   settings: Generated<Record<string, unknown>>;
+  extra_blocks: Generated<number>;
   created_at: Timestamp;
 }
 
@@ -308,6 +309,57 @@ export interface MessageTable {
   deleted_at: NullableTimestamp;
 }
 
+type Plan = "basic" | "standard" | "pro" | "network";
+type Interval = "month" | "year";
+
+export interface ChurchBillingTable {
+  church_id: string;
+  plan: Generated<Plan>;
+  extra_blocks: Generated<number>;
+  interval: Interval | null;
+  status: Generated<"free" | "active" | "canceling" | "grace" | "granted">;
+  period_start: NullableTimestamp;
+  period_end: NullableTimestamp;
+  period_price_kobo: Generated<number>;
+  grace_until: NullableTimestamp;
+  granted_until: NullableTimestamp;
+  granted_note: string | null;
+  founding_until: NullableTimestamp;
+  next_plan: "basic" | "standard" | null;
+  next_blocks: number | null;
+  next_interval: Interval | null;
+  billing_email: string | null;
+  auth_code: string | null;
+  auth_label: string | null;
+  paystack_customer: string | null;
+  last_attempt_at: NullableTimestamp;
+  reminded_at: NullableTimestamp;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface BillingPaymentTable {
+  id: Generated<string>;
+  church_id: string;
+  reference: string;
+  kind: "checkout" | "renewal";
+  plan: Plan;
+  interval: Interval;
+  extra_blocks: Generated<number>;
+  amount_kobo: number;
+  period_price_kobo: number;
+  founding: Generated<boolean>;
+  status: Generated<"pending" | "success" | "failed" | "abandoned">;
+  channel: string | null;
+  paystack_id: string | number | null;
+  failure: string | null;
+  period_start: NullableTimestamp;
+  period_end: NullableTimestamp;
+  paid_at: NullableTimestamp;
+  created_by: string | null;
+  created_at: Timestamp;
+}
+
 export interface DB {
   person: PersonTable;
   otp_challenge: OtpChallengeTable;
@@ -332,4 +384,6 @@ export interface DB {
   call_session: CallSessionTable;
   call_participant: CallParticipantTable;
   message: MessageTable;
+  church_billing: ChurchBillingTable;
+  billing_payment: BillingPaymentTable;
 }

@@ -29,7 +29,7 @@ export default function Settings() {
             <Row title={c.name} sub={c.city} />
             <Row title="Church code" sub={<span className="font-mono font-bold tracking-[0.2em] text-ink">{c.joinCode}</span>} />
             <Row title="Verification" sub={c.status === "verified" ? "Verified by DaveUp" : c.status === "suspended" ? "Suspended" : "Waiting for DaveUp verification"} />
-            <Row title="Plan" sub={<span className="capitalize">{c.plan}</span>} />
+            <Row href="/admin/billing" title="Plan and billing" sub={<span className="capitalize">{c.plan}</span>} />
           </div>
         </Card>
       )}

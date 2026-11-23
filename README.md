@@ -326,6 +326,23 @@ Share files and documents (up to 50 MB each) in any chat or cell: attach, drag a
 
 For AWS S3 use `S3_ENDPOINT=https://s3.<region>.amazonaws.com` and the bucket's region. In development, files go to `apps/api/.uploads` (ignored by Git).
 
+## Plans and billing (Paystack)
+
+Plans follow PRD section 17. Basic is free: 3 disciplers, 36 disciples and 3 cells. Standard is ₦70,000 a month at the founding price, locked for 12 months from a church's first payment (list price ₦100,000), with 12 disciplers, 144 disciples and unlimited cells. An extra capacity block costs ₦30,000 a month and adds 3 disciplers, 36 disciples and 3 cells. Yearly billing charges 10 months. DaveUp staff set Pro and Network plans by hand in the staff console, along with pilots. Prices and limits are in `packages/shared/src/billing.ts`.
+
+- **Limits** only stop new additions: approving a discipler, accepting a disciple, creating a cell. Nobody already in loses access.
+- **Checkout:** the administrator chooses a plan under **Billing** in the church console and pays on Paystack's own page by card, bank transfer or USSD. A payment is applied once, after Paystack confirms the exact amount. Confirmation comes when the administrator returns to `/admin/billing/return`, or through the webhook, whichever is first.
+- **Changes:** anything that adds capacity, or moves to yearly, is paid now, with credit for the unused part of the current period. Smaller plans and cancellations take effect when the paid period ends.
+- **Renewals:** a background job in the API (every 5 minutes) charges the saved card when a period ends. Churches without a card get an email 3 days before. A failed or unpaid renewal starts 14 days of grace, with a daily retry; after that the church returns to Basic. Staff grants with an end date also return to Basic when they end.
+- **Emails:** receipts, payment problems and the end of a plan go to church administrators even if they turned notifications off. "Talk to us" enquiries go to DaveUp staff.
+
+**Set up:**
+1. In the Paystack dashboard, copy the **secret key** from Settings → API Keys & Webhooks. Use `sk_test_…` while testing and `sk_live_…` for real money. Set it as `PAYSTACK_SECRET_KEY` on the API.
+2. On the same page, set the **Webhook URL** to `https://daveup.app/api/billing/paystack/webhook`.
+3. Optional: when the founding offer closes, set `FOUNDING_PRICE_OPEN=false`. Churches already on the founding price keep it until their 12 months end.
+
+Without a secret key, online payment is off: the billing screens show plans and usage, and ask churches to contact DaveUp.
+
 ## DaveUp staff console
 
 The staff console (`/staff`) is for DaveUp's own team, not churches.
@@ -445,7 +462,7 @@ Slots with `src: null` (church team, family, app preview) show a navy panel with
 - **Brevo account:** set `BREVO_API_KEY` and a verified `EMAIL_FROM` before real users. SMS codes for phone sign-in still need a Termii account.
 - **Reminders and background jobs:** check reminders at 3 and 7 days, telling the other person at 14 days, and the weekly brief.
 - **AI features:** plan drafts, meeting preparation and summaries, and the meeting recording pipeline.
-- **More console features:** member import, departments as structures, analytics, billing (Paystack), a church-wide audit log screen, and two-factor sign-in for admins.
+- **More console features:** member import, departments as structures, analytics, a church-wide audit log screen, and two-factor sign-in for admins.
 - **Other member features:** departments, family circle, stories, Storehouse, Bible, trainings, sermon packs, push notifications, and email digests of unread messages.
 - **DaveUp staff console:** disputes, support and billing operations.
 - **Mobile app:** Expo.

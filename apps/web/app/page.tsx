@@ -66,9 +66,9 @@ const AUDIENCES = [
 ] as const satisfies readonly { title: string; text: string; slot: SiteImageKey }[];
 
 const PLANS = [
-  { name: "Basic", price: "Free forever", note: null },
-  { name: "Standard", price: "₦70,000 / month", note: "Founding price (list price ₦100,000). Pilot churches lock it in." },
-  { name: "Pro and Network", price: "Talk to us", note: null },
+  { name: "Basic", price: "Free forever", note: "3 disciplers, 36 disciples and 3 cells. No card, no time limit." },
+  { name: "Standard", price: "₦70,000 / month", note: "Founding price, locked for 12 months (list price ₦100,000). 12 disciplers, 144 disciples, unlimited cells." },
+  { name: "Pro and Network", price: "Talk to us", note: "Up to 1,440 disciples and 120 disciplers, or many churches under one agreement." },
 ];
 
 const COMING = [
@@ -319,7 +319,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <p data-reveal className="mt-8 text-[15px] text-ink-muted">No free trial. Payments by Paystack.</p>
+          <p data-reveal className="mt-8 text-[15px] text-ink-muted">Yearly billing gets 2 months free. Extra capacity is ₦30,000 a month for 3 disciplers, 36 disciples and 3 cells. No free trial. Pay with Paystack by card, bank transfer or USSD.</p>
         </Section>
 
         {/* ---- Coming next ---- */}

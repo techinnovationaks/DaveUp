@@ -17,6 +17,7 @@ import {
 } from "@daveup/shared";
 import { withTenant, type Tx } from "../db/pool";
 import { audit } from "../lib/audit";
+import { assertRoom } from "../lib/limits";
 import { notify } from "../lib/notify";
 import { requireMember } from "../lib/context";
 import { badRequest, conflict, forbidden, isUniqueViolation, notFound, parse } from "../lib/errors";
@@ -291,6 +292,8 @@ export async function relationshipRoutes(app: FastifyInstance) {
       if (Number(n) >= MAX_ACTIVE_DISCIPLES) {
         throw conflict("CAPACITY_FULL", `This discipler already has ${MAX_ACTIVE_DISCIPLES} disciples`);
       }
+      // The church's plan limit on disciples (PRD 17.3).
+      await assertRoom(tx, churchId, "disciples");
 
       try {
         await tx

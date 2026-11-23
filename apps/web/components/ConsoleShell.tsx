@@ -18,6 +18,7 @@ const icons = {
   members: <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M18 14a6 6 0 0 1 4 7" />,
   settings: <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />,
   cells: <path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM5 20a7 7 0 0 1 14 0M5.5 10.5a2.5 2.5 0 1 0 0-5M18.5 10.5a2.5 2.5 0 1 0 0-5M1 18a4.5 4.5 0 0 1 3-4.2M23 18a4.5 4.5 0 0 0-3-4.2" />,
+  billing: <path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7zM3 10h18M7 15h4" />,
   memberApp: <path d="M12 21s-7-4.4-9.2-9A5.2 5.2 0 0 1 12 6.7 5.2 5.2 0 0 1 21.2 12C19 16.6 12 21 12 21z" />,
   staff: <path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3zM9 12l2 2 4-4" />,
   signOut: <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />,
@@ -28,10 +29,11 @@ const NAV = [
   { href: "/admin/approvals", label: "Approvals", icon: icons.approvals },
   { href: "/admin/members", label: "Members", icon: icons.members },
   { href: "/admin/cells", label: "Cells", icon: icons.cells },
+  { href: "/admin/billing", label: "Billing", icon: icons.billing },
   { href: "/admin/settings", label: "Settings", icon: icons.settings },
 ];
 
-const TITLES: Record<string, string> = { "/admin": "Overview", "/admin/approvals": "Approvals", "/admin/members": "Members", "/admin/cells": "Cells", "/admin/settings": "Settings" };
+const TITLES: Record<string, string> = { "/admin": "Overview", "/admin/approvals": "Approvals", "/admin/members": "Members", "/admin/cells": "Cells", "/admin/billing": "Plan and billing", "/admin/settings": "Settings" };
 
 function initialsOf(name: string | null | undefined) {
   return (

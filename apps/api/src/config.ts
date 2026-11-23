@@ -98,6 +98,17 @@ export const config = {
     apiSecret: env.LIVEKIT_API_SECRET || "",
   },
   /**
+   * Church plans paid through Paystack. Online payment is off until
+   * PAYSTACK_SECRET_KEY is set (sk_test_... while testing, sk_live_... for real
+   * money). Webhooks are checked with the same key.
+   */
+  paystack: {
+    secretKey: env.PAYSTACK_SECRET_KEY || "",
+    baseUrl: (env.PAYSTACK_BASE_URL || "https://api.paystack.co").replace(/\/+$/, ""),
+  },
+  /** While true, a church that starts Standard gets the founding price, locked for 12 months. */
+  foundingPriceOpen: env.FOUNDING_PRICE_OPEN !== "false",
+  /**
    * Shared files. "s3": any S3-compatible bucket (Cloudflare R2, AWS S3,
    * Backblaze B2), used when S3_BUCKET is set. "local": a folder on this
    * machine, for development only (refused in production).
@@ -132,6 +143,10 @@ if (config.storage.provider === "s3") {
   if (!s3.bucket || !s3.endpoint || !s3.accessKeyId || !s3.secretAccessKey) {
     throw new Error("File storage needs S3_BUCKET, S3_ENDPOINT, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY");
   }
+}
+
+if (config.paystack.secretKey && !/^sk_(test|live)_/.test(config.paystack.secretKey)) {
+  throw new Error("PAYSTACK_SECRET_KEY should start with sk_test_ or sk_live_ (the secret key, not the public key)");
 }
 
 if (isProd && config.otp.provider === "console") {
