@@ -1,5 +1,5 @@
 import { AREAS, ITEMS_PER_AREA } from "./areas";
-import { getQuestion, type TestVersion } from "./questions";
+import { getQuestion, type Domain, type TestVersion } from "./questions";
 import { FULL_SET, itemsFor, type ItemSet } from "./cycle";
 
 export const SCALE = [
@@ -78,7 +78,60 @@ export function progressOf(version: TestVersion, answers: Answer[], set: ItemSet
 
 export function validateItemForVersion(itemId: string, version: TestVersion, set: ItemSet = FULL_SET): boolean {
   const q = getQuestion(itemId);
-  return !!q && q.version === version && (set.kind === "full" || q.index === set.itemIndex);
+  return !!q && q.version === version && itemsFor(version, set).some((x) => x.id === q.id);
+}
+
+// ---- Priest and King (PRD 38.26) ----
+
+/** Each domain is out of 120: 30 items scored 0 to 4. */
+export const DOMAIN_MAX = 120;
+
+/** Faith and Impact more than this many percentage points apart suggests a conversation. */
+export const DOMAIN_GAP_POINTS = 20;
+
+export interface DomainScore {
+  /** Out of 120. Items marked "No occasion yet" are left out and the rest scaled up, as for areas. Null when none were scored. */
+  outOf120: number | null;
+  /** The same score as a whole percentage. */
+  percent: number | null;
+  /** Items actually scored. */
+  scoredItems: number;
+}
+
+export type DomainScores = Record<Domain, DomainScore>;
+
+/**
+ * Priest and King scores for one test. Never combined into an overall score.
+ * A monthly check asks fewer items, scaled to the same 120 so the trend line
+ * is comparable from month to month.
+ */
+export function scoreDomains(version: TestVersion, answers: Answer[], set: ItemSet = FULL_SET): DomainScores {
+  const byId = new Map(answers.map((a) => [a.itemId, a]));
+  const tally = { priest: { raw: 0, n: 0 }, king: { raw: 0, n: 0 } };
+  for (const q of itemsFor(version, set)) {
+    const a = byId.get(q.id);
+    if (!a || a.noOccasion || a.value === null) continue;
+    tally[q.domain].raw += a.value;
+    tally[q.domain].n += 1;
+  }
+  const score = ({ raw, n }: { raw: number; n: number }): DomainScore => {
+    if (n === 0) return { outOf120: null, percent: null, scoredItems: 0 };
+    const share = raw / (n * MAX_ITEM_SCORE);
+    return { outOf120: Math.round(share * DOMAIN_MAX), percent: Math.round(share * 100), scoredItems: n };
+  };
+  return { priest: score(tally.priest), king: score(tally.king) };
+}
+
+/**
+ * Percentage points between Faith and Impact when they are more than
+ * DOMAIN_GAP_POINTS apart, otherwise null. Shown as a prompt to talk, never a label.
+ */
+export function domainGap(d: Pick<DomainScores, Domain> | null | undefined): number | null {
+  const p = d?.priest.percent;
+  const k = d?.king.percent;
+  if (p == null || k == null) return null;
+  const gap = Math.abs(p - k);
+  return gap > DOMAIN_GAP_POINTS ? gap : null;
 }
 
 // ---- Comparison (PRD 7.3, 7.4) ----

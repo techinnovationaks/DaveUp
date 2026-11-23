@@ -72,10 +72,10 @@ function Hub() {
 
       <div className="grid gap-4 lg:grid-cols-2">
       <Card>
-        <Eyebrow className="mb-2">About me</Eyebrow>
+        <Eyebrow className="mb-2">About you</Eyebrow>
         <p className="text-[18px] font-bold text-ink">Baseline self-assessment</p>
         <p className="mb-4 mt-1 text-[15px] text-ink-muted">
-          {!b && "60 questions across 12 areas. You can stop and continue later."}
+          {!b && "60 questions across 12 areas, 30 about faith and 30 about impact. You can stop and continue later."}
           {b?.status === "in_progress" && `${b.progress.answered} of ${b.progress.total} answered, ${b.progress.areasComplete} of 12 areas complete.`}
           {b?.status === "submitted" && `Finished on ${new Date(b.submittedAt!).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}.`}
         </p>
@@ -83,14 +83,14 @@ function Hub() {
           <Pill tone="green">Finished</Pill>
         ) : (
           <Button disabled={busy} onClick={() => (b ? router.push(`/assessments/${b.id}`) : start({ version: "B" }))}>
-            {b ? "Continue" : "Start"}
+            {b ? "Continue" : "Start the assessment"}
           </Button>
         )}
       </Card>
 
       {(hub.data?.testAsOwed.length ?? 0) > 0 && (
         <Card>
-          <Eyebrow className="mb-1">About my disciples</Eyebrow>
+          <Eyebrow className="mb-1">About them</Eyebrow>
           <p className="text-[14px] text-ink-muted">Your view of each person. They answer about themselves separately.</p>
           <div className="divide-y divide-surface-line">
             {hub.data!.testAsOwed.map((t) => (
@@ -114,8 +114,9 @@ function HowItWorks() {
     <Card>
       <Eyebrow className="mb-2">How it works</Eyebrow>
       <ul className="space-y-2 text-[14px] text-ink">
-        <li>Everyone takes the same 60 questions across 12 areas, including disciplers.</li>
+        <li>Everyone takes the same 60 questions across 12 areas, including disciplers: 30 about faith (Priest) and 30 about impact in work and community (King).</li>
         <li>After that, a 12-question check each month, and the full 60 every third month.</li>
+        <li>You get two scores, Faith and Impact, never one overall grade.</li>
         <li>You answer about yourself. Your discipler answers about you, on their own.</li>
         <li>Neither of you sees the other&apos;s answers. You see the comparison together once you have both finished.</li>
         <li>You can stop at any time. Your progress is saved.</li>

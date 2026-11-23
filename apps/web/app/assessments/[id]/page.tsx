@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   AREAS,
   ASSESSMENT_INTRO,
+  DOMAIN_LABEL,
   SCALE,
   getArea,
   isAnswerComplete,
@@ -39,7 +40,7 @@ export default function AssessmentFlow({ params }: { params: Promise<{ id: strin
   }, []);
 
   const a = detail.data;
-  const questions = useMemo(() => (a ? itemsFor(a.version, { kind: a.kind, itemIndex: a.itemIndex }) : []), [a]);
+  const questions = useMemo(() => (a ? itemsFor(a.version, { kind: a.kind, itemIndex: a.itemIndex, round: a.checkRound }) : []), [a]);
   // A monthly check asks one question per area; the full assessment asks five.
   const perArea = a?.kind === "check" ? 1 : 5;
   const isCheck = a?.kind === "check";
@@ -81,7 +82,7 @@ export default function AssessmentFlow({ params }: { params: Promise<{ id: strin
   if (index === "intro") {
     return (
       <Screen narrow>
-        <TopBar back="/assessments" title={aboutSelf ? "Self-assessment" : `About ${a.subject.fullName}`} />
+        <TopBar back="/assessments" title={aboutSelf ? "About you" : `About them: ${a.subject.fullName}`} />
         <H1 sub={ASSESSMENT_INTRO.purpose}>
           {isCheck ? (aboutSelf ? "Your monthly check" : `Monthly check about ${subjectFirst}`) : a.cycleNumber ? (aboutSelf ? "Your full assessment" : `Full assessment about ${subjectFirst}`) : aboutSelf ? "Your baseline assessment" : `Your view of ${subjectFirst}`}
         </H1>
@@ -94,12 +95,13 @@ export default function AssessmentFlow({ params }: { params: Promise<{ id: strin
             <ul className="list-disc space-y-1.5 pl-5 text-[15px] text-ink">
               <li>{ASSESSMENT_INTRO.window}</li>
               <li>{isCheck ? "12 questions, one from each area, about 4 minutes." : "60 questions, 5 in each of 12 areas."} Your progress saves as you go.</li>
+              <li>Each question is tagged Priest (your walk with God) or King (your work and impact in the world). You get a score for each, never one overall grade.</li>
               <li>Choose &ldquo;No occasion yet&rdquo; when there has been no opportunity. It does not count against you.</li>
               <li>{aboutSelf ? "Your discipler answers about you separately." : `${subjectFirst} answers about themselves separately.`} You see the comparison together once you have both finished.</li>
             </ul>
           </Card>
         </div>
-        <Button onClick={() => setIndex(0)}>Begin</Button>
+        <Button onClick={() => setIndex(0)}>Start the assessment</Button>
       </Screen>
     );
   }
@@ -186,7 +188,7 @@ export default function AssessmentFlow({ params }: { params: Promise<{ id: strin
   };
 
   const areasComplete = AREAS.filter((x) => questions.filter((y) => y.area === x.number).every((y) => done.has(y.id))).length;
-  const testLabel = aboutSelf ? "Test B, about you" : `Test A, about ${a.subject.fullName}`;
+  const testLabel = aboutSelf ? "About you" : `About them: ${a.subject.fullName}`;
 
   return (
     <Screen>
@@ -257,6 +259,11 @@ export default function AssessmentFlow({ params }: { params: Promise<{ id: strin
           </div>
 
           <Card className="mb-4 md:p-6">
+            <span
+              className={`mb-2 inline-block rounded-full px-2.5 py-0.5 text-[12px] font-bold uppercase tracking-wider ${q.domain === "priest" ? "bg-brand-soft text-brand" : "bg-sky-100 text-sky-700"}`}
+            >
+              {DOMAIN_LABEL[q.domain].name}
+            </span>
             <p className="text-[19px] font-semibold leading-snug text-ink md:text-[21px]">{q.text}</p>
           </Card>
 

@@ -1,24 +1,57 @@
-// The monthly cycle (PRD 8.5, 38.19).
+// The monthly cycle (PRD 8.5, 38.19, 38.26).
 // After the baseline, each month brings a short check: twelve questions, one
-// per area. Every third month is the full 60-question assessment. Both people
+// per area, alternating Priest and King (area 11 is always King), so a month is
+// 6 Priest and 6 King or 5 Priest and 7 King. Every third month is the full
+// 60-question assessment, exactly 30 and 30. Both people
 // answer alone and see the result together. A missed check never locks
 // anything or ends a relationship; it shows as overdue with a grace period.
 import { AREAS, getArea } from "./areas";
-import { questionsFor, type Question, type TestVersion } from "./questions";
+import { priestItemCount, questionsFor, type Domain, type Question, type TestVersion } from "./questions";
 
 export type AssessmentKind = "full" | "check";
 
-/** Which questions an assessment asks. A check asks item `itemIndex` (1..5) of every area. */
+/**
+ * Which questions an assessment asks.
+ * - A check with `round` (1, 2, 3, …: the how-manyth monthly check) asks one item per
+ *   area, Priest or King by turns (see checkItemIndex).
+ * - A check with only `itemIndex` was opened before the Priest and King split and
+ *   keeps its original rule: item `itemIndex` (1..5) of every area.
+ */
 export interface ItemSet {
   kind: AssessmentKind;
   itemIndex: number | null;
+  round?: number | null;
 }
 
-export const FULL_SET: ItemSet = { kind: "full", itemIndex: null };
+export const FULL_SET: ItemSet = { kind: "full", itemIndex: null, round: null };
+
+/** Domain an area asks about in check round `round`. Area 11 has only King items. */
+export function checkDomain(area: number, round: number): Domain {
+  if (priestItemCount(area) === 0) return "king";
+  return (area + round) % 2 === 0 ? "priest" : "king";
+}
+
+/**
+ * Item (1..5) an area asks in check round `round`. Each area's Priest and King
+ * items take turns, and within a domain the items rotate so checks do not keep
+ * asking the same question.
+ */
+export function checkItemIndex(area: number, round: number): number {
+  const domain = checkDomain(area, round);
+  const p = priestItemCount(area);
+  const items = domain === "priest" ? Array.from({ length: p }, (_, i) => i + 1) : Array.from({ length: 5 - p }, (_, i) => p + i + 1);
+  const turn = Math.floor((round - 1) / 2);
+  return items[turn % items.length]!;
+}
 
 export function itemsFor(version: TestVersion, set: ItemSet = FULL_SET): Question[] {
   const all = questionsFor(version);
-  return set.kind === "check" ? all.filter((q) => q.index === set.itemIndex) : all;
+  if (set.kind === "full") return all;
+  if (set.round) {
+    const round = set.round;
+    return all.filter((q) => q.index === checkItemIndex(q.area, round));
+  }
+  return all.filter((q) => q.index === set.itemIndex);
 }
 
 /** Every third cycle is the full assessment. */
@@ -33,9 +66,9 @@ export function cycleKind(number: number): AssessmentKind {
   return number % FULL_EVERY_CYCLES === 0 ? "full" : "check";
 }
 
-/** Rotate through the five items of each area so checks do not repeat the same question. */
-export function cycleItemIndex(number: number): number | null {
-  return cycleKind(number) === "check" ? ((number - 1) % 5) + 1 : null;
+/** The how-manyth monthly check cycle `number` is (cycles 3, 6, 9… are full, so 4 is round 3). Null for a full cycle. */
+export function cycleCheckRound(number: number): number | null {
+  return cycleKind(number) === "check" ? number - Math.floor(number / FULL_EVERY_CYCLES) : null;
 }
 
 /** Same day of the month, `months` later (clamped to the month's last day). */

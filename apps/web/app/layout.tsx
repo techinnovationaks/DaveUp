@@ -8,8 +8,17 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "DaveUp",
-  description: "Know where you are. Take the next step. Make disciples.",
+  title: "DaveUp: Growth you can see",
+  description:
+    "Level up in faith, work and life with people who have your back. DaveUp pairs you with a discipler, mentor or coach and shows your progress month by month.",
+  applicationName: "DaveUp",
+  appleWebApp: { capable: true, title: "DaveUp", statusBarStyle: "default" },
+  openGraph: {
+    title: "DaveUp: Growth you can see",
+    description: "Faith and impact, in one picture. Join or create an organization and grow together.",
+    siteName: "DaveUp",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#1E3A8A" };

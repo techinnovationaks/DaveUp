@@ -350,13 +350,13 @@ describe("monthly cycle, growth plan and meetings", () => {
     const cycleId = (await call(member.token, "GET", `/relationships/${relId}/progress`)).body.current.id;
     const b = await call(member.token, "POST", `/cycles/${cycleId}/start`);
     expect(b.status).toBe(201);
-    expect(b.body).toMatchObject({ version: "B", kind: "check", itemIndex: 1, cycleNumber: 1 });
+    expect(b.body).toMatchObject({ version: "B", kind: "check", itemIndex: null, checkRound: 1, cycleNumber: 1 });
     expect(b.body.progress.total).toBe(12);
     // Starting again resumes the same one.
     expect((await call(member.token, "POST", `/cycles/${cycleId}/start`)).body.id).toBe(b.body.id);
     // A question outside this month's set is refused.
     expect((await call(member.token, "PUT", `/assessments/${b.body.id}/answers/4B-2`, { value: 3 })).body.error.code).toBe("BAD_ITEM");
-    for (const q of itemsFor("B", { kind: "check", itemIndex: 1 })) {
+    for (const q of itemsFor("B", { kind: "check", itemIndex: null, round: 1 })) {
       expect((await call(member.token, "PUT", `/assessments/${b.body.id}/answers/${q.id}`, { value: q.area === 4 ? 4 : 3 })).status).toBe(200);
     }
     expect((await call(member.token, "POST", `/assessments/${b.body.id}/submit`)).body.status).toBe("submitted");
@@ -369,13 +369,20 @@ describe("monthly cycle, growth plan and meetings", () => {
 
     const a = await call(lead.token, "POST", `/cycles/${cycleId}/start`);
     expect(a.body).toMatchObject({ version: "A", kind: "check" });
-    for (const q of itemsFor("A", { kind: "check", itemIndex: 1 })) {
+    for (const q of itemsFor("A", { kind: "check", itemIndex: null, round: 1 })) {
       await call(lead.token, "PUT", `/assessments/${a.body.id}/answers/${q.id}`, { value: q.area === 4 ? 4 : 3 });
     }
     await call(lead.token, "POST", `/assessments/${a.body.id}/submit`);
 
     p = await call(member.token, "GET", `/relationships/${relId}/progress`);
     expect(p.body.points.map((x: any) => x.label)).toEqual(["Baseline", "Monthly check"]);
+    // Priest and King scores from each perspective, out of 120. Round 1 asks 5 Priest and 7 King.
+    const check = p.body.points[1].domains;
+    expect(check.disciple.priest.scoredItems + check.disciple.king.scoredItems).toBe(12);
+    expect(check.disciple.priest.scoredItems).toBe(5);
+    expect(check.disciple.priest).toMatchObject({ outOf120: 90, percent: 75 });
+    expect(check.discipler.king.percent).toBeGreaterThan(75); // area 4's King item scored 4
+    expect(p.body.points[0].domains.disciple.priest.scoredItems).toBe(30);
     expect(p.body.summary.improved).toContain(4);
     expect(p.body.summary.text).toContain("strongest observable progress has been in Prayer");
     expect(p.body.current).toBeNull();

@@ -5,10 +5,11 @@ import { Logo } from "@/components/Shell";
 import { nextStep, useSession } from "@/lib/session";
 
 const LINKS = [
-  { href: "#how-it-works", label: "How it works", hint: "The discipleship cycle, step by step", icon: "M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" },
-  { href: "#features", label: "Features", hint: "Assessment, plans, meetings and checks", icon: "M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z" },
-  { href: "#churches", label: "For churches", hint: "The console for pastors and administrators", icon: "M3 21h18M5 21V10l7-5 7 5v11M10 21v-5h4v5M12 2v3M10.5 3.5h3" },
-  { href: "#faq", label: "FAQ", hint: "Cost, privacy and signing in", icon: "M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" },
+  { href: "#how-it-works", label: "How it works", hint: "Join, check in, walk together, see it grow", icon: "M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" },
+  { href: "#features", label: "Features", hint: "Scores, plans, chat, calls and spaces", icon: "M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z" },
+  { href: "#who-its-for", label: "Who it's for", hint: "Churches, fellowships, mentoring and training", icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" },
+  { href: "#pricing", label: "Pricing", hint: "Basic is free forever", icon: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
+  { href: "#faq", label: "FAQ", hint: "Cost, privacy and installing", icon: "M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" },
 ];
 
 /** Public site header: section links, and sign-in or "Open DaveUp" for people already signed in. */
@@ -164,7 +165,7 @@ export function SiteHeader() {
                   </Link>
                 </div>
               )}
-              <p className="mt-4 text-center text-[13px] text-ink-faint">Provided through your local church.</p>
+              <p className="mt-4 text-center text-[13px] text-ink-faint">Christian-first, open to any organization.</p>
             </div>
           </div>
         </div>

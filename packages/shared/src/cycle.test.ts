@@ -1,17 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { addMonths, cycleItemIndex, cycleKind, describeProgress, dueState, itemsFor, type AreaPoint } from "./cycle";
+import { addMonths, checkDomain, cycleCheckRound, cycleKind, describeProgress, dueState, itemsFor, type AreaPoint } from "./cycle";
 import { weekStart } from "./plans";
 
 describe("monthly cycle rules", () => {
-  it("makes every third cycle the full assessment and rotates check items", () => {
+  it("makes every third cycle the full assessment and numbers the checks in between", () => {
     expect([1, 2, 3, 4, 5, 6].map(cycleKind)).toEqual(["check", "check", "full", "check", "check", "full"]);
-    expect([1, 2, 3, 4, 5, 7].map(cycleItemIndex)).toEqual([1, 2, null, 4, 5, 2]);
+    expect([1, 2, 3, 4, 5, 6, 7].map(cycleCheckRound)).toEqual([1, 2, null, 3, 4, null, 5]);
   });
 
-  it("asks one question per area in a check", () => {
+  it("asks one question per area in a check, alternating Priest and King", () => {
+    for (let round = 1; round <= 60; round++) {
+      for (const v of ["A", "B"] as const) {
+        const qs = itemsFor(v, { kind: "check", itemIndex: null, round });
+        expect(qs).toHaveLength(12);
+        expect(qs.map((q) => q.area)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+        // Area 11 is always King; the month is 6 and 6, or 5 Priest and 7 King.
+        expect(qs.find((q) => q.area === 11)!.domain).toBe("king");
+        const priest = qs.filter((q) => q.domain === "priest").length;
+        expect([5, 6]).toContain(priest);
+        // Neighbouring areas (other than around 11) alternate.
+        for (const area of [1, 2, 3, 4, 5, 6, 7, 8, 9]) expect(checkDomain(area, round)).not.toBe(checkDomain(area + 1, round));
+        for (const q of qs) expect(q.domain).toBe(checkDomain(q.area, round));
+      }
+    }
+    // Over a run of checks every item comes up.
+    const seen = new Set<string>();
+    for (let round = 1; round <= 12; round++) for (const q of itemsFor("B", { kind: "check", itemIndex: null, round })) seen.add(q.id);
+    expect(seen.size).toBe(60);
+  });
+
+  it("keeps the original rule for checks opened before the split", () => {
     const qs = itemsFor("B", { kind: "check", itemIndex: 3 });
     expect(qs).toHaveLength(12);
-    expect(new Set(qs.map((q) => q.area)).size).toBe(12);
     expect(qs.every((q) => q.index === 3)).toBe(true);
     expect(itemsFor("A")).toHaveLength(60);
   });

@@ -8,8 +8,8 @@ export async function loadAnswers(tx: Tx, assessmentId: string): Promise<(Answer
   return rows.map((r) => ({ itemId: r.item_id, value: r.value, noOccasion: r.no_occasion, evidence: r.evidence }));
 }
 
-export function itemSetOf(a: { kind: "full" | "check"; item_index: number | null }): ItemSet {
-  return { kind: a.kind, itemIndex: a.item_index };
+export function itemSetOf(a: { kind: "full" | "check"; item_index: number | null; check_round: number | null }): ItemSet {
+  return { kind: a.kind, itemIndex: a.item_index, round: a.check_round };
 }
 
 export async function summary(tx: Tx, id: string): Promise<AssessmentSummaryDto & { respondentId: string }> {
@@ -29,6 +29,7 @@ export async function summary(tx: Tx, id: string): Promise<AssessmentSummaryDto 
     version: a.version,
     kind: a.kind,
     itemIndex: a.item_index,
+    checkRound: a.check_round,
     cycleNumber: a.cycle_number ?? null,
     subject: { personId: a.subject_id, fullName: a.subject_name ?? "Member" },
     relationshipId: a.relationship_id,
