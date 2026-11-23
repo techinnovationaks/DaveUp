@@ -107,6 +107,7 @@ export interface AssessmentTable {
   submitted_at: NullableTimestamp;
   kind: Generated<"full" | "check">;
   item_index: number | null;
+  check_round: number | null;
   cycle_id: string | null;
 }
 
@@ -120,6 +121,7 @@ export interface AssessmentCycleTable {
   number: number;
   kind: "full" | "check";
   item_index: number | null;
+  check_round: number | null;
   due_on: DateString;
   test_a_id: string | null;
   test_b_id: string | null;

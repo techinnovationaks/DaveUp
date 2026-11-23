@@ -5,6 +5,7 @@ import { MAX_ACTIVE_DISCIPLES, getArea, type AssessmentHubDto, type MeDto, type 
 import { Card, ErrorText, Eyebrow, Initials, LinkButton, Loading, Pill, Row, Screen, Segmented } from "@/components/ui";
 import { useApi } from "@/lib/api";
 import { useGuard } from "@/lib/session";
+import { HomeGrowthCard } from "@/components/rel/Growth";
 import { OPEN_STATUSES, baselineLabel, dueText, firstName, fmtDateTime, greeting, statusLabel } from "@/lib/labels";
 
 type Mode = "me" | "lead";
@@ -190,6 +191,7 @@ function MeView({ me, rels, hub }: { me: MeDto; rels: RelationshipDto[]; hub: As
         )}
       </Card>
 
+      {current?.status === "active" && <HomeGrowthCard relId={current.id} />}
       {current?.status === "active" && <ThisWeek relId={current.id} />}
 
       <Card tone={testB?.status === "submitted" ? "plain" : "brand"}>

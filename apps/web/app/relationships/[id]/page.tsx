@@ -9,6 +9,7 @@ import { useGuard, useSession } from "@/lib/session";
 import { baselineLabel, firstName, fmtDay, statusLabel } from "@/lib/labels";
 import { CheckCard } from "@/components/rel/CheckCard";
 import { ProgressCard } from "@/components/rel/ProgressCard";
+import { GrowthResults } from "@/components/rel/Growth";
 import { PlanPanel } from "@/components/rel/PlanPanel";
 import { MeetingsPanel } from "@/components/rel/MeetingsPanel";
 
@@ -92,6 +93,7 @@ export default function RelationshipPage({ params }: { params: Promise<{ id: str
           {tab === "results" && (
             <>
               {progress.data?.current && <CheckCard cycle={progress.data.current} myRole={r.myRole} otherName={r.other.fullName} />}
+              {progress.data && <GrowthResults progress={progress.data} myRole={r.myRole} otherName={r.other.fullName} />}
               {progress.data && <ProgressCard progress={progress.data} />}
               {progress.error && <ErrorText>{progress.error.message}</ErrorText>}
               {cmp.data && <Compare c={cmp.data} r={r} />}

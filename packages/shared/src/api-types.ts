@@ -1,7 +1,7 @@
 // Response shapes returned by the API. Shared so web and mobile stay in sync.
 import type { DisciplerStatus, MembershipStatus, Participation, RelationshipStatus } from "./domain";
 import type { TestVersion } from "./questions";
-import type { Comparison, Progress } from "./scoring";
+import type { Comparison, DomainScores, Progress } from "./scoring";
 import type { AreaPoint, AssessmentKind, DueState, ProgressSummary } from "./cycle";
 
 export interface PersonDto {
@@ -86,9 +86,13 @@ export interface RelationshipDto {
 export interface AssessmentSummaryDto {
   id: string;
   version: TestVersion;
-  /** "check" is the 12-question monthly check; `itemIndex` says which item of each area it asks. */
+  /**
+   * "check" is the 12-question monthly check. `checkRound` picks its Priest and King
+   * items (see itemsFor); checks opened before that rule have only `itemIndex`.
+   */
   kind: AssessmentKind;
   itemIndex: number | null;
+  checkRound: number | null;
   /** Monthly cycle number; null for the baseline. */
   cycleNumber: number | null;
   subject: { personId: string; fullName: string };
@@ -142,6 +146,8 @@ export interface ProgressPointDto {
   kind: AssessmentKind;
   date: string;
   areas: AreaPoint[];
+  /** Priest (Faith) and King (Impact) scores from each perspective: Test B (disciple) and Test A (discipler). */
+  domains: { disciple: DomainScores; discipler: DomainScores };
 }
 
 export interface RelationshipProgressDto {

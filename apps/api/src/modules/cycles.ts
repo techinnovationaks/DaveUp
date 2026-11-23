@@ -6,13 +6,14 @@ import {
   CHECK_GRACE_DAYS,
   CYCLE_OPENS_DAYS_BEFORE,
   cycleDueOn,
-  cycleItemIndex,
+  cycleCheckRound,
   cycleKind,
   describeProgress,
   dueState,
   isoDay,
   progressOf,
   scoreAreas,
+  scoreDomains,
   type AreaPoint,
   type CycleDto,
   type ProgressPointDto,
@@ -49,7 +50,7 @@ export async function ensureOpenCycle(tx: Tx, rel: RelRow, now: Date = new Date(
 
   const created = await tx
     .insertInto("assessment_cycle")
-    .values({ church_id: rel.church_id, relationship_id: rel.id, number, kind: cycleKind(number), item_index: cycleItemIndex(number), due_on: isoDay(due) })
+    .values({ church_id: rel.church_id, relationship_id: rel.id, number, kind: cycleKind(number), check_round: cycleCheckRound(number), due_on: isoDay(due) })
     .onConflict((oc) => oc.columns(["relationship_id", "number"]).doNothing())
     .returning("id")
     .executeTakeFirst();
@@ -88,8 +89,8 @@ export async function completeCycleIfDone(tx: Tx, cycleId: string, churchId: str
   await audit(tx, { churchId, actorId, action: "cycle.completed", targetType: "relationship", targetId: c.relationship_id, data: { number: c.number, kind: c.kind } });
 }
 
-export async function cycleDto(tx: Tx, cycle: { id: string; number: number; kind: "full" | "check"; item_index: number | null; due_on: string; completed_at: Date | null }, myId: string): Promise<CycleDto> {
-  const tests = await tx.selectFrom("assessment").select(["id", "respondent_id", "status", "version", "kind", "item_index"]).where("cycle_id", "=", cycle.id).execute();
+export async function cycleDto(tx: Tx, cycle: { id: string; number: number; kind: "full" | "check"; due_on: string; completed_at: Date | null }, myId: string): Promise<CycleDto> {
+  const tests = await tx.selectFrom("assessment").select(["id", "respondent_id", "status", "version", "kind", "item_index", "check_round"]).where("cycle_id", "=", cycle.id).execute();
   const mine = tests.find((t) => t.respondent_id === myId);
   const theirs = tests.find((t) => t.respondent_id !== myId);
   return {
@@ -104,19 +105,25 @@ export async function cycleDto(tx: Tx, cycle: { id: string; number: number; kind
   };
 }
 
-async function point(tx: Tx, aId: string, bId: string): Promise<AreaPoint[]> {
-  const meta = await tx.selectFrom("assessment").select(["id", "kind", "item_index"]).where("id", "in", [aId, bId]).execute();
+/** Area scores and Priest/King scores for one revealed pair of tests. */
+async function point(tx: Tx, aId: string, bId: string): Promise<Pick<ProgressPointDto, "areas" | "domains">> {
+  const meta = await tx.selectFrom("assessment").select(["id", "kind", "item_index", "check_round"]).where("id", "in", [aId, bId]).execute();
   const set = (id: string) => itemSetOf(meta.find((m) => m.id === id)!);
-  const b = scoreAreas("B", await loadAnswers(tx, bId), set(bId));
-  const a = scoreAreas("A", await loadAnswers(tx, aId), set(aId));
-  return b.map((s, i) => ({ area: s.area, disciple: s.outOf20, discipler: a[i]!.outOf20 }));
+  const bAnswers = await loadAnswers(tx, bId);
+  const aAnswers = await loadAnswers(tx, aId);
+  const b = scoreAreas("B", bAnswers, set(bId));
+  const a = scoreAreas("A", aAnswers, set(aId));
+  return {
+    areas: b.map((s, i): AreaPoint => ({ area: s.area, disciple: s.outOf20, discipler: a[i]!.outOf20 })),
+    domains: { disciple: scoreDomains("B", bAnswers, set(bId)), discipler: scoreDomains("A", aAnswers, set(aId)) },
+  };
 }
 
 /** Baseline then every completed cycle, oldest first. Only revealed points (both finished). */
 export async function progressPoints(tx: Tx, rel: { id: string; baseline_a_id: string | null; baseline_b_id: string | null; activated_at: Date | null }): Promise<ProgressPointDto[]> {
   const points: ProgressPointDto[] = [];
   if (rel.baseline_a_id && rel.baseline_b_id) {
-    points.push({ label: "Baseline", kind: "full", date: (rel.activated_at ?? new Date()).toISOString(), areas: await point(tx, rel.baseline_a_id, rel.baseline_b_id) });
+    points.push({ label: "Baseline", kind: "full", date: (rel.activated_at ?? new Date()).toISOString(), ...(await point(tx, rel.baseline_a_id, rel.baseline_b_id)) });
   }
   const cycles = await tx
     .selectFrom("assessment_cycle")
@@ -130,7 +137,7 @@ export async function progressPoints(tx: Tx, rel: { id: string; baseline_a_id: s
       label: c.kind === "full" ? "Full assessment" : "Monthly check",
       kind: c.kind,
       date: c.completed_at!.toISOString(),
-      areas: await point(tx, c.test_a_id!, c.test_b_id!),
+      ...(await point(tx, c.test_a_id!, c.test_b_id!)),
     });
   }
   return points;
@@ -181,6 +188,7 @@ export async function cycleRoutes(app: FastifyInstance) {
           relationship_id: r.id,
           kind: c.kind,
           item_index: c.item_index,
+          check_round: c.check_round,
           cycle_id: c.id,
         })
         .returning("id")
