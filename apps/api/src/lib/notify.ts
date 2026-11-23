@@ -30,6 +30,23 @@ type Data = {
   "church.verified": { churchName: string };
   "church.suspended": { churchName: string };
   "church.reinstated": { churchName: string };
+  "billing.paid": { churchName: string; planName: string; amount: string; interval: "month" | "year"; periodEnd: string; reference: string; renewal: boolean };
+  "billing.renew_soon": { churchName: string; planName: string; periodEnd: string };
+  "billing.renew_due": { churchName: string; planName: string; graceUntil: string };
+  "billing.failed": { churchName: string; planName: string; graceUntil: string };
+  "billing.ended": { churchName: string; planName: string; reason: "grace" | "canceling" | "granted" };
+  "staff.plan_enquiry": {
+    planName: string;
+    churchName: string;
+    city: string;
+    currentPlan: string;
+    fromName: string;
+    email: string | null;
+    phone: string | null;
+    message: string;
+    usage: string;
+    churchId: string;
+  };
 };
 export type NotificationKind = keyof Data;
 
@@ -53,6 +70,9 @@ const first = (name: string | null | undefined) => (name ?? "").trim().split(/\s
 
 function when(iso: string) {
   return new Date(iso).toLocaleString("en-GB", { timeZone: config.timeZone, weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" });
+}
+function date(iso: string) {
+  return new Date(iso).toLocaleDateString("en-GB", { timeZone: config.timeZone, day: "numeric", month: "long", year: "numeric" });
 }
 function day(isoDate: string) {
   return new Date(`${isoDate}T12:00:00Z`).toLocaleDateString("en-GB", { timeZone: config.timeZone, day: "numeric", month: "long" });
@@ -135,10 +155,82 @@ export function contentFor(kind: string, d: Record<string, any>, recipientName: 
         lines: [hi, `Access for ${d.churchName} is restored. Members can use DaveUp again.`],
         cta: { label: "Open DaveUp", path: "/admin" },
       };
+    case "billing.paid":
+      return {
+        subject: `Receipt: ${d.amount} for DaveUp ${d.planName}`,
+        title: "Payment received",
+        lines: [
+          hi,
+          `Thank you. We received ${d.amount} for ${d.churchName}'s ${d.planName} plan${d.renewal ? " renewal" : ""}, paid ${d.interval === "year" ? "yearly" : "monthly"}.`,
+          `It is paid up to ${date(d.periodEnd)}. Payment reference: ${d.reference}.`,
+          "Need a tax invoice? Reply to this email.",
+        ],
+        cta: { label: "See plan and billing", path: "/admin/billing" },
+      };
+    case "billing.renew_soon":
+      return {
+        subject: `${d.churchName}'s DaveUp plan renews on ${date(d.periodEnd)}`,
+        title: "Your plan is due for renewal",
+        lines: [hi, `${d.churchName}'s ${d.planName} plan is paid up to ${date(d.periodEnd)}. There is no saved card, so please pay for the next period by then. Card, bank transfer and USSD all work.`],
+        cta: { label: "Renew now", path: "/admin/billing/change" },
+      };
+    case "billing.renew_due":
+      return {
+        subject: `Action needed: renew ${d.churchName}'s DaveUp plan`,
+        title: "Your plan needs renewing",
+        lines: [
+          hi,
+          `${d.churchName}'s ${d.planName} period has ended and has not been paid. Everything keeps working until ${date(d.graceUntil)}.`,
+          "If it is not paid by then, your church returns to Basic. Nothing is deleted and nobody loses access to their own data.",
+        ],
+        cta: { label: "Renew now", path: "/admin/billing/change" },
+      };
+    case "billing.failed":
+      return {
+        subject: `Payment failed for ${d.churchName}'s DaveUp plan`,
+        title: "A payment did not go through",
+        lines: [
+          hi,
+          `We could not charge the saved card for ${d.churchName}'s ${d.planName} plan. We will try again each day. Everything keeps working until ${date(d.graceUntil)}.`,
+          "You can pay now with another card, bank transfer or USSD. If it is not paid by then, your church returns to Basic. Nothing is deleted.",
+        ],
+        cta: { label: "Pay now", path: "/admin/billing/change" },
+      };
+    case "billing.ended":
+      return {
+        subject: `${d.churchName} is now on DaveUp Basic`,
+        title: "Your church is now on Basic",
+        lines: [
+          hi,
+          d.reason === "canceling"
+            ? `${d.churchName}'s ${d.planName} plan has ended as you asked.`
+            : d.reason === "granted"
+              ? `${d.churchName}'s ${d.planName} arrangement with DaveUp has ended.`
+              : `${d.churchName}'s ${d.planName} plan was not renewed within the 14 days of grace.`,
+          "Your church is now on Basic. Nothing is deleted and everyone already in keeps their access. New disciplers, disciples and cells need room within the Basic limits.",
+        ],
+        cta: { label: "Choose a plan", path: "/admin/billing/change" },
+      };
+    case "staff.plan_enquiry":
+      return {
+        subject: `${d.planName} enquiry: ${d.churchName}, ${d.city}`,
+        title: `${d.churchName} asked about ${d.planName}`,
+        lines: [
+          hi,
+          `${d.fromName} (${[d.email, d.phone].filter(Boolean).join(", ") || "no contact details"}) wrote about ${d.planName}:`,
+          `"${d.message}"`,
+          `Current plan: ${d.currentPlan}. In use: ${d.usage}.`,
+          "To give them a plan, open the church in the staff console and set it under Plan.",
+        ],
+        cta: { label: "Open in the staff console", path: `/staff/churches/${d.churchId}` },
+      };
     default:
       return null;
   }
 }
+
+/** Receipts, payment problems and staff enquiries are sent even when someone turned notification emails off. */
+const essential = (kind: string) => kind.startsWith("billing.") || kind.startsWith("staff.");
 
 /** Minutes to wait after each failed attempt; after the last one the notification is marked failed. */
 const BACKOFF_MINUTES = [1, 5, 30, 120];
@@ -170,7 +262,7 @@ export async function deliverPending(limit = 25): Promise<{ sent: number; skippe
     for (const n of due) {
       const p = people.find((x) => x.id === n.person_id);
       const content = contentFor(n.kind, n.data, p?.full_name ?? null);
-      if (!p?.email || !p.email_verified_at || !p.notify_email || !content) {
+      if (!p?.email || !p.email_verified_at || (!p.notify_email && !essential(n.kind)) || !content) {
         await tx.updateTable("notification").set({ status: "skipped" }).where("id", "=", n.id).execute();
         out.skipped += 1;
         continue;

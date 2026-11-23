@@ -1,6 +1,7 @@
 "use client";
 import { use, useState } from "react";
-import type { ChurchPlan, ChurchStatus, StaffChurchDetailDto } from "@daveup/shared";
+import { PLAN_NAME, naira, type BillingDto, type ChurchPlan, type ChurchStatus, type StaffChurchDetailDto } from "@daveup/shared";
+import { fmtDate as fmtLongDate, planTitle, standing } from "@/components/console/billing";
 import { actionLabel, fmtDate, fmtDateTime, planLabel, StaffScreen, statusLabel, statusTone } from "@/components/staff/StaffShell";
 import { Button, Card, ErrorText, Field, Loading, Pill, TopBar, inputClass } from "@/components/ui";
 import { api, useAction, useApi } from "@/lib/api";
@@ -11,6 +12,11 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
   const { id } = use(params);
   const { ready } = useStaffGuard();
   const church = useApi<StaffChurchDetailDto>(ready ? `/staff/churches/${id}` : null);
+  const billing = useApi<BillingDto>(ready ? `/staff/churches/${id}/billing` : null);
+  const [plan, setPlanChoice] = useState<ChurchPlan | null>(null);
+  const [blocks, setBlocks] = useState(0);
+  const [until, setUntil] = useState("");
+  const [note, setNote] = useState("");
   const { busy, error, run } = useAction();
   const [suspending, setSuspending] = useState(false);
   const [reason, setReason] = useState("");
@@ -33,11 +39,14 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
       setReason("");
       await church.reload();
     });
-  const setPlan = (plan: ChurchPlan) =>
+  const savePlan = () =>
     run(async () => {
-      await api(`/staff/churches/${id}/plan`, { method: "POST", body: { plan } });
+      billing.setData(await api<BillingDto>(`/staff/churches/${id}/plan`, { method: "POST", body: { plan: plan ?? c.plan, extraBlocks: blocks, until, note } }));
+      setPlanChoice(null);
       await church.reload();
     });
+  const b = billing.data;
+  const paidOnline = b && (b.status === "active" || b.status === "canceling" || b.status === "grace");
 
   return (
     <StaffScreen title="Church">
@@ -148,19 +157,65 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
           </Card>
 
           <Card>
-            <p className="mb-3 text-[17px] font-bold text-ink">Plan</p>
+            <p className="mb-1 text-[17px] font-bold text-ink">Plan</p>
+            {b && (
+              <div className="mb-4">
+                <p className="text-[15px] font-semibold text-ink">
+                  {planTitle(b.plan, b.extraBlocks)} <span className="font-normal text-ink-muted">· {standing(b).pill}</span>
+                </p>
+                <p className="text-[14px] text-ink-muted">{standing(b).line}</p>
+                <p className="mt-1 text-[13px] text-ink-muted">
+                  Using {b.usage.disciples} disciples, {b.usage.disciplers} disciplers, {b.usage.cells} cells
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               {(Object.keys(planLabel) as ChurchPlan[]).map((p) => (
                 <button
                   key={p}
-                  disabled={busy || p === c.plan}
-                  onClick={() => void setPlan(p)}
-                  className={`rounded-xl border px-3 py-2.5 text-[14px] font-semibold ${p === c.plan ? "border-brand bg-brand-soft text-brand" : "border-surface-line hover:bg-surface"}`}
+                  disabled={busy}
+                  onClick={() => setPlanChoice(p)}
+                  className={`rounded-xl border px-3 py-2.5 text-[14px] font-semibold ${(plan ?? c.plan) === p ? "border-brand bg-brand-soft text-brand" : "border-surface-line hover:bg-surface"}`}
                 >
                   {planLabel[p]}
                 </button>
               ))}
             </div>
+            {plan && (
+              <div className="mt-4">
+                <Field label="Extra capacity blocks" hint="Each adds 3 disciplers, 36 disciples and 3 cells.">
+                  <input className={inputClass} type="number" min={0} max={1000} value={blocks} onChange={(e) => setBlocks(Math.max(0, Number(e.target.value) || 0))} />
+                </Field>
+                <Field label="Until (optional)" hint="On this date the church returns to Basic by itself. Leave empty for no end.">
+                  <input className={inputClass} type="date" value={until} onChange={(e) => setUntil(e.target.value)} />
+                </Field>
+                <Field label="Note (optional)" hint="Shown to the church, e.g. Pilot church or Network agreement.">
+                  <input className={inputClass} value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} />
+                </Field>
+                {paidOnline && <p className="mb-3 text-[14px] text-danger">This church pays online. Setting a plan here stops its renewals.</p>}
+                <div className="flex gap-2">
+                  <Button disabled={busy} onClick={() => void savePlan()}>
+                    Set {PLAN_NAME[plan]}
+                  </Button>
+                  <Button variant="secondary" onClick={() => setPlanChoice(null)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+            {b && b.payments.length > 0 && (
+              <div className="mt-5 border-t border-surface-line pt-3">
+                <p className="mb-1 text-[14px] font-bold text-ink">Payments</p>
+                {b.payments.slice(0, 8).map((p) => (
+                  <p key={p.id} className="flex justify-between gap-2 py-1 text-[13px] text-ink-muted">
+                    <span>
+                      {fmtLongDate(p.paidAt ?? p.createdAt)} · {p.status}
+                    </span>
+                    <span className="font-semibold text-ink">{naira(p.amountKobo)}</span>
+                  </p>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
       </div>

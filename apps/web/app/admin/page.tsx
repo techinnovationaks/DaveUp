@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { MAX_ACTIVE_DISCIPLES, type AdminOverviewDto } from "@daveup/shared";
 import { ConsoleScreen } from "@/components/ConsoleShell";
+import { BillingNotice } from "@/components/console/billing";
 import { Card, ErrorText, Eyebrow, H1, Loading } from "@/components/ui";
 import { useApi } from "@/lib/api";
 import { useGuard } from "@/lib/session";
@@ -30,6 +31,7 @@ export default function Overview() {
         {greeting()}, {firstName(me!.person.fullName)}
       </H1>
       <ErrorText>{ov.error?.message}</ErrorText>
+      <BillingNotice />
 
       {o && (
         <>

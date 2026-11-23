@@ -17,6 +17,7 @@ import { cellRoutes } from "./modules/cells";
 import { fileRoutes } from "./modules/files";
 import { callRoutes } from "./modules/calls";
 import { staffRoutes } from "./modules/staff";
+import { billingRoutes } from "./modules/billing";
 import { realtimeRoutes } from "./lib/realtime";
 import { appDb } from "./db/pool";
 import { sql } from "kysely";
@@ -73,6 +74,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(fileRoutes);
   await app.register(callRoutes);
   await app.register(staffRoutes);
+  await app.register(billingRoutes);
 
   return app;
 }
