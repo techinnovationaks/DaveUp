@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Participation } from "@daveup/shared";
-import { Button, Card, ErrorText, Field, H1, AuthScreen, TopBar, inputClass } from "@/components/ui";
+import { Button, Card, ErrorText, Field, H1, AuthScreen, Loading, TopBar, inputClass } from "@/components/ui";
 import { ParticipationPicker } from "@/components/ParticipationPicker";
 import { api, useAction } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -13,7 +13,7 @@ interface Registered {
 
 export default function RegisterChurch() {
   const router = useRouter();
-  const { reload } = useSession();
+  const { me, loading, reload } = useSession();
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [participation, setParticipation] = useState<Participation | null>(null);
@@ -25,6 +25,13 @@ export default function RegisterChurch() {
       setDone(await api<Registered>("/churches", { method: "POST", body: { name: name.trim(), city: city.trim(), participation } }));
       await reload();
     });
+
+  // The homepage's "Create an organization" links here; signed-out visitors create an account first.
+  useEffect(() => {
+    if (!loading && !me) router.replace("/signup");
+  }, [loading, me, router]);
+
+  if (loading || !me) return <Loading />;
 
   if (done) {
     return (
