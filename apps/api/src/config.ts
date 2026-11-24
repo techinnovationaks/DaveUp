@@ -106,6 +106,15 @@ export const config = {
     secretKey: env.PAYSTACK_SECRET_KEY || "",
     baseUrl: (env.PAYSTACK_BASE_URL || "https://api.paystack.co").replace(/\/+$/, ""),
   },
+  /**
+   * Sign in with Google (OAuth client of type "Web application" in Google
+   * Cloud Console). Off until both are set. The authorised redirect URI is
+   * APP_URL + /api/auth/google/callback.
+   */
+  google: {
+    clientId: env.GOOGLE_CLIENT_ID || "",
+    clientSecret: env.GOOGLE_CLIENT_SECRET || "",
+  },
   /** While true, a church that starts Standard gets the founding price, locked for 12 months. */
   foundingPriceOpen: env.FOUNDING_PRICE_OPEN !== "false",
   /**
@@ -145,6 +154,9 @@ if (config.storage.provider === "s3") {
   }
 }
 
+if (!config.google.clientId !== !config.google.clientSecret) {
+  throw new Error("Google sign-in needs both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET");
+}
 if (config.paystack.secretKey && !/^sk_(test|live)_/.test(config.paystack.secretKey)) {
   throw new Error("PAYSTACK_SECRET_KEY should start with sk_test_ or sk_live_ (the secret key, not the public key)");
 }

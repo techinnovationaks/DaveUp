@@ -12,6 +12,7 @@ export interface PersonTable {
   email_verified_at: NullableTimestamp;
   notify_email: Generated<boolean>;
   is_super_admin: Generated<boolean>;
+  google_sub: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 }

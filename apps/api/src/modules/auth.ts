@@ -2,11 +2,14 @@
 // you up the first time and in every time after. Phone sign-in remains as an
 // alternative (with SMS codes once a provider is configured).
 import type { FastifyInstance, FastifyReply } from "fastify";
+import { sql } from "kysely";
 import { EmailRequestSchema, EmailVerifySchema, OtpRequestSchema, OtpVerifySchema, type AuthMethodsDto } from "@daveup/shared";
 import { config } from "../config";
 import { ownerDb, type Tx } from "../db/pool";
 import { consumeCode, issueCode } from "../lib/codes";
-import { hmac, newSessionToken } from "../lib/crypto";
+import { randomBytes } from "node:crypto";
+import { hmac, newSessionToken, safeEqualHex } from "../lib/crypto";
+import { getGoogle, pkcePair, type GoogleProfile } from "../lib/google";
 import { AppError, badRequest, parse } from "../lib/errors";
 import { getEmailSender, renderEmail } from "../lib/email";
 import { getOtpSender } from "../lib/otp-sender";
@@ -47,6 +50,50 @@ async function personForEmail(tx: Tx, email: string): Promise<{ person: Who; isN
   return { person, isNew: true };
 }
 
+/**
+ * Find or create the person for a Google account. The Google account's id is
+ * remembered on first use; until then a Google-verified email is proof of
+ * owning that address, exactly like an emailed code.
+ */
+async function personForGoogle(tx: Tx, g: GoogleProfile): Promise<{ person: Who; isNew: boolean }> {
+  const linked = await tx.selectFrom("person").select(["id", "full_name"]).where("google_sub", "=", g.sub).executeTakeFirst();
+  if (linked) return { person: linked, isNew: false };
+  const { person, isNew } = await personForEmail(tx, g.email);
+  const full_name = person.full_name ?? g.name;
+  await tx
+    .updateTable("person")
+    .set({ google_sub: sql`coalesce(google_sub, ${g.sub})`, full_name, updated_at: new Date() })
+    .where("id", "=", person.id)
+    .execute();
+  return { person: { ...person, full_name }, isNew };
+}
+
+// The browser carries the Google flow's state and PKCE verifier in a short-lived
+// signed cookie, so nothing is stored server-side for an unfinished sign-in.
+const GOOGLE_COOKIE = "daveup_google";
+const GOOGLE_FLOW_SECONDS = 600;
+const googleRedirectUri = () => `${config.appUrl}/api/auth/google/callback`;
+
+function packFlow(flow: { state: string; verifier: string; exp: number }): string {
+  const body = Buffer.from(JSON.stringify(flow)).toString("base64url");
+  return `${body}.${hmac(`google-flow:${body}`)}`;
+}
+
+function unpackFlow(value: string | undefined): { state: string; verifier: string; exp: number } | null {
+  const [body, mac] = (value ?? "").split(".");
+  if (!body || !mac || !safeEqualHex(mac, hmac(`google-flow:${body}`))) return null;
+  try {
+    const f = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+    return typeof f.state === "string" && typeof f.verifier === "string" && f.exp > Date.now() ? f : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Back to the sign-in page with a reason it can explain. */
+const googleFailed = (reply: FastifyReply, why: "cancelled" | "expired" | "unverified" | "failed" | "off") =>
+  reply.redirect(`${config.appUrl}/signin?google=${why}`, 303);
+
 function finishSignIn(reply: FastifyReply, token: string, result: Awaited<ReturnType<typeof openSession>>) {
   setSessionCookie(reply, token);
   // The token is also returned for the mobile app, which stores it in secure storage.
@@ -82,7 +129,51 @@ async function sendCodeEmail(email: string, code: string, minutes: number, purpo
 
 export async function authRoutes(app: FastifyInstance) {
   /** Which sign-in methods are available. */
-  app.get("/auth/methods", async (): Promise<AuthMethodsDto> => ({ email: true, phone: true, phoneOtp: getOtpSender() !== null }));
+  app.get("/auth/methods", async (): Promise<AuthMethodsDto> => ({ email: true, phone: true, phoneOtp: getOtpSender() !== null, google: getGoogle() !== null }));
+
+  // ---- Google ----
+
+  /** Start "Continue with Google": the browser is sent to Google's account chooser. */
+  app.get("/auth/google/start", async (_req, reply) => {
+    const google = getGoogle();
+    if (!google) return googleFailed(reply, "off");
+    const { verifier, challenge } = pkcePair();
+    const state = randomBytes(16).toString("base64url");
+    reply.setCookie(GOOGLE_COOKIE, packFlow({ state, verifier, exp: Date.now() + GOOGLE_FLOW_SECONDS * 1000 }), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: config.cookieSecure,
+      path: "/",
+      maxAge: GOOGLE_FLOW_SECONDS,
+    });
+    return reply.redirect(google.authUrl({ state, codeChallenge: challenge, redirectUri: googleRedirectUri() }), 303);
+  });
+
+  /** Google sends the browser back here. Sign in (or up), then carry on in the web app. */
+  app.get("/auth/google/callback", async (req, reply) => {
+    const q = req.query as { code?: string; state?: string; error?: string };
+    const flow = unpackFlow(req.cookies?.[GOOGLE_COOKIE]);
+    reply.clearCookie(GOOGLE_COOKIE, { path: "/" });
+    const google = getGoogle();
+    if (!google) return googleFailed(reply, "off");
+    if (q.error) return googleFailed(reply, "cancelled");
+    if (!flow || !q.code || !q.state || q.state !== flow.state) return googleFailed(reply, "expired");
+    let profile: GoogleProfile;
+    try {
+      profile = await google.exchange({ code: q.code, codeVerifier: flow.verifier, redirectUri: googleRedirectUri() });
+    } catch (err) {
+      req.log.warn({ err: err instanceof Error ? err.message : err }, "google sign-in failed");
+      return googleFailed(reply, "failed");
+    }
+    if (!profile.emailVerified) return googleFailed(reply, "unverified");
+    const token = newSessionToken();
+    await ownerDb.transaction().execute(async (tx) => {
+      const { person, isNew } = await personForGoogle(tx, profile);
+      return openSession(tx, person, isNew, token);
+    });
+    setSessionCookie(reply, token);
+    return reply.redirect(`${config.appUrl}/start`, 303);
+  });
 
   // ---- Email (primary) ----
 

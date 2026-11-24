@@ -164,6 +164,7 @@ cp apps/web/.env.example apps/web/.env.local
 | `TERMII_BASE_URL` | `https://api.ng.termii.com` | |
 | `TERMII_CHANNEL` | `dnd` | `dnd` (SMS), `whatsapp` or `generic` |
 | `ALLOW_PHONE_ONLY_SIGNIN` | (unset) | Must be `true` to run production without sign-in codes |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | (unset) | Sign in with Google. Set both or neither. See [Sign-in modes](#sign-in-modes). |
 | `SUPER_ADMIN_EMAILS` | (unset) | Comma-separated emails of DaveUp staff. A person whose **verified** email is listed can open the staff console. See [DaveUp staff console](#daveup-staff-console). |
 | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | (unset) | Audio and video calls. Calls are off (buttons hidden) until all three are set. See [Calls](#calls). |
 | `STORAGE_PROVIDER` | `s3` if `S3_BUCKET` is set, else `local` in development | Where shared files are kept: `s3` or `local`. `local` is refused in production; with no bucket in production, file sharing is off. |
@@ -185,6 +186,15 @@ The web app has one setting:
 - **Codes:** stored hashed, 5 attempts allowed, and limited to 5 requests per 15 minutes per address.
 - **Verified emails only:** only an email proven with a code identifies an account. Changing your email in the profile needs a code sent to the new address.
 - **Sending:** codes go through Brevo, or the API terminal in development.
+
+**Google.** "Sign in with Google" and "Sign up with Google" appear on both pages once `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set.
+
+- **How it works:** the API sends the browser to Google (authorisation code with PKCE, state kept in a 10-minute signed cookie) and back to `/api/auth/google/callback`. It then opens a session and continues at `/start`.
+- **Accounts:** the first time, a Google account joins the DaveUp account with the same verified email, or creates one and uses the Google name. After that it is found by Google's account id (`person.google_sub`, migration 0008), so changing either email does not lock anyone out. Google accounts whose email Google has not verified are refused.
+- **Setup:** in Google Cloud Console, open APIs & Services → Credentials and create an OAuth client ID of type *Web application*:
+  - Authorised JavaScript origin: `https://daveup.app`.
+  - Authorised redirect URI: `https://daveup.app/api/auth/google/callback`. For local testing, also add `http://localhost:3000/api/auth/google/callback` with `APP_URL=http://localhost:3000`.
+  - The OAuth consent screen needs the app name, support email and the `email`, `profile` and `openid` scopes. Publish it ("In production") so anyone can sign in, not only test users.
 
 **Phone (alternative).** Nigerian numbers are accepted as `0803 000 0000`, `+234803...` or `234803...` and stored in E.164 form.
 
