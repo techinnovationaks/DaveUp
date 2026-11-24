@@ -38,7 +38,7 @@ export default function Profile() {
     <>
       <TopBar title={editing ? "Your profile" : "Create your account"} back={editing ? back : undefined} />
       <form onSubmit={(e) => (e.preventDefault(), void save())}>
-        <H1 sub="This is how your church and your discipler will know you.">{editing ? "Your profile" : "About you"}</H1>
+        <H1 sub="This is how your organization and your discipler will know you.">{editing ? "Your profile" : "About you"}</H1>
         <Field label="Full name">
           <input className={inputClass} autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} autoFocus />
         </Field>

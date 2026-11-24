@@ -64,7 +64,7 @@ function ConsoleRail() {
 
   return (
     <aside className="sticky top-0 hidden h-dvh w-[80px] shrink-0 flex-col border-r border-surface-line bg-white px-3 py-6 md:flex lg:w-[272px] lg:px-5">
-      <Link href="/admin" className="flex justify-center lg:justify-start lg:px-2" aria-label="Church console">
+      <Link href="/admin" className="flex justify-center lg:justify-start lg:px-2" aria-label="Organization console">
         <span className="lg:hidden">
           <Logo size={40} markOnly />
         </span>
@@ -72,10 +72,10 @@ function ConsoleRail() {
           <Logo />
         </span>
       </Link>
-      <p className="mt-2 hidden px-2 text-[12px] font-bold uppercase tracking-wider text-brand lg:block">Church console</p>
+      <p className="mt-2 hidden px-2 text-[12px] font-bold uppercase tracking-wider text-brand lg:block">Organization console</p>
       {me?.membership && <p className="hidden truncate px-2 text-[13px] text-ink-muted lg:block">{me.membership.churchName}, {me.membership.churchCity}</p>}
 
-      <nav className="mt-10 flex flex-col gap-3" aria-label="Church console">
+      <nav className="mt-10 flex flex-col gap-3" aria-label="Organization console">
         {NAV.map((it) => {
           const active = path === it.href || (it.href !== "/admin" && path.startsWith(it.href + "/"));
           return (
@@ -145,12 +145,12 @@ export function ConsoleScreen({ children, narrow = false }: { children: ReactNod
         <header className="flex items-center justify-between border-b border-surface-line bg-white px-4 py-3 md:hidden">
           <span className="flex items-center gap-2">
             <Logo size={28} markOnly />
-            <span className="text-[15px] font-bold text-ink">Church console</span>
+            <span className="text-[15px] font-bold text-ink">Organization console</span>
           </span>
           <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">Administrator</span>
         </header>
         <header className="sticky top-0 z-10 hidden h-16 items-center justify-between border-b border-surface-line bg-white/90 px-8 backdrop-blur md:flex">
-          <p className="text-[17px] font-bold text-ink">{TITLES[path] ?? (path.startsWith("/admin/members/") ? "Member" : path.startsWith("/admin/cells/") ? "Cell" : "Church console")}</p>
+          <p className="text-[17px] font-bold text-ink">{TITLES[path] ?? (path.startsWith("/admin/members/") ? "Member" : path.startsWith("/admin/cells/") ? "Cell" : "Organization console")}</p>
           {me?.membership && <p className="text-[14px] text-ink-muted">{me.membership.churchName}, {me.membership.churchCity}</p>}
         </header>
         <main className={`mx-auto w-full px-4 pb-28 pt-6 md:px-8 md:pb-12 md:pt-8 ${narrow ? "max-w-md md:max-w-2xl" : "max-w-md md:max-w-none lg:max-w-[80vw]"}`}>{children}</main>

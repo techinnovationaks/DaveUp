@@ -128,7 +128,7 @@ export default function Members() {
 
       {shown.length === 0 ? (
         <Card>
-          <p className="text-[15px] text-ink-muted">{all.length === 0 ? "No one has joined yet. Share your church code from the Overview." : "No members match."}</p>
+          <p className="text-[15px] text-ink-muted">{all.length === 0 ? "No one has joined yet. Share your organization code from the Overview." : "No members match."}</p>
         </Card>
       ) : (
         <>

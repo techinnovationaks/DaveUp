@@ -160,7 +160,7 @@ export function AuthFlow({ mode }: { mode: Mode }) {
                 ? "Enter your email and we will send you a 6-digit code."
                 : phoneOtp
                   ? "Enter your phone number and we will text you a 6-digit code."
-                  : "Enter the phone number you use with your church."
+                  : "Enter the phone number you use with your organization."
           }
         >
           {signup ? "Create your account" : "Sign in"}

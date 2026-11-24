@@ -35,7 +35,7 @@ export default function StaffChurches() {
 
   return (
     <StaffScreen>
-      <H1 sub="Verify new churches, change plans, and suspend a church if needed.">Churches</H1>
+      <H1 sub="Verify new organizations, change plans, and suspend an organization if needed.">Organizations</H1>
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center">
         <div className="flex gap-1 rounded-xl bg-surface-line/60 p-1">
           {FILTERS.map((f) => (
@@ -44,21 +44,21 @@ export default function StaffChurches() {
             </button>
           ))}
         </div>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or city" className={`${inputClass} py-2.5 md:max-w-xs`} aria-label="Search churches" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or city" className={`${inputClass} py-2.5 md:max-w-xs`} aria-label="Search organizations" />
       </div>
       <ErrorText>{list.error?.message}</ErrorText>
       {list.loading ? (
         <Loading />
       ) : (list.data ?? []).length === 0 ? (
         <Card tone="soft">
-          <p className="text-[15px]">No churches match.</p>
+          <p className="text-[15px]">No organizations match.</p>
         </Card>
       ) : (
         <Card className="!p-0 overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-[14px]">
             <thead className="border-b border-surface-line text-[13px] text-ink-muted">
               <tr>
-                <th className="px-5 py-3 font-semibold">Church</th>
+                <th className="px-5 py-3 font-semibold">Organization</th>
                 <th className="px-3 py-3 font-semibold">Status</th>
                 <th className="px-3 py-3 font-semibold">Plan</th>
                 <th className="px-3 py-3 font-semibold">Members</th>

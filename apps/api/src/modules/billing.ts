@@ -755,7 +755,7 @@ export async function billingRoutes(app: FastifyInstance) {
     if (until && until <= new Date()) throw badRequest("UNTIL_PAST", "Choose an end date in the future");
     await ownerDb.transaction().execute(async (tx) => {
       const c = await tx.selectFrom("church").select("plan").where("id", "=", id).executeTakeFirst();
-      if (!c) throw notFound("Church not found");
+      if (!c) throw notFound("Organization not found");
       const b = await billingRow(tx, id, true);
       const free = body.plan === "basic" && body.extraBlocks === 0;
       await tx
@@ -780,7 +780,7 @@ export async function billingRoutes(app: FastifyInstance) {
     await requireSuperAdmin(req);
     const { id } = parse(z.object({ id: z.string().uuid() }), req.params);
     const c = await ownerDb.selectFrom("church").select("id").where("id", "=", id).executeTakeFirst();
-    if (!c) throw notFound("Church not found");
+    if (!c) throw notFound("Organization not found");
     return billingDto(id);
   });
 }

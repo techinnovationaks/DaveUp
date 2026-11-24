@@ -19,15 +19,15 @@ export default function Settings() {
 
   return (
     <ConsoleScreen narrow>
-      <H1 sub="Your church and your administrator account.">Settings</H1>
+      <H1 sub="Your organization and your administrator account.">Settings</H1>
       <ErrorText>{ov.error?.message}</ErrorText>
 
       {c && (
         <Card className="mb-4">
-          <Eyebrow className="mb-1">Church</Eyebrow>
+          <Eyebrow className="mb-1">Organization</Eyebrow>
           <div className="divide-y divide-surface-line">
             <Row title={c.name} sub={c.city} />
-            <Row title="Church code" sub={<span className="font-mono font-bold tracking-[0.2em] text-ink">{c.joinCode}</span>} />
+            <Row title="Organization code" sub={<span className="font-mono font-bold tracking-[0.2em] text-ink">{c.joinCode}</span>} />
             <Row title="Verification" sub={c.status === "verified" ? "Verified by DaveUp" : c.status === "suspended" ? "Suspended" : "Waiting for DaveUp verification"} />
             <Row href="/admin/billing" title="Plan and billing" sub={<span className="capitalize">{c.plan}</span>} />
           </div>

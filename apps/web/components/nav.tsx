@@ -52,7 +52,7 @@ export function isAdmin(me: MeDto | null): boolean {
 /** In the member app, administrators get one way back to the Church console. */
 export function adminNav(me: MeDto | null): NavItem[] {
   if (!isAdmin(me)) return [];
-  return [{ href: "/admin", label: "Church console", short: "Console", icon: icons.church }];
+  return [{ href: "/admin", label: "Organization console", short: "Console", icon: icons.church }];
 }
 
 /** Mobile bottom bar: one Church tab for admins; Members is reached from the console tabs. */

@@ -36,7 +36,7 @@ export default function Invite() {
     return (
       <Screen>
         <TopBar back="/home" />
-        <H1 sub="Only church-approved disciplers can invite someone.">Invite someone</H1>
+        <H1 sub="Only organization-approved disciplers can invite someone.">Invite someone</H1>
       </Screen>
     );
   }

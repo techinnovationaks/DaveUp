@@ -51,13 +51,13 @@ export default function ChooseDiscipler() {
   return (
     <Screen>
       <TopBar back="/home" title="Choose a discipler" />
-      <H1 sub="These people are approved by your church to disciple others.">Who would you like to walk with?</H1>
+      <H1 sub="These people are approved by your organization to disciple others.">Who would you like to walk with?</H1>
       <ErrorText>{list.error?.message}</ErrorText>
       {(list.data?.length ?? 0) > 3 && <input className={`${inputClass} mb-4 md:max-w-md`} placeholder="Search by name or department" value={q} onChange={(e) => setQ(e.target.value)} />}
       {list.data?.length === 0 && (
         <Card>
-          <p className="text-[16px] text-ink">There are no approved disciplers in your church yet.</p>
-          <p className="mt-1 text-[14px] text-ink-muted">Ask your church administrator, or wait for a discipler to invite you.</p>
+          <p className="text-[16px] text-ink">There are no approved disciplers in your organization yet.</p>
+          <p className="mt-1 text-[14px] text-ink-muted">Ask your organization administrator, or wait for a discipler to invite you.</p>
         </Card>
       )}
       <div className="grid gap-3 md:grid-cols-2">

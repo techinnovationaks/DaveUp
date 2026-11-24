@@ -94,7 +94,7 @@ function SideRail() {
         {items.map(link)}
       </nav>
       {admin.length > 0 && (
-        <nav className="mt-8 flex flex-col gap-3 border-t border-surface-line pt-6 lg:border-0 lg:pt-0" aria-label="Church admin">
+        <nav className="mt-8 flex flex-col gap-3 border-t border-surface-line pt-6 lg:border-0 lg:pt-0" aria-label="Organization admin">
           {admin.map(link)}
         </nav>
       )}
@@ -182,7 +182,7 @@ export function BrandPanel({ className = "" }: { className?: string }) {
       <div className="relative flex h-full flex-col justify-between p-10 lg:p-14">
         <span />
         <IntroSlides onDark />
-        <p className="text-[14px] text-white/75">Provided through your church.</p>
+        <p className="text-[14px] text-white/75">Provided through your organization.</p>
       </div>
     </div>
   );

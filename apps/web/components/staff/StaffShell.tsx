@@ -19,7 +19,7 @@ const icons = {
 
 const NAV = [
   { href: "/staff", label: "Overview", icon: icons.overview },
-  { href: "/staff/churches", label: "Churches", icon: icons.churches },
+  { href: "/staff/churches", label: "Organizations", icon: icons.churches },
   { href: "/staff/people", label: "People & staff", icon: icons.people },
   { href: "/staff/activity", label: "Activity", icon: icons.activity },
 ];
@@ -54,9 +54,9 @@ export function StaffScreen({ children, title }: { children: ReactNode; title?: 
         </nav>
         <div className="mt-auto flex flex-col gap-2 border-t border-white/15 pt-4">
           {me?.membership?.status === "approved" && (
-            <Link href={me.membership.isAdmin ? "/admin" : "/home"} title="Back to my church" className={`${item} h-11 text-[14px] text-white/70 hover:bg-white/10 hover:text-white`}>
+            <Link href={me.membership.isAdmin ? "/admin" : "/home"} title="Back to my organization" className={`${item} h-11 text-[14px] text-white/70 hover:bg-white/10 hover:text-white`}>
               <Icon size={20}>{icons.back}</Icon>
-              <span className="hidden lg:inline">Back to my church</span>
+              <span className="hidden lg:inline">Back to my organization</span>
             </Link>
           )}
           <button onClick={() => void signOut()} title="Sign out" className={`${item} h-11 text-[14px] text-white/70 hover:bg-white/10 hover:text-white`}>
@@ -74,7 +74,7 @@ export function StaffScreen({ children, title }: { children: ReactNode; title?: 
           </span>
           {me?.membership?.status === "approved" && (
             <Link href={me.membership.isAdmin ? "/admin" : "/home"} className="text-[13px] font-semibold text-white/80">
-              My church
+              My organization
             </Link>
           )}
         </header>
@@ -107,9 +107,9 @@ export const fmtDateTime = (iso: string) => new Date(iso).toLocaleString(undefin
 /** "staff.church_suspended" -> "Suspended the church" */
 export function actionLabel(action: string): string {
   const map: Record<string, string> = {
-    "staff.church_verified": "Verified the church",
-    "staff.church_suspended": "Suspended the church",
-    "staff.church_unverified": "Marked the church unverified",
+    "staff.church_verified": "Verified the organization",
+    "staff.church_suspended": "Suspended the organization",
+    "staff.church_unverified": "Marked the organization unverified",
     "staff.church_plan": "Changed the plan",
     "staff.granted": "Gave staff access",
     "staff.revoked": "Removed staff access",

@@ -25,9 +25,9 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
   const c = church.data;
   if (!c) {
     return (
-      <StaffScreen title="Church">
+      <StaffScreen title="Organization">
         <TopBar back="/staff/churches" />
-        <ErrorText>{church.error?.message ?? "Church not found"}</ErrorText>
+        <ErrorText>{church.error?.message ?? "Organization not found"}</ErrorText>
       </StaffScreen>
     );
   }
@@ -49,8 +49,8 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
   const paidOnline = b && (b.status === "active" || b.status === "canceling" || b.status === "grace");
 
   return (
-    <StaffScreen title="Church">
-      <TopBar back="/staff/churches" title="Church" />
+    <StaffScreen title="Organization">
+      <TopBar back="/staff/churches" title="Organization" />
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-[28px] font-extrabold leading-tight text-ink">{c.name}</h1>
@@ -120,12 +120,12 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
           <Card>
             <p className="mb-1 text-[17px] font-bold text-ink">Verification</p>
             <p className="mb-4 text-[14px] text-ink-muted">
-              {c.status === "verified" ? `Verified on ${fmtDate(c.verifiedAt!)}.` : c.status === "suspended" ? "Members cannot use DaveUp while the church is suspended. Nothing is deleted." : "Check that this is a real church and its administrator is genuine, then verify it."}
+              {c.status === "verified" ? `Verified on ${fmtDate(c.verifiedAt!)}.` : c.status === "suspended" ? "Members cannot use DaveUp while the organization is suspended. Nothing is deleted." : "Check that this is a real organization and its administrator is genuine, then verify it."}
             </p>
             <div className="flex flex-col gap-2">
               {c.status !== "verified" && (
                 <Button disabled={busy} onClick={() => void setStatus("verified")}>
-                  {c.status === "suspended" ? "Reinstate and verify" : "Verify church"}
+                  {c.status === "suspended" ? "Reinstate and verify" : "Verify organization"}
                 </Button>
               )}
               {c.status === "suspended" && (
@@ -135,13 +135,13 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
               )}
               {c.status !== "suspended" && !suspending && (
                 <Button variant="danger" disabled={busy} onClick={() => setSuspending(true)}>
-                  Suspend church
+                  Suspend organization
                 </Button>
               )}
             </div>
             {suspending && (
               <div className="mt-4 border-t border-surface-line pt-4">
-                <Field label="Reason" hint="Kept in the audit log. The church's administrators are emailed that access is paused.">
+                <Field label="Reason" hint="Kept in the audit log. The organization's administrators are emailed that access is paused.">
                   <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} maxLength={500} className={inputClass} />
                 </Field>
                 <div className="flex gap-2">
@@ -186,13 +186,13 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
                 <Field label="Extra capacity blocks" hint="Each adds 3 disciplers, 36 disciples and 3 cells.">
                   <input className={inputClass} type="number" min={0} max={1000} value={blocks} onChange={(e) => setBlocks(Math.max(0, Number(e.target.value) || 0))} />
                 </Field>
-                <Field label="Until (optional)" hint="On this date the church returns to Basic by itself. Leave empty for no end.">
+                <Field label="Until (optional)" hint="On this date the organization returns to Basic by itself. Leave empty for no end.">
                   <input className={inputClass} type="date" value={until} onChange={(e) => setUntil(e.target.value)} />
                 </Field>
-                <Field label="Note (optional)" hint="Shown to the church, e.g. Pilot church or Network agreement.">
+                <Field label="Note (optional)" hint="Shown to the organization, e.g. Pilot or Network agreement.">
                   <input className={inputClass} value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} />
                 </Field>
-                {paidOnline && <p className="mb-3 text-[14px] text-danger">This church pays online. Setting a plan here stops its renewals.</p>}
+                {paidOnline && <p className="mb-3 text-[14px] text-danger">This organization pays online. Setting a plan here stops its renewals.</p>}
                 <div className="flex gap-2">
                   <Button disabled={busy} onClick={() => void savePlan()}>
                     Set {PLAN_NAME[plan]}

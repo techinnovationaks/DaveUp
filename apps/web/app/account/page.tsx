@@ -30,7 +30,7 @@ export default function Account() {
             title="Discipler status"
             sub={me.disciplerStatus === "approved" ? "Approved" : me.disciplerStatus === "requested" ? "Waiting for approval" : "Not a discipler"}
           />
-          {me.person.isSuperAdmin && <Row href="/staff" title="DaveUp staff console" sub="Churches, verification and staff access" />}
+          {me.person.isSuperAdmin && <Row href="/staff" title="DaveUp staff console" sub="Organizations, verification and staff access" />}
         </div>
       </Card>
       <Card className="mb-4">

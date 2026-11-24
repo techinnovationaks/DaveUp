@@ -146,7 +146,7 @@ export async function adminMemberRoutes(app: FastifyInstance) {
     return withTenant(churchId, async (tx) => {
       const m = await approvedMembership(tx, id);
       if (body.isAdmin === false && m.is_admin && (await adminCount(tx)) <= 1) {
-        throw conflict("LAST_ADMIN", "Your church needs at least one administrator. Make someone else an administrator first.");
+        throw conflict("LAST_ADMIN", "Your organization needs at least one administrator. Make someone else an administrator first.");
       }
       const set: { department?: string | null; is_admin?: boolean } = {};
       if (body.department !== undefined) set.department = body.department || null;
@@ -174,7 +174,7 @@ export async function adminMemberRoutes(app: FastifyInstance) {
     await withTenant(churchId, async (tx) => {
       const m = await approvedMembership(tx, id);
       if (m.person_id === ctx.personId) throw conflict("REMOVE_SELF", "You cannot remove yourself. Ask another administrator.");
-      if (m.is_admin && (await adminCount(tx)) <= 1) throw conflict("LAST_ADMIN", "Your church needs at least one administrator.");
+      if (m.is_admin && (await adminCount(tx)) <= 1) throw conflict("LAST_ADMIN", "Your organization needs at least one administrator.");
       const now = new Date();
       await tx.updateTable("membership").set({ status: "left", is_admin: false, decided_at: now, decided_by: ctx.personId }).where("id", "=", id).execute();
       const who = (eb: any) => eb.or([eb("discipler_id", "=", m.person_id), eb("disciple_id", "=", m.person_id)]);
@@ -220,7 +220,7 @@ export async function adminMemberRoutes(app: FastifyInstance) {
     const out = await withTenant(churchId, async (tx) => {
       const ds = await tx.selectFrom("discipler_status").select("status").where("person_id", "=", body.disciplerId).forUpdate().executeTakeFirst();
       const dm = await tx.selectFrom("membership").select("id").where("person_id", "=", body.disciplerId).where("status", "=", "approved").executeTakeFirst();
-      if (ds?.status !== "approved" || !dm) throw badRequest("NOT_DISCIPLER", "Choose an approved discipler in your church");
+      if (ds?.status !== "approved" || !dm) throw badRequest("NOT_DISCIPLER", "Choose an approved discipler in your organization");
 
       const { n } = await tx.selectFrom("relationship").select(sql<string>`count(*)`.as("n")).where("discipler_id", "=", body.disciplerId).where("status", "in", CAPACITY_STATUSES).executeTakeFirstOrThrow();
       const { p } = await tx

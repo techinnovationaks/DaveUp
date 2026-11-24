@@ -16,7 +16,7 @@ export default function DisciplerRequest() {
   return (
     <Screen narrow>
       <TopBar back="/home" title="Discipler status" />
-      <H1 sub="Your church administrator approves every discipler.">Disciple others</H1>
+      <H1 sub="Your organization administrator approves every discipler.">Disciple others</H1>
       <Card className="mb-6">
         <ul className="list-disc space-y-2 pl-5 text-[15px] text-ink">
           <li>You can walk with up to {MAX_ACTIVE_DISCIPLES} disciples at a time.</li>

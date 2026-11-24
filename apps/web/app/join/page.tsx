@@ -31,10 +31,10 @@ export default function Join() {
   if (!church) {
     return (
       <AuthScreen>
-        <TopBar back="/start" title="Join your church" />
+        <TopBar back="/start" title="Join your organization" />
         <form onSubmit={(e) => (e.preventDefault(), void lookup())}>
-          <H1 sub="A church code identifies your church only. It never gives anyone a leadership role.">Enter your church code</H1>
-          <Field label="Church code">
+          <H1 sub="An organization code identifies your organization only. It never gives anyone a leadership role.">Enter your organization code</H1>
+          <Field label="Organization code">
             <input
               className={`${inputClass} uppercase tracking-[0.2em]`}
               autoCapitalize="characters"
@@ -46,7 +46,7 @@ export default function Join() {
           </Field>
           <ErrorText>{error}</ErrorText>
           <Button type="submit" disabled={busy || code.length < 4}>
-            {busy ? "Checking…" : "Find my church"}
+            {busy ? "Checking…" : "Find my organization"}
           </Button>
         </form>
       </AuthScreen>
@@ -55,13 +55,13 @@ export default function Join() {
 
   return (
     <AuthScreen>
-      <TopBar back={true} title="Confirm your church" />
+      <TopBar back={true} title="Confirm your organization" />
       <Card className="mb-6">
         <p className="text-[14px] text-ink-muted">You are joining</p>
         <p className="mt-1 text-[20px] font-extrabold text-ink">{church.name}</p>
         <p className="text-[15px] text-ink-muted">{church.city}</p>
         <button className="mt-3 text-[14px] font-semibold text-brand" onClick={() => setChurch(null)}>
-          Not your church? Change code
+          Not your organization? Change code
         </button>
       </Card>
       <form onSubmit={(e) => (e.preventDefault(), void join())}>
@@ -69,7 +69,7 @@ export default function Join() {
         <Field label="Department (optional)" hint="For example Media, Ushering, Choir.">
           <input className={inputClass} value={department} onChange={(e) => setDepartment(e.target.value)} />
         </Field>
-        <p className="mb-4 text-[14px] text-ink-muted">Your church administrator will approve your request. They will see your name, phone number and department.</p>
+        <p className="mb-4 text-[14px] text-ink-muted">Your organization administrator will approve your request. They will see your name, phone number and department.</p>
         <ErrorText>{error}</ErrorText>
         <Button type="submit" disabled={busy || !participation}>
           {busy ? "Sending…" : "Ask to join"}

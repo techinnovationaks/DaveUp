@@ -265,7 +265,7 @@ export function Thread({ id }: { id: string }) {
             <span className="min-w-0">
               <span className="block truncate text-[16px] font-bold text-ink">{c.title}</span>
               <span className="block truncate text-[13px] text-ink-muted">
-                {typingNames.length ? `${typingNames.join(", ")} ${typingNames.length > 1 ? "are" : "is"} typing…` : c.kind === "cell" ? `${c.memberCount} members${c.archived ? " · Archived" : ""}` : c.readOnly ? "No longer in your church" : "Tap for files and details"}
+                {typingNames.length ? `${typingNames.join(", ")} ${typingNames.length > 1 ? "are" : "is"} typing…` : c.kind === "cell" ? `${c.memberCount} members${c.archived ? " · Archived" : ""}` : c.readOnly ? "No longer in your organization" : "Tap for files and details"}
               </span>
             </span>
           </button>

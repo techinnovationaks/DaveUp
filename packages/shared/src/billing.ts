@@ -111,7 +111,7 @@ export const BillingContactSchema = z.object({ email: z.string().trim().toLowerC
 export const BillingVerifySchema = z.object({ reference: z.string().trim().min(6).max(100) });
 export const PlanEnquirySchema = z.object({
   plan: z.enum(["pro", "network"]),
-  message: z.string().trim().min(10, "Tell us a little about your church or network").max(2000),
+  message: z.string().trim().min(10, "Tell us a little about your organization or network").max(2000),
   phone: z.string().trim().max(40).optional().or(z.literal("")),
 });
 

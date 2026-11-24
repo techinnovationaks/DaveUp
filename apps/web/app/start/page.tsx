@@ -17,17 +17,17 @@ export default function Start() {
 
   return (
     <AuthScreen>
-      <H1 sub="DaveUp is provided through your local church.">Find your church</H1>
+      <H1 sub="DaveUp is provided through your organization.">Find your organization</H1>
       <Card className="mb-4">
-        <p className="text-[17px] font-bold text-ink">Join your church</p>
-        <p className="mb-4 mt-1 text-[15px] text-ink-muted">Use the church code from your church office, bulletin or an invite.</p>
-        <LinkButton href="/join">I have a church code</LinkButton>
+        <p className="text-[17px] font-bold text-ink">Join your organization</p>
+        <p className="mb-4 mt-1 text-[15px] text-ink-muted">Use the organization code from your leaders, a notice or an invite.</p>
+        <LinkButton href="/join">I have an organization code</LinkButton>
       </Card>
       <Card>
-        <p className="text-[17px] font-bold text-ink">Register your church</p>
-        <p className="mb-4 mt-1 text-[15px] text-ink-muted">For pastors and church administrators setting DaveUp up for the first time. You become its administrator.</p>
+        <p className="text-[17px] font-bold text-ink">Register your organization</p>
+        <p className="mb-4 mt-1 text-[15px] text-ink-muted">For leaders and administrators setting DaveUp up for the first time. You become its administrator.</p>
         <LinkButton href="/register-church" variant="secondary">
-          Register a church
+          Register an organization
         </LinkButton>
       </Card>
     </AuthScreen>

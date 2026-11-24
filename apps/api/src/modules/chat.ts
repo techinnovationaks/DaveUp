@@ -91,7 +91,7 @@ export async function chatRoutes(app: FastifyInstance) {
     const churchId = ctx.membership.churchId;
     return withTenant(churchId, async (tx) => {
       const other = await tx.selectFrom("membership").select("id").where("person_id", "=", personId).where("status", "=", "approved").executeTakeFirst();
-      if (!other) throw notFound("That person is not a member of your church");
+      if (!other) throw notFound("That person is not a member of your organization");
       const key = [ctx.personId, personId].sort().join(":");
       let conv = await tx.selectFrom("conversation").select("id").where("direct_key", "=", key).executeTakeFirst();
       if (!conv) {
@@ -263,5 +263,5 @@ async function requireOtherStillMember(tx: Parameters<typeof detail>[0], conv: {
     .where("cm.conversation_id", "=", conv.id)
     .where("cm.person_id", "!=", personId)
     .executeTakeFirst();
-  if (!other?.id) throw forbidden("This person is no longer a member of your church");
+  if (!other?.id) throw forbidden("This person is no longer a member of your organization");
 }

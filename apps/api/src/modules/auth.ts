@@ -122,7 +122,7 @@ async function sendCodeEmail(email: string, code: string, minutes: number, purpo
         `It expires in ${minutes} minutes. If you did not ask for it, you can ignore this email.`,
       ],
       code,
-      footer: "Never share this code. DaveUp and your church will never ask you for it.",
+      footer: "Never share this code. DaveUp and your organization will never ask you for it.",
     }),
   });
 }

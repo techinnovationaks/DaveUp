@@ -124,7 +124,7 @@ function RequestPanel({ r, onDone }: { r: RelationshipDto; onDone: () => Promise
       <Card className="mb-4">
         <p className="text-[16px] text-ink">
           {fromChurch
-            ? `You accepted your church's suggestion. Waiting for ${r.other.fullName} to accept too.`
+            ? `You accepted your organization's suggestion. Waiting for ${r.other.fullName} to accept too.`
             : `${iAmDisciple ? `Your request has been sent to ${r.other.fullName}.` : `Your invitation has been sent to ${r.other.fullName}.`} You will be told when they reply.`}
         </p>
         <ErrorText>{error}</ErrorText>
@@ -140,7 +140,7 @@ function RequestPanel({ r, onDone }: { r: RelationshipDto; onDone: () => Promise
       <H1
         sub={
           fromChurch
-            ? `Your church suggested ${r.other.fullName} as your ${iAmDisciple ? "discipler" : "disciple"}. It only goes ahead if you both accept.`
+            ? `Your organization suggested ${r.other.fullName} as your ${iAmDisciple ? "discipler" : "disciple"}. It only goes ahead if you both accept.`
             : iAmDisciple
               ? `${r.other.fullName} has invited you to be their disciple.`
               : `${r.other.fullName} would like you to disciple them.`
@@ -198,7 +198,7 @@ function ClosedPanel({ r }: { r: RelationshipDto }) {
       <p className="text-[17px] font-bold text-ink">{ended ? "This relationship has ended" : "This request was not taken forward"}</p>
       <p className="mb-4 mt-1 text-[15px] text-ink-muted">
         {ended
-          ? "Its history is kept under your church's policy. Your own assessment stays with you."
+          ? "Its history is kept under your organization's policy. Your own assessment stays with you."
           : "Nothing was shared and no place was used."}
         {iAmDisciple ? " You can choose another discipler whenever you are ready." : ""}
       </p>
@@ -326,7 +326,7 @@ function EndPanel({ r, onDone }: { r: RelationshipDto; onDone: () => Promise<voi
     <Card>
       <p className="text-[17px] font-bold text-ink">End this relationship</p>
       <p className="mt-1 text-[14px] text-ink-muted">
-        {r.myRole === "disciple" ? "You can always leave. Your discipler cannot stop this." : "Your disciple will be told the relationship has ended."} History is kept under your church&apos;s policy.
+        {r.myRole === "disciple" ? "You can always leave. Your discipler cannot stop this." : "Your disciple will be told the relationship has ended."} History is kept under your organization&apos;s policy.
       </p>
       <div className="mt-4 space-y-2">
         {END_REASONS.map((k) => (
@@ -341,7 +341,7 @@ function EndPanel({ r, onDone }: { r: RelationshipDto; onDone: () => Promise<voi
           className="mt-3 w-full rounded-2xl border border-surface-line p-3 text-[15px]"
           rows={3}
           maxLength={500}
-          placeholder="Optional: what should your church administrator know?"
+          placeholder="Optional: what should your organization administrator know?"
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />

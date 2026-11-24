@@ -20,12 +20,12 @@ export default function Pending() {
   if (me.membership.churchStatus === "suspended") {
     return (
       <AuthScreen>
-        <H1 sub="DaveUp has paused access for your church. Your data is safe and nothing has been deleted.">Access paused</H1>
+        <H1 sub="DaveUp has paused access for your organization. Your data is safe and nothing has been deleted.">Access paused</H1>
         <Card className="mb-6">
-          <p className="text-[14px] text-ink-muted">Your church</p>
+          <p className="text-[14px] text-ink-muted">Your organization</p>
           <p className="mt-1 text-[20px] font-extrabold text-ink">{me.membership.churchName}</p>
           <p className="text-[15px] text-ink-muted">{me.membership.churchCity}</p>
-          <p className="mt-4 text-[15px] text-ink">Please speak with your church administrator. They have been sent the details by email.</p>
+          <p className="mt-4 text-[15px] text-ink">Please speak with your organization administrator. They have been sent the details by email.</p>
         </Card>
         <Button variant="secondary" disabled={busy} onClick={() => run(reload)}>
           {busy ? "Checking…" : "Check again"}
@@ -36,7 +36,7 @@ export default function Pending() {
 
   return (
     <AuthScreen>
-      <H1 sub="Your church administrator needs to approve you before you can start.">Waiting for approval</H1>
+      <H1 sub="Your organization administrator needs to approve you before you can start.">Waiting for approval</H1>
       <Card className="mb-6">
         <p className="text-[14px] text-ink-muted">Request sent to</p>
         <p className="mt-1 text-[20px] font-extrabold text-ink">{me.membership.churchName}</p>

@@ -25,13 +25,13 @@ export default function StaffOverview() {
   const o = ov.data;
   return (
     <StaffScreen>
-      <H1 sub="Every church on DaveUp. Staff see who belongs where and how much DaveUp is used, never messages, files or assessment answers.">Welcome, {me?.person.fullName?.split(" ")[0]}</H1>
+      <H1 sub="Every organization on DaveUp. Staff see who belongs where and how much DaveUp is used, never messages, files or assessment answers.">Welcome, {me?.person.fullName?.split(" ")[0]}</H1>
       <ErrorText>{ov.error?.message}</ErrorText>
       {!o ? (
         <Loading />
       ) : (
         <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Stat label="Churches" value={o.churches.total} href="/staff/churches" />
+          <Stat label="Organizations" value={o.churches.total} href="/staff/churches" />
           <Stat label="Waiting for verification" value={o.churches.unverified} href="/staff/churches?status=unverified" tone={o.churches.unverified ? "warn" : undefined} />
           <Stat label="Suspended" value={o.churches.suspended} href="/staff/churches?status=suspended" tone={o.churches.suspended ? "danger" : undefined} />
           <Stat label="People signed up" value={o.people} href="/staff/people" />
@@ -49,7 +49,7 @@ export default function StaffOverview() {
         <Loading />
       ) : (waiting.data ?? []).length === 0 ? (
         <Card tone="soft">
-          <p className="text-[15px] text-ink">No churches are waiting. New registrations will appear here.</p>
+          <p className="text-[15px] text-ink">No organizations are waiting. New registrations will appear here.</p>
         </Card>
       ) : (
         <Card className="!p-0">

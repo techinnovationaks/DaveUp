@@ -64,7 +64,7 @@ async function requireProfileName(personId: string): Promise<void> {
 }
 
 async function ensureNoCurrentChurch(personId: string): Promise<void> {
-  if (await currentMembership(personId)) throw conflict("ALREADY_IN_CHURCH", "You already belong to a church. Leave it first to join another.");
+  if (await currentMembership(personId)) throw conflict("ALREADY_IN_CHURCH", "You already belong to an organization. Leave it first to join another.");
 }
 
 export async function churchRoutes(app: FastifyInstance) {
@@ -143,7 +143,7 @@ export async function churchRoutes(app: FastifyInstance) {
           if (!isUniqueViolation(err, "church_join_code_key")) throw err;
         }
       }
-      if (!church) throw new Error("Could not allocate a church code");
+      if (!church) throw new Error("Could not allocate an organization code");
       await tx
         .insertInto("membership")
         .values({
@@ -182,7 +182,7 @@ export async function churchRoutes(app: FastifyInstance) {
       .where("join_code", "=", code)
       .where("status", "!=", "suspended")
       .executeTakeFirst();
-    if (!c) throw notFound("No church found with that code. Check with your church office.");
+    if (!c) throw notFound("No organization found with that code. Check with your organization's office or administrator.");
     return c;
   });
 
@@ -194,7 +194,7 @@ export async function churchRoutes(app: FastifyInstance) {
     await ensureNoCurrentChurch(personId);
 
     const church = await ownerDb.selectFrom("church").select(["id"]).where("join_code", "=", body.code).where("status", "!=", "suspended").executeTakeFirst();
-    if (!church) throw notFound("No church found with that code. Check with your church office.");
+    if (!church) throw notFound("No organization found with that code. Check with your organization's office or administrator.");
 
     const me = await ownerDb.selectFrom("person").select("full_name").where("id", "=", personId).executeTakeFirstOrThrow();
     await withTenant(church.id, async (tx) => {

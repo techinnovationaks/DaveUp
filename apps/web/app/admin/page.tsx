@@ -68,7 +68,7 @@ export default function Overview() {
             </Card>
 
             <Card>
-              <Eyebrow className="mb-1">Church code</Eyebrow>
+              <Eyebrow className="mb-1">Organization code</Eyebrow>
               <p className="font-mono text-[30px] font-extrabold tracking-[0.25em] text-ink">{o.church.joinCode}</p>
               <p className="mt-1 text-[14px] text-ink-muted">Share it in your bulletin or announcements. It lets people ask to join; it never grants a role.</p>
               <div className="mt-4 flex items-center gap-2 border-t border-surface-line pt-4 text-[14px]">

@@ -131,7 +131,7 @@ export interface EmailContent {
 
 export function renderEmail(c: EmailContent): Pick<EmailMessage, "subject" | "html" | "text"> {
   const url = c.cta ? `${config.appUrl}${c.cta.path}` : null;
-  const footer = c.footer ?? "You get this email because you use DaveUp through your church. You can turn email notifications off in Account settings.";
+  const footer = c.footer ?? "You get this email because you use DaveUp through your organization. You can turn email notifications off in Account settings.";
   const html = `<!doctype html><html><body style="margin:0;background:#F7F8FA;font-family:Inter,Segoe UI,Arial,sans-serif;color:#1E293B">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #E5E7EB;border-radius:16px">

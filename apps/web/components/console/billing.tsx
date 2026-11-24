@@ -20,7 +20,7 @@ export function standing(b: BillingDto): { line: string; pill: string; tone: "gr
     case "active":
       return { line: `${price}. Renews on ${fmtDate(b.periodEnd)}${b.card ? ` with ${b.card}` : ""}.`, pill: "Active", tone: "green" };
     case "canceling":
-      return { line: `Paid to ${fmtDate(b.periodEnd)}. It does not renew; your church then moves to Basic.`, pill: "Ending", tone: "amber" };
+      return { line: `Paid to ${fmtDate(b.periodEnd)}. It does not renew; your organization then moves to Basic.`, pill: "Ending", tone: "amber" };
     case "grace":
       return { line: `Payment needed. Everything keeps working until ${fmtDate(b.graceUntil)}.`, pill: "Payment due", tone: "red" };
     case "granted":
@@ -61,7 +61,7 @@ export function BillingNotice() {
   return (
     <Link href={grace ? "/admin/billing/change" : "/admin/billing"} className={`mb-4 block rounded-card border p-4 ${grace ? "border-danger-line bg-danger-soft" : "border-amber-200 bg-amber-50"}`}>
       <p className={`text-[16px] font-bold ${grace ? "text-danger" : "text-ink"}`}>
-        {grace ? `Payment needed by ${fmtDate(b.graceUntil)}` : `Your church is at its ${PLAN_NAME[b.plan]} limit for ${full.join(" and ")}`}
+        {grace ? `Payment needed by ${fmtDate(b.graceUntil)}` : `Your organization is at its ${PLAN_NAME[b.plan]} limit for ${full.join(" and ")}`}
       </p>
       <p className="mt-0.5 text-[14px] text-ink">
         {grace ? "Everything keeps working until then. Pay now to keep your plan." : "No more can be added until you add capacity or change plan. Nobody already in is affected."}

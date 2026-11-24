@@ -20,7 +20,7 @@ export async function disciplerRoutes(app: FastifyInstance) {
       const existing = await tx.selectFrom("discipler_status").select(["id", "status"]).where("person_id", "=", ctx.personId).forUpdate().executeTakeFirst();
       if (existing?.status === "approved") throw conflict("ALREADY_DISCIPLER", "You are already an approved discipler");
       if (existing?.status === "requested") throw conflict("ALREADY_REQUESTED", "Your request is already waiting for approval");
-      if (existing?.status === "suspended") throw conflict("SUSPENDED", "Your discipler status is suspended. Speak with your church administrator.");
+      if (existing?.status === "suspended") throw conflict("SUSPENDED", "Your discipler status is suspended. Speak with your organization administrator.");
       if (existing) {
         await tx
           .updateTable("discipler_status")

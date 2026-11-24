@@ -78,10 +78,10 @@ export async function currentMembership(personId: string): Promise<Membership | 
 export async function requireMember(req: FastifyRequest): Promise<Auth & { membership: Membership }> {
   const auth = requireAuth(req);
   const membership = await currentMembership(auth.personId);
-  if (!membership) throw forbidden("Join your church first");
-  if (membership.status !== "approved") throw forbidden("Your church has not approved your membership yet");
+  if (!membership) throw forbidden("Join your organization first");
+  if (membership.status !== "approved") throw forbidden("Your organization has not approved your membership yet");
   if (membership.churchStatus === "suspended") {
-    throw new AppError(403, "CHURCH_SUSPENDED", "Your church's DaveUp access is paused. Please contact your church administrator.");
+    throw new AppError(403, "CHURCH_SUSPENDED", "Your organization's DaveUp access is paused. Please contact your organization administrator.");
   }
   return { ...auth, membership };
 }
@@ -105,7 +105,7 @@ export async function requireSuperAdmin(req: FastifyRequest): Promise<Auth> {
 
 export async function requireAdmin(req: FastifyRequest): Promise<Auth & { membership: Membership }> {
   const ctx = await requireMember(req);
-  if (!ctx.membership.isAdmin) throw forbidden("Only church administrators can do this");
+  if (!ctx.membership.isAdmin) throw forbidden("Only organization administrators can do this");
   return ctx;
 }
 

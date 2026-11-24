@@ -84,23 +84,23 @@ export function contentFor(kind: string, d: Record<string, any>, recipientName: 
   const rel = (label: string) => ({ label, path: `/relationships/${d.relationshipId}` });
   switch (kind as NotificationKind) {
     case "member.approved":
-      return { subject: `You're in: ${d.churchName}`, title: `Welcome to ${d.churchName}`, lines: [hi, "Your church has approved you on DaveUp. You can now choose a discipler and take the 12-area assessment."], cta: { label: "Open DaveUp", path: "/home" } };
+      return { subject: `You're in: ${d.churchName}`, title: `Welcome to ${d.churchName}`, lines: [hi, "Your organization has approved you on DaveUp. You can now choose a discipler and take the 12-area assessment."], cta: { label: "Open DaveUp", path: "/home" } };
     case "admin.member_waiting":
       return { subject: `${d.name} asked to join`, title: "A new member is waiting", lines: [hi, `${d.name} asked to join your church on DaveUp.`], cta: { label: "Review approvals", path: "/admin/approvals" } };
     case "admin.discipler_request":
       return { subject: `${d.name} asked to become a discipler`, title: "A discipler request is waiting", lines: [hi, `${d.name} asked for discipler status.`], cta: { label: "Review approvals", path: "/admin/approvals" } };
     case "discipler.approved":
-      return { subject: "You are now a discipler", title: "Your discipler status is approved", lines: [hi, "Your church approved you as a discipler. Members can now choose you, and you can invite up to 12 people."], cta: { label: "Open My disciples", path: "/home" } };
+      return { subject: "You are now a discipler", title: "Your discipler status is approved", lines: [hi, "Your organization approved you as a discipler. Members can now choose you, and you can invite up to 12 people."], cta: { label: "Open My disciples", path: "/home" } };
     case "discipler.declined":
-      return { subject: "About your discipler request", title: "Your discipler request was not approved", lines: [hi, "Your church did not approve your discipler request this time. Speak with your church administrator if you have questions."] };
+      return { subject: "About your discipler request", title: "Your discipler request was not approved", lines: [hi, "Your organization did not approve your discipler request this time. Speak with your organization administrator if you have questions."] };
     case "relationship.requested":
       return { subject: `${d.otherName} would like you to disciple them`, title: "A new discipleship request", lines: [hi, `${d.otherName} asked you to be their discipler. Take time to pray about it before you reply.`], cta: rel("Reply to the request") };
     case "relationship.invited":
       return { subject: `${d.otherName} invited you to be discipled`, title: "You have an invitation", lines: [hi, `${d.otherName} invited you to be their disciple. Nothing starts unless you accept.`], cta: rel("See the invitation") };
     case "relationship.suggested":
       return {
-        subject: "Your church suggested a discipleship pairing",
-        title: d.role === "disciple" ? `Your church suggested ${d.otherName} as your discipler` : `Your church suggested you disciple ${d.otherName}`,
+        subject: "Your organization suggested a discipleship pairing",
+        title: d.role === "disciple" ? `Your organization suggested ${d.otherName} as your discipler` : `Your organization suggested you disciple ${d.otherName}`,
         lines: [hi, "It only goes ahead if you both accept."],
         cta: rel("Reply to the suggestion"),
       };
@@ -109,7 +109,7 @@ export function contentFor(kind: string, d: Record<string, any>, recipientName: 
     case "relationship.active":
       return { subject: "Your results are ready", title: "Your results are ready", lines: [hi, `You and ${d.otherName} have both finished the baseline. You can now see where your views differ and agree a growth plan.`], cta: rel("See your results") };
     case "relationship.ended":
-      return { subject: "A discipleship relationship has ended", title: "A relationship has ended", lines: [hi, `Your discipleship relationship with ${d.otherName} has ended. Its history is kept under your church's policy.`], cta: { label: "Open DaveUp", path: "/home" } };
+      return { subject: "A discipleship relationship has ended", title: "A relationship has ended", lines: [hi, `Your discipleship relationship with ${d.otherName} has ended. Its history is kept under your organization's policy.`], cta: { label: "Open DaveUp", path: "/home" } };
     case "plan.to_confirm":
       return { subject: `${d.otherName} proposed a growth plan`, title: "A growth plan is waiting for you", lines: [hi, `${d.otherName} proposed a growth plan. It starts once you confirm it.`], cta: { label: "Review the plan", path: `/relationships/${d.relationshipId}#plan` } };
     case "plan.active":
@@ -138,20 +138,20 @@ export function contentFor(kind: string, d: Record<string, any>, recipientName: 
     case "church.verified":
       return {
         subject: `${d.churchName} is verified on DaveUp`,
-        title: "Your church is verified",
-        lines: [hi, `DaveUp has verified ${d.churchName}. Your church now shows as verified to members who join.`],
-        cta: { label: "Open the Church console", path: "/admin" },
+        title: "Your organization is verified",
+        lines: [hi, `DaveUp has verified ${d.churchName}. Your organization now shows as verified to members who join.`],
+        cta: { label: "Open the Organization console", path: "/admin" },
       };
     case "church.suspended":
       return {
         subject: `${d.churchName}'s DaveUp access is paused`,
-        title: "Your church's access is paused",
+        title: "Your organization's access is paused",
         lines: [hi, `DaveUp has paused access for ${d.churchName}. Members cannot use the app until access is restored. Please reply to this email or contact DaveUp support to resolve it.`],
       };
     case "church.reinstated":
       return {
         subject: `${d.churchName}'s DaveUp access is restored`,
-        title: "Your church's access is restored",
+        title: "Your organization's access is restored",
         lines: [hi, `Access for ${d.churchName} is restored. Members can use DaveUp again.`],
         cta: { label: "Open DaveUp", path: "/admin" },
       };
@@ -181,7 +181,7 @@ export function contentFor(kind: string, d: Record<string, any>, recipientName: 
         lines: [
           hi,
           `${d.churchName}'s ${d.planName} period has ended and has not been paid. Everything keeps working until ${date(d.graceUntil)}.`,
-          "If it is not paid by then, your church returns to Basic. Nothing is deleted and nobody loses access to their own data.",
+          "If it is not paid by then, your organization returns to Basic. Nothing is deleted and nobody loses access to their own data.",
         ],
         cta: { label: "Renew now", path: "/admin/billing/change" },
       };
@@ -192,14 +192,14 @@ export function contentFor(kind: string, d: Record<string, any>, recipientName: 
         lines: [
           hi,
           `We could not charge the saved card for ${d.churchName}'s ${d.planName} plan. We will try again each day. Everything keeps working until ${date(d.graceUntil)}.`,
-          "You can pay now with another card, bank transfer or USSD. If it is not paid by then, your church returns to Basic. Nothing is deleted.",
+          "You can pay now with another card, bank transfer or USSD. If it is not paid by then, your organization returns to Basic. Nothing is deleted.",
         ],
         cta: { label: "Pay now", path: "/admin/billing/change" },
       };
     case "billing.ended":
       return {
         subject: `${d.churchName} is now on DaveUp Basic`,
-        title: "Your church is now on Basic",
+        title: "Your organization is now on Basic",
         lines: [
           hi,
           d.reason === "canceling"
@@ -207,7 +207,7 @@ export function contentFor(kind: string, d: Record<string, any>, recipientName: 
             : d.reason === "granted"
               ? `${d.churchName}'s ${d.planName} arrangement with DaveUp has ended.`
               : `${d.churchName}'s ${d.planName} plan was not renewed within the 14 days of grace.`,
-          "Your church is now on Basic. Nothing is deleted and everyone already in keeps their access. New disciplers, disciples and cells need room within the Basic limits.",
+          "Your organization is now on Basic. Nothing is deleted and everyone already in keeps their access. New disciplers, disciples and cells need room within the Basic limits.",
         ],
         cta: { label: "Choose a plan", path: "/admin/billing/change" },
       };
@@ -220,7 +220,7 @@ export function contentFor(kind: string, d: Record<string, any>, recipientName: 
           `${d.fromName} (${[d.email, d.phone].filter(Boolean).join(", ") || "no contact details"}) wrote about ${d.planName}:`,
           `"${d.message}"`,
           `Current plan: ${d.currentPlan}. In use: ${d.usage}.`,
-          "To give them a plan, open the church in the staff console and set it under Plan.",
+          "To give them a plan, open the organization in the staff console and set it under Plan.",
         ],
         cta: { label: "Open in the staff console", path: `/staff/churches/${d.churchId}` },
       };

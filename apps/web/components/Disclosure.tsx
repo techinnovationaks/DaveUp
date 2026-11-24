@@ -8,7 +8,7 @@ export function Disclosure({ checked, onChange, disciplerName }: { checked: bool
       <ul className="mt-2 list-disc space-y-1 pl-5 text-[14px] text-ink-muted">
         <li>Your area scores from the 12-area assessment, side by side with theirs, once you have both finished.</li>
         <li>Not your individual answers or evidence notes.</li>
-        <li>Not your other relationships in the church.</li>
+        <li>Not your other relationships in the organization.</li>
       </ul>
       <p className="mt-2 text-[14px] text-ink-muted">You can end the relationship or raise a concern at any time.</p>
       <label className="mt-3 flex items-start gap-3 text-[15px] text-ink">

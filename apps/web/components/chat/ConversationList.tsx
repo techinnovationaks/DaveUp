@@ -95,7 +95,7 @@ export function ConversationList({ selectedId }: { selectedId: string | null }) 
         {!list.loading && shown.length === 0 && (
           <div className="px-6 py-12 text-center">
             <p className="text-[16px] font-semibold text-ink">{q ? "Nothing matches that search" : tab === "cell" ? "You are not in a cell yet" : "No conversations yet"}</p>
-            <p className="mt-1 text-[14px] text-ink-muted">{tab === "cell" ? "Your church administrator adds people to cells." : "Start a chat with anyone in your church."}</p>
+            <p className="mt-1 text-[14px] text-ink-muted">{tab === "cell" ? "Your organization administrator adds people to cells." : "Start a chat with anyone in your organization."}</p>
           </div>
         )}
         <ul>
