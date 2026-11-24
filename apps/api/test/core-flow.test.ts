@@ -82,7 +82,7 @@ describe("auth", () => {
   });
 
   it("refuses phone-only sign-in while codes are on", async () => {
-    expect((await call(null, "GET", "/auth/methods")).body).toEqual({ email: true, phone: true, phoneOtp: true });
+    expect((await call(null, "GET", "/auth/methods")).body).toEqual({ email: true, phone: true, phoneOtp: true, google: false });
     const r = await call(null, "POST", "/auth/phone", { phone: "08039999998" });
     expect(r.status).toBe(400);
     expect(r.body.error.code).toBe("OTP_REQUIRED");
@@ -92,7 +92,7 @@ describe("auth", () => {
     const capture = { send: async (phone: string, code: string) => void sentCodes.set(phone, code) };
     setOtpSender(null);
     try {
-      expect((await call(null, "GET", "/auth/methods")).body).toEqual({ email: true, phone: true, phoneOtp: false });
+      expect((await call(null, "GET", "/auth/methods")).body).toEqual({ email: true, phone: true, phoneOtp: false, google: false });
       expect((await call(null, "POST", "/auth/otp/request", { phone: "08039999997" })).body.error.code).toBe("OTP_DISABLED");
 
       const first = await call(null, "POST", "/auth/phone", { phone: "0803 999 9997" });

@@ -24,6 +24,8 @@ export interface AuthMethodsDto {
   phone: boolean;
   /** Phone sign-in needs a code (SMS service configured). */
   phoneOtp: boolean;
+  /** "Continue with Google" is set up. */
+  google: boolean;
 }
 
 export interface MembershipDto {
