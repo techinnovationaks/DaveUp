@@ -45,7 +45,8 @@ export const MarkReadSchema = z.object({ seq: z.coerce.number().int().min(0) });
 export const CreateCellSchema = z.object({
   name: z.string().trim().min(2, "Give the cell a name").max(CELL_NAME_MAX),
   description: z.string().trim().max(CELL_DESCRIPTION_MAX).optional().default(""),
-  leaderIds: z.array(Uuid).min(1, "Choose at least one cell leader").max(10),
+  /** Empty: the organization's owner (who registered it) leads the cell. */
+  leaderIds: z.array(Uuid).max(10).optional().default([]),
   memberIds: z.array(Uuid).max(500).optional().default([]),
 });
 

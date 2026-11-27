@@ -1,13 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CellAdminDto, ConversationDetailDto, DirectoryPersonDto } from "@daveup/shared";
 import { ConsoleScreen } from "@/components/ConsoleShell";
 import { CellGlyph, PeoplePicker, shortWhen } from "@/components/chat/kit";
 import { Button, Card, ErrorText, Field, H1, Loading, Pill, inputClass } from "@/components/ui";
 import { api, useAction, useApi } from "@/lib/api";
-import { useGuard } from "@/lib/session";
+import { useGuard, useSession } from "@/lib/session";
 
 /** Church console: every cell in the church, and creating new ones. */
 export default function AdminCells() {
@@ -79,13 +79,21 @@ export default function AdminCells() {
 function CreateCell({ onCancel, onCreated }: { onCancel: () => void; onCreated: (c: ConversationDetailDto) => void }) {
   const router = useRouter();
   const directory = useApi<DirectoryPersonDto[]>("/people/directory");
+  const org = useApi<{ owner: { personId: string; fullName: string } | null }>("/church");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [leaders, setLeaders] = useState<string[]>([]);
   const [members, setMembers] = useState<string[]>([]);
   const [picking, setPicking] = useState<"leaders" | "members" | null>(null);
   const { busy, error, run } = useAction();
-  const nameOf = (id: string) => directory.data?.find((p) => p.personId === id)?.fullName ?? "You";
+  const { me } = useSession();
+  const owner = org.data?.owner ?? null;
+  // The organization's owner leads new cells unless the admin chooses otherwise.
+  const [leadersTouched, setLeadersTouched] = useState(false);
+  useEffect(() => {
+    if (owner && !leadersTouched) setLeaders([owner.personId]);
+  }, [owner, leadersTouched]);
+  const nameOf = (id: string) => (id === me?.person.id ? "You" : (directory.data?.find((p) => p.personId === id)?.fullName ?? (id === owner?.personId ? owner.fullName : "Member")));
 
   const create = () =>
     run(async () => {
@@ -119,10 +127,11 @@ function CreateCell({ onCancel, onCreated }: { onCancel: () => void; onCreated: 
       </Field>
       <div className="mb-4">
         <p className="mb-1.5 text-[14px] font-semibold text-ink">Leaders</p>
-        {chips(leaders, (id) => setLeaders((l) => l.filter((x) => x !== id)))}
+        {chips(leaders, (id) => (setLeadersTouched(true), setLeaders((l) => l.filter((x) => x !== id))))}
         <button onClick={() => setPicking("leaders")} className="mt-2 text-[14px] font-bold text-brand">
           + Choose leaders
         </button>
+        {owner && <p className="mt-1 text-[13px] text-ink-muted">{owner.personId === me?.person.id ? "You lead" : `${owner.fullName} leads`} new cells unless you choose someone else.</p>}
       </div>
       <div className="mb-6">
         <p className="mb-1.5 text-[14px] font-semibold text-ink">Members (optional)</p>
@@ -147,7 +156,7 @@ function CreateCell({ onCancel, onCreated }: { onCancel: () => void; onCreated: 
           confirmLabel={picking === "leaders" ? "Choose" : "Add"}
           exclude={[...leaders, ...members]}
           onPick={(ids) => {
-            if (picking === "leaders") setLeaders((l) => [...l, ...ids]);
+            if (picking === "leaders") (setLeadersTouched(true), setLeaders((l) => [...l, ...ids]));
             else setMembers((m) => [...m, ...ids]);
             setPicking(null);
           }}
