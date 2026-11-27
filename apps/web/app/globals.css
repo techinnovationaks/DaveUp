@@ -95,3 +95,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   [class*="animate-[quote-in"] { animation: none !important; }
 }
+
+/* Home: the outer ring around "your line" turns slowly. */
+@keyframes daveup-orbit {
+  to { transform: rotate(360deg); }
+}

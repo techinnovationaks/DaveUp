@@ -29,12 +29,12 @@ export function faithImpact(p: ProgressPointDto | undefined): { faith: number | 
   };
 }
 
-function signed(d: number | null): string | null {
+export function signed(d: number | null): string | null {
   if (d === null) return null;
   return d > 0 ? `+${d}` : d < 0 ? `${d}` : "±0";
 }
 
-function deltas(points: ProgressPointDto[]) {
+export function deltas(points: ProgressPointDto[]) {
   const now = faithImpact(points.at(-1));
   const prev = points.length > 1 ? faithImpact(points.at(-2)) : null;
   const diff = (a: number | null, b: number | null | undefined) => (a !== null && b != null ? a - b : null);
