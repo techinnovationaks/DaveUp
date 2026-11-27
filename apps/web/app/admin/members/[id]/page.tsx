@@ -119,7 +119,7 @@ export default function MemberDetail({ params }: { params: Promise<{ id: string 
             <div className="mb-4 border-b border-surface-line pb-4">
               <p className="text-[16px] font-semibold text-ink">Administrator</p>
               <p className="mb-3 text-[14px] text-ink-muted">
-                {m.isAdmin ? "Can use the Church console: approvals, members and settings." : "Not an administrator."}
+                {m.isAdmin ? "Can use the Organization console: approvals, members and settings." : "Not an administrator."}
                 {x.lastAdmin ? " They are the only administrator, so the role cannot be removed." : ""}
               </p>
               <Button
@@ -249,9 +249,9 @@ export default function MemberDetail({ params }: { params: Promise<{ id: string 
 
           {!isMe && (
             <Card tone="soft">
-              <Eyebrow className="mb-1">Remove from the church</Eyebrow>
+              <Eyebrow className="mb-1">Remove from the organization</Eyebrow>
               <p className="mb-3 text-[14px] text-ink">
-                Ends their access to {me!.membership!.churchName}. Open discipleship relationships end and discipler status is revoked. Their account stays, and they can join a church again.
+                Ends their access to {me!.membership!.churchName}. Open discipleship relationships end and discipler status is revoked. Their account stays, and they can join an organization again.
               </p>
               {confirmRemove ? (
                 <div className="flex flex-col gap-2 md:flex-row md:gap-3">
@@ -268,7 +268,7 @@ export default function MemberDetail({ params }: { params: Promise<{ id: string 
                 </div>
               ) : (
                 <Button variant="secondary" onClick={() => setConfirmRemove(true)}>
-                  Remove from the church
+                  Remove from the organization
                 </Button>
               )}
             </Card>
@@ -298,7 +298,7 @@ function RelRow({ r, onWithdraw, busy }: { r: MemberDetailDto["relationships"][n
       <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-semibold text-ink">{r.other.fullName}</p>
         <p className="text-[13px] text-ink-muted">
-          {suggestion ? "Suggested by the church, waiting for both to accept" : statusLabel[r.status]} · since {fmtDay(r.since)}
+          {suggestion ? "Suggested by the organization, waiting for both to accept" : statusLabel[r.status]} · since {fmtDay(r.since)}
         </p>
       </div>
       {suggestion && (

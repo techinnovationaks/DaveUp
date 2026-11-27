@@ -151,8 +151,8 @@ export default function ChangePlan() {
             <span className="text-[20px] font-extrabold text-ink">Network</span>
             <span className="text-[18px] font-extrabold text-brand">Custom</span>
           </div>
-          <p className="mt-1 text-[14px] font-semibold text-ok">Many churches, one agreement</p>
-          <p className="mt-2 text-[15px] text-ink-muted">Network view that respects each church&apos;s privacy, shared content and dedicated onboarding. At least 10 churches.</p>
+          <p className="mt-1 text-[14px] font-semibold text-ok">Many organizations, one agreement</p>
+          <p className="mt-2 text-[15px] text-ink-muted">Network view that respects each organization&apos;s privacy, shared content and dedicated onboarding. At least 10 organizations.</p>
         </a>
       </div>
 

@@ -7,3 +7,5 @@ export * from "./domain";
 export * from "./api-types";
 export * from "./chat";
 export * from "./billing";
+export * from "./journal";
+export * from "./learning";

@@ -20,6 +20,8 @@ export interface Membership {
 export interface Auth {
   personId: string;
   sessionId: string;
+  /** The organization this session is looking at, when the person belongs to several. */
+  activeChurchId: string | null;
 }
 
 declare module "fastify" {
@@ -41,12 +43,12 @@ export async function resolveAuth(req: FastifyRequest): Promise<void> {
   if (!token) return;
   const s = await ownerDb
     .selectFrom("session")
-    .select(["id", "person_id"])
+    .select(["id", "person_id", "active_church_id"])
     .where("token_hash", "=", hmac(token))
     .where("revoked_at", "is", null)
     .where("expires_at", ">", new Date())
     .executeTakeFirst();
-  if (s) req.auth = { personId: s.person_id, sessionId: s.id };
+  if (s) req.auth = { personId: s.person_id, sessionId: s.id, activeChurchId: s.active_church_id };
 }
 
 export function requireAuth(req: FastifyRequest): Auth {
@@ -54,16 +56,28 @@ export function requireAuth(req: FastifyRequest): Auth {
   return req.auth;
 }
 
-export async function currentMembership(personId: string): Promise<Membership | null> {
-  const m = await ownerDb
+/** Every organization the person belongs to or has asked to join. */
+export async function memberships(personId: string): Promise<(Membership & { churchName: string; churchCity: string })[]> {
+  const rows = await ownerDb
     .selectFrom("membership")
     .innerJoin("church", "church.id", "membership.church_id")
-    .select(["membership.id", "membership.church_id", "membership.status", "membership.is_admin", "membership.participation", "membership.department", "church.status as church_status"])
+    .select([
+      "membership.id",
+      "membership.church_id",
+      "membership.status",
+      "membership.is_admin",
+      "membership.participation",
+      "membership.department",
+      "membership.created_at",
+      "church.status as church_status",
+      "church.name as church_name",
+      "church.city as church_city",
+    ])
     .where("membership.person_id", "=", personId)
     .where("membership.status", "in", ["pending", "approved"])
-    .executeTakeFirst();
-  if (!m) return null;
-  return {
+    .orderBy("membership.created_at")
+    .execute();
+  return rows.map((m) => ({
     id: m.id,
     churchId: m.church_id,
     status: m.status as "pending" | "approved",
@@ -71,17 +85,36 @@ export async function currentMembership(personId: string): Promise<Membership | 
     participation: m.participation,
     department: m.department,
     churchStatus: m.church_status,
-  };
+    churchName: m.church_name,
+    churchCity: m.church_city,
+  }));
+}
+
+/**
+ * The membership a request acts in: the session's chosen organization when the
+ * person still belongs to it, otherwise their first approved one (or a pending
+ * request if that is all they have).
+ */
+export async function currentMembership(personId: string, preferChurchId?: string | null): Promise<Membership | null> {
+  const all = await memberships(personId);
+  const pick =
+    (preferChurchId ? all.find((m) => m.churchId === preferChurchId) : undefined) ??
+    all.find((m) => m.status === "approved" && m.churchStatus !== "suspended") ??
+    all.find((m) => m.status === "approved") ??
+    all[0];
+  if (!pick) return null;
+  const { churchName: _n, churchCity: _c, ...m } = pick;
+  return m;
 }
 
 /** Signed in AND an approved member of a church. */
 export async function requireMember(req: FastifyRequest): Promise<Auth & { membership: Membership }> {
   const auth = requireAuth(req);
-  const membership = await currentMembership(auth.personId);
-  if (!membership) throw forbidden("Join your church first");
-  if (membership.status !== "approved") throw forbidden("Your church has not approved your membership yet");
+  const membership = await currentMembership(auth.personId, auth.activeChurchId);
+  if (!membership) throw forbidden("Join your organization first");
+  if (membership.status !== "approved") throw forbidden("Your organization has not approved your membership yet");
   if (membership.churchStatus === "suspended") {
-    throw new AppError(403, "CHURCH_SUSPENDED", "Your church's DaveUp access is paused. Please contact your church administrator.");
+    throw new AppError(403, "CHURCH_SUSPENDED", "Your organization's DaveUp access is paused. Please contact your organization administrator.");
   }
   return { ...auth, membership };
 }
@@ -105,7 +138,7 @@ export async function requireSuperAdmin(req: FastifyRequest): Promise<Auth> {
 
 export async function requireAdmin(req: FastifyRequest): Promise<Auth & { membership: Membership }> {
   const ctx = await requireMember(req);
-  if (!ctx.membership.isAdmin) throw forbidden("Only church administrators can do this");
+  if (!ctx.membership.isAdmin) throw forbidden("Only organization administrators can do this");
   return ctx;
 }
 

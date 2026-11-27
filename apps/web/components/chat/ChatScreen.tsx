@@ -23,7 +23,7 @@ export function ChatScreen({ selectedId }: { selectedId: string | null }) {
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-2 bg-surface p-8 text-center">
               <p className="text-[18px] font-bold text-ink">Choose a conversation</p>
-              <p className="max-w-sm text-[15px] text-ink-muted">Chat one to one with anyone in your church, or with your cell. Share files and start voice or video calls from any conversation.</p>
+              <p className="max-w-sm text-[15px] text-ink-muted">Chat one to one with anyone in your organization, or with your cell. Share files and start voice or video calls from any conversation.</p>
             </div>
           )}
         </div>

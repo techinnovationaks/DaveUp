@@ -2,7 +2,7 @@
 import type { Participation } from "@daveup/shared";
 
 const OPTIONS: { value: Participation; title: string; sub: string }[] = [
-  { value: "grow", title: "I want to grow", sub: "Be discipled by someone in your church." },
+  { value: "grow", title: "I want to grow", sub: "Be discipled by someone in your organization." },
   { value: "disciple", title: "I disciple others", sub: "Walk with people and help them grow." },
   { value: "both", title: "Both", sub: "Grow with a discipler and disciple others." },
 ];

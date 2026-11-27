@@ -125,7 +125,7 @@ export async function staffRoutes(app: FastifyInstance) {
     await requireSuperAdmin(req);
     const { id } = parse(IdParam, req.params);
     const [base] = await churchRows({ id });
-    if (!base) throw notFound("Church not found");
+    if (!base) throw notFound("Organization not found");
     const extra = await sql<Record<string, string>>`
       select
         (select join_code from church where id = ${id}) as join_code,
@@ -157,11 +157,11 @@ export async function staffRoutes(app: FastifyInstance) {
     const auth = await requireSuperAdmin(req);
     const { id } = parse(IdParam, req.params);
     const { status, reason } = parse(ChurchStatusSchema, req.body);
-    if (status === "suspended" && !reason) throw badRequest("REASON_REQUIRED", "Give a reason for suspending this church");
+    if (status === "suspended" && !reason) throw badRequest("REASON_REQUIRED", "Give a reason for suspending this organization");
     await ownerDb.transaction().execute(async (tx) => {
       const c = await tx.selectFrom("church").select(["status", "name"]).where("id", "=", id).forUpdate().executeTakeFirst();
-      if (!c) throw notFound("Church not found");
-      if (c.status === status) throw conflict("NO_CHANGE", `This church is already ${status}`);
+      if (!c) throw notFound("Organization not found");
+      if (c.status === status) throw conflict("NO_CHANGE", `This organization is already ${status}`);
       await tx
         .updateTable("church")
         .set({ status, ...(status === "verified" ? { verified_at: new Date() } : status === "unverified" ? { verified_at: null } : {}) })
@@ -195,7 +195,9 @@ export async function staffRoutes(app: FastifyInstance) {
     } else {
       query = query.orderBy("p.created_at", "desc");
     }
-    const rows = await query.execute();
+    // Someone in several organizations is listed once, with the first of them.
+    const seen = new Set<string>();
+    const rows = (await query.execute()).filter((r) => !seen.has(r.id) && !!seen.add(r.id));
     return rows.map((r) => {
       const fromConfig = isConfigSuperAdmin(r.email, r.email_verified_at);
       return {

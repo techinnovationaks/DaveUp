@@ -43,8 +43,37 @@ export interface MembershipDto {
 
 export interface MeDto {
   person: PersonDto;
+  /** The organization this session is looking at. */
   membership: MembershipDto | null;
   disciplerStatus: DisciplerStatus | null;
+  /** Every organization the person belongs to or has asked to join, for the switcher. */
+  memberships: OrganizationChoiceDto[];
+}
+
+export interface OrganizationChoiceDto {
+  churchId: string;
+  churchName: string;
+  churchCity: string;
+  status: MembershipStatus;
+  isAdmin: boolean;
+  suspended: boolean;
+}
+
+/** An organization in the public search. */
+export interface OrganizationSearchDto {
+  id: string;
+  name: string;
+  city: string;
+  verified: boolean;
+  members: number;
+  /** The searcher already belongs, or has asked to join. */
+  mine: boolean;
+}
+
+export interface BlockedPersonDto {
+  personId: string;
+  fullName: string;
+  blockedAt: string;
 }
 
 export interface ChurchLookupDto {

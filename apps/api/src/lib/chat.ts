@@ -2,7 +2,7 @@
 // shapes, posting a message, and conversation summaries.
 import { sql } from "kysely";
 import type { ActiveCallDto, ConversationDetailDto, ConversationSummaryDto, FileDto, MessageDto } from "@daveup/shared";
-import type { Tx } from "../db/pool";
+import { ownerDb, type Tx } from "../db/pool";
 import { forbidden, notFound } from "./errors";
 import { publish } from "./realtime";
 
@@ -55,6 +55,54 @@ export function requireWritable(conv: ConversationRow) {
 /** Cell leaders and church admins manage a cell. */
 export function canManageCell(member: MemberRow | null, isAdmin: boolean): boolean {
   return isAdmin || member?.role === "leader";
+}
+
+/**
+ * Leads calls here: anyone in a direct chat; in a cell, its leaders, the
+ * organization's administrators, and approved disciplers who are in the cell.
+ */
+export async function isCallLeader(tx: Tx, conv: ConversationRow, member: MemberRow | null, personId: string, isAdmin: boolean): Promise<boolean> {
+  if (conv.kind === "direct") return true;
+  if (canManageCell(member, isAdmin)) return true;
+  if (!member) return false;
+  const d = await tx.selectFrom("discipler_status").select("id").where("person_id", "=", personId).where("church_id", "=", conv.church_id).where("status", "=", "approved").executeTakeFirst();
+  return !!d;
+}
+
+/** Who has blocked whom between two people (either direction counts for messaging). */
+export async function blockState(me: string, other: string): Promise<{ byMe: boolean; byThem: boolean }> {
+  const rows = await ownerDb
+    .selectFrom("person_block")
+    .select(["blocker_id"])
+    .where((e) => e.or([e.and([e("blocker_id", "=", me), e("blocked_id", "=", other)]), e.and([e("blocker_id", "=", other), e("blocked_id", "=", me)])]))
+    .execute();
+  return { byMe: rows.some((r) => r.blocker_id === me), byThem: rows.some((r) => r.blocker_id === other) };
+}
+
+/** Everyone the person blocked or was blocked by. */
+export async function blockedEitherWay(personId: string): Promise<Set<string>> {
+  const rows = await ownerDb
+    .selectFrom("person_block")
+    .select(["blocker_id", "blocked_id"])
+    .where((e) => e.or([e("blocker_id", "=", personId), e("blocked_id", "=", personId)]))
+    .execute();
+  return new Set(rows.map((r) => (r.blocker_id === personId ? r.blocked_id : r.blocker_id)));
+}
+
+/** The other person in a direct chat. */
+async function directOther(tx: Tx, conversationId: string, personId: string): Promise<string | null> {
+  const o = await tx.selectFrom("conversation_member").select("person_id").where("conversation_id", "=", conversationId).where("person_id", "!=", personId).executeTakeFirst();
+  return o?.person_id ?? null;
+}
+
+/** Direct chats only: refuse when either person has blocked the other. */
+export async function requireNotBlocked(tx: Tx, conv: { id: string; kind: string }, personId: string): Promise<void> {
+  if (conv.kind !== "direct") return;
+  const other = await directOther(tx, conv.id, personId);
+  if (!other) return;
+  const b = await blockState(personId, other);
+  if (b.byMe) throw forbidden("You blocked this person. Unblock them to send messages or call.");
+  if (b.byThem) throw forbidden("You cannot message or call this person.");
 }
 
 export function fileUrl(fileId: string): string {
@@ -354,11 +402,15 @@ export async function detail(tx: Tx, conv: ConversationRow, member: MemberRow | 
     };
   }
   const other = conv.kind === "direct" ? people.find((p) => p.person_id !== personId) : undefined;
+  const blocks = other ? await blockState(personId, other.person_id) : { byMe: false, byThem: false };
   return {
     ...base,
     members: people.map((p) => ({ personId: p.person_id, fullName: p.full_name ?? "Member", role: p.role, department: p.department ?? null })),
     canManage: conv.kind === "cell" && canManageCell(member, isAdmin),
-    readOnly: conv.kind === "direct" ? !other?.membership_id : !!conv.archived_at,
+    canStartCall: !!member && !blocks.byMe && !blocks.byThem && (await isCallLeader(tx, conv, member, personId, isAdmin)),
+    readOnly: conv.kind === "direct" ? !other?.membership_id || blocks.byMe || blocks.byThem : !!conv.archived_at,
+    blockedByMe: blocks.byMe,
+    blocked: blocks.byMe || blocks.byThem,
   };
 }
 

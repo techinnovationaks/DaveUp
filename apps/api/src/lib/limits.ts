@@ -35,7 +35,7 @@ export async function assertRoom(tx: Kysely<DB>, churchId: string, kind: Kind, a
   if (used + adding > limit) {
     throw conflict(
       "PLAN_LIMIT",
-      `Your church's ${PLAN_NAME[c.plan]} plan allows ${limit} ${NOUN[kind]}, and all of them are in use. A church administrator can add capacity under Plan and billing.`,
+      `Your organization's ${PLAN_NAME[c.plan]} plan allows ${limit} ${NOUN[kind]}, and all of them are in use. An organization administrator can add capacity under Plan and billing.`,
     );
   }
 }

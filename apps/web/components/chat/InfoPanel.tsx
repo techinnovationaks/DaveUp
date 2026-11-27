@@ -167,6 +167,32 @@ function CellSettings({ conv, onChanged }: { conv: ConversationDetailDto; onChan
   );
 }
 
+/** Direct chats: block or unblock the other person. */
+function BlockControl({ conv, personId, name, onChanged }: { conv: ConversationDetailDto; personId: string; name: string; onChanged: (c: ConversationDetailDto) => void }) {
+  const { busy, error, run } = useAction();
+  const first = name.split(/\s+/)[0] ?? name;
+  const toggle = () =>
+    run(async () => {
+      if (conv.blockedByMe) await api(`/blocks/${personId}`, { method: "DELETE" });
+      else {
+        if (!confirm(`Block ${name}? Neither of you will be able to message or call the other, in any organization. You can unblock them later.`)) return;
+        await api("/blocks", { method: "POST", body: { personId } });
+      }
+      onChanged(await api<ConversationDetailDto>(`/conversations/${conv.id}`));
+    });
+  return (
+    <div className="mb-4 rounded-2xl border border-surface-line p-3">
+      <Button variant={conv.blockedByMe ? "secondary" : "danger"} className="w-full !min-h-[44px] text-[15px]" disabled={busy} onClick={() => void toggle()}>
+        {conv.blockedByMe ? `Unblock ${first}` : `Block ${first}`}
+      </Button>
+      <p className="mt-2 text-center text-[13px] text-ink-muted">
+        {conv.blockedByMe ? "They cannot message or call you while blocked." : "Stops messages and calls both ways. They are not told."}
+      </p>
+      <ErrorText>{error}</ErrorText>
+    </div>
+  );
+}
+
 /** Right-hand panel (overlay on small screens): who is here, shared files, cell settings. */
 export function InfoPanel({ conv, onClose, onChanged, onLeft }: { conv: ConversationDetailDto; onClose: () => void; onChanged: (c: ConversationDetailDto) => void; onLeft: () => void }) {
   const { me } = useSession();
@@ -205,6 +231,7 @@ export function InfoPanel({ conv, onClose, onChanged, onLeft }: { conv: Conversa
             ))}
           </div>
         )}
+        {other && <BlockControl conv={conv} personId={other.personId} name={other.fullName} onChanged={onChanged} />}
         {tab === "members" && conv.kind === "cell" && <CellMembers conv={conv} onChanged={onChanged} onLeft={onLeft} />}
         {tab === "files" && isMember && <FilesList conversationId={conv.id} />}
         {tab === "settings" && <CellSettings conv={conv} onChanged={onChanged} />}

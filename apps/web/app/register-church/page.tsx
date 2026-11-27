@@ -36,28 +36,28 @@ export default function RegisterChurch() {
   if (done) {
     return (
       <AuthScreen>
-        <H1 sub="You are the administrator. Share this code so members can join.">Your church is set up</H1>
+        <H1 sub="You are the administrator. Share this code so members can join.">Your organization is set up</H1>
         <Card className="mb-4 text-center">
           <p className="text-[14px] text-ink-muted">{done.church.name}</p>
           <p className="mt-2 font-mono text-[34px] font-extrabold tracking-[0.25em] text-ink">{done.church.joinCode}</p>
-          <p className="mt-2 text-[13px] text-ink-muted">Church code. You can find it later under Church.</p>
+          <p className="mt-2 text-[13px] text-ink-muted">Organization code. You can find it later under Organization.</p>
         </Card>
         <Card tone="soft" className="mb-6">
           <p className="text-[15px] text-ink">
-            DaveUp will verify your church before it appears in the church directory. Members with your code can join in the meantime.
+            DaveUp will verify your organization before it appears in the organization directory. Members with your code can join in the meantime.
           </p>
         </Card>
-        <Button onClick={() => router.replace("/admin")}>Open the church console</Button>
+        <Button onClick={() => router.replace("/admin")}>Open the organization console</Button>
       </AuthScreen>
     );
   }
 
   return (
     <AuthScreen>
-      <TopBar back="/start" title="Register your church" />
+      <TopBar back="/start" title="Register your organization" />
       <form onSubmit={(e) => (e.preventDefault(), void submit())}>
-        <H1 sub="Start on the free Basic plan. Paid plans can be added later.">About your church</H1>
-        <Field label="Church name">
+        <H1 sub="Start on the free Basic plan. Paid plans can be added later.">About your organization</H1>
+        <Field label="Organization name">
           <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} autoFocus />
         </Field>
         <Field label="City">
@@ -66,7 +66,7 @@ export default function RegisterChurch() {
         <ParticipationPicker value={participation} onChange={setParticipation} />
         <ErrorText>{error}</ErrorText>
         <Button type="submit" disabled={busy || name.trim().length < 3 || city.trim().length < 2 || !participation}>
-          {busy ? "Registering…" : "Register church"}
+          {busy ? "Registering…" : "Register organization"}
         </Button>
       </form>
     </AuthScreen>

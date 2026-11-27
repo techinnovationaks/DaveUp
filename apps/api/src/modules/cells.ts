@@ -28,7 +28,7 @@ async function approvedMembers(tx: Tx, ids: string[]): Promise<Map<string, strin
     .where("ms.status", "=", "approved")
     .where("p.id", "in", unique)
     .execute();
-  if (rows.length !== unique.length) throw badRequest("NOT_MEMBERS", "Everyone in a cell must be an approved member of your church");
+  if (rows.length !== unique.length) throw badRequest("NOT_MEMBERS", "Everyone in a cell must be an approved member of your organization");
   return new Map(rows.map((r) => [r.id, r.full_name ?? "Member"]));
 }
 
@@ -40,7 +40,7 @@ async function loadCell(tx: Tx, id: string, personId: string, isAdmin: boolean, 
 
 async function requireManager(tx: Tx, id: string, personId: string, isAdmin: boolean) {
   const r = await loadCell(tx, id, personId, isAdmin, true);
-  if (!canManageCell(r.member, isAdmin)) throw forbidden("Only the cell's leaders and church administrators can do this");
+  if (!canManageCell(r.member, isAdmin)) throw forbidden("Only the cell's leaders and organization administrators can do this");
   return r;
 }
 
@@ -219,7 +219,7 @@ export async function cellRoutes(app: FastifyInstance) {
     const self = personId === ctx.personId;
     await withTenant(churchId, async (tx) => {
       const { member } = await loadCell(tx, id, ctx.personId, ctx.membership.isAdmin, true);
-      if (!self && !canManageCell(member, ctx.membership.isAdmin)) throw forbidden("Only the cell's leaders and church administrators can remove people");
+      if (!self && !canManageCell(member, ctx.membership.isAdmin)) throw forbidden("Only the cell's leaders and organization administrators can remove people");
       const target = await tx.selectFrom("conversation_member").select("role").where("conversation_id", "=", id).where("person_id", "=", personId).executeTakeFirst();
       if (!target) throw notFound("That person is not in this cell");
       if (target.role === "leader" && (await leaderCount(tx, id)) <= 1) {

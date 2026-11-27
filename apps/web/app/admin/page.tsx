@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MAX_ACTIVE_DISCIPLES, type AdminOverviewDto } from "@daveup/shared";
 import { ConsoleScreen } from "@/components/ConsoleShell";
 import { BillingNotice } from "@/components/console/billing";
+import { InviteCard } from "@/components/console/InviteCard";
 import { Card, ErrorText, Eyebrow, H1, Loading } from "@/components/ui";
 import { useApi } from "@/lib/api";
 import { useGuard } from "@/lib/session";
@@ -67,11 +68,9 @@ export default function Overview() {
               )}
             </Card>
 
+            <InviteCard code={o.church.joinCode} name={o.church.name} />
             <Card>
-              <Eyebrow className="mb-1">Church code</Eyebrow>
-              <p className="font-mono text-[30px] font-extrabold tracking-[0.25em] text-ink">{o.church.joinCode}</p>
-              <p className="mt-1 text-[14px] text-ink-muted">Share it in your bulletin or announcements. It lets people ask to join; it never grants a role.</p>
-              <div className="mt-4 flex items-center gap-2 border-t border-surface-line pt-4 text-[14px]">
+              <div className="flex items-center gap-2 text-[14px]">
                 <span className={`h-2 w-2 rounded-full ${o.church.status === "verified" ? "bg-ok" : "bg-warn"}`} />
                 <span className="text-ink">{o.church.status === "verified" ? "Verified by DaveUp" : "Waiting for DaveUp verification"}</span>
                 <span className="ml-auto capitalize text-ink-muted">{o.church.plan} plan</span>

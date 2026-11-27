@@ -46,16 +46,18 @@ export default function Home() {
     <Screen nav aside={showLead ? undefined : <UpNext rels={all.filter((r) => OPEN_STATUSES.includes(r.status))} hub={hub.data} />}>
       <div className="mb-5 flex items-start justify-between">
         <div>
-          <p className="flex flex-wrap items-center gap-2 text-[15px] text-ink-muted md:hidden">
-            {me.membership!.churchName}, {me.membership!.churchCity}
-          </p>
           <h1 className="text-[28px] font-extrabold leading-tight text-ink md:text-[34px]">
             {greeting()}, {firstName(me.person.fullName)}
           </h1>
           <p className="mt-1 hidden text-[16px] text-ink-muted md:block">{today}. Your discipleship this week.</p>
         </div>
-        <Link href="/account" aria-label="Account" className="md:hidden">
-          <Initials name={me.person.fullName ?? ""} size={52} />
+      </div>
+      <div className="-mt-2 mb-5 flex flex-wrap gap-2">
+        <Link href="/assessments" className="rounded-full border border-surface-line bg-white px-4 py-2 text-[14px] font-semibold text-ink hover:border-brand-line hover:text-brand">
+          Assessments
+        </Link>
+        <Link href="/journal" className="rounded-full border border-surface-line bg-white px-4 py-2 text-[14px] font-semibold text-ink hover:border-brand-line hover:text-brand">
+          Write in my journal
         </Link>
       </div>
 
@@ -94,7 +96,7 @@ function UpNext({ rels, hub }: { rels: RelationshipDto[]; hub: AssessmentHubDto 
         key: `reply-${r.id}`,
         href: `/relationships/${r.id}`,
         title: `Reply to ${r.other.fullName}`,
-        sub: r.initiatedBy === "church" ? "Suggested by your church" : r.myRole === "disciple" ? "Invited you to be their disciple" : "Wants you as their discipler",
+        sub: r.initiatedBy === "church" ? "Suggested by your organization" : r.myRole === "disciple" ? "Invited you to be their disciple" : "Wants you as their discipler",
         name: r.other.fullName,
       });
   }
@@ -151,7 +153,7 @@ function MeView({ me, rels, hub }: { me: MeDto; rels: RelationshipDto[]; hub: As
         {!current && (
           <>
             <p className="text-[16px] text-ink">You are not connected to a discipler yet.</p>
-            <p className="mb-4 mt-1 text-[14px] text-ink-muted">Choose an approved discipler in your church, or accept an invitation when one arrives.</p>
+            <p className="mb-4 mt-1 text-[14px] text-ink-muted">Choose an approved discipler in your organization, or accept an invitation when one arrives.</p>
             <LinkButton href="/disciplers">Choose a discipler</LinkButton>
           </>
         )}
@@ -162,7 +164,7 @@ function MeView({ me, rels, hub }: { me: MeDto; rels: RelationshipDto[]; hub: As
               <p className="truncate text-[18px] font-bold text-ink">{current.other.fullName}</p>
               <p className="text-[14px] text-ink-muted">
                 {current.status === "requested" && current.initiatedBy === "church" && current.awaiting !== "them"
-                  ? "Suggested by your church"
+                  ? "Suggested by your organization"
                   : current.status === "requested" && current.awaiting === "me"
                     ? "Invited you to be their disciple"
                     : statusLabel[current.status]}
@@ -230,12 +232,12 @@ function MeView({ me, rels, hub }: { me: MeDto; rels: RelationshipDto[]; hub: As
         <Card tone="dashed" className="lg:col-span-2">
           <p className="text-[17px] font-bold text-ink">Disciple others</p>
           {me.disciplerStatus === "requested" ? (
-            <p className="mt-1 text-[15px] text-ink-muted">Your request for discipler status is with your church administrator.</p>
+            <p className="mt-1 text-[15px] text-ink-muted">Your request for discipler status is with your organization administrator.</p>
           ) : me.disciplerStatus === "suspended" || me.disciplerStatus === "revoked" ? (
-            <p className="mt-1 text-[15px] text-ink-muted">Your discipler status is not active. Speak with your church administrator.</p>
+            <p className="mt-1 text-[15px] text-ink-muted">Your discipler status is not active. Speak with your organization administrator.</p>
           ) : (
             <>
-              <p className="mb-4 mt-1 text-[15px] text-ink-muted">Your church approves disciplers. Once approved you can walk with up to {MAX_ACTIVE_DISCIPLES} people.</p>
+              <p className="mb-4 mt-1 text-[15px] text-ink-muted">Your organization approves disciplers. Once approved you can walk with up to {MAX_ACTIVE_DISCIPLES} people.</p>
               <LinkButton href="/discipler-request" variant="secondary">
                 Ask for discipler status
               </LinkButton>
@@ -313,8 +315,8 @@ function LeadView({ rels, hub }: { rels: RelationshipDto[]; hub: AssessmentHubDt
                   r.status === "requested"
                     ? r.initiatedBy === "church"
                       ? r.awaiting === "them"
-                        ? "Church suggestion: waiting for them to accept"
-                        : "Church suggestion: please reply"
+                        ? "Organization suggestion: waiting for them to accept"
+                        : "Organization suggestion: please reply"
                       : r.awaiting === "me"
                         ? "New request: wants you as their discipler"
                         : "Invitation sent, waiting for them to accept"
@@ -365,8 +367,8 @@ function DiscipleDetail({ r }: { r: RelationshipDto }) {
         <p className="mb-5 text-[15px] text-ink">
           {r.initiatedBy === "church"
             ? mustReply
-              ? `Your church suggested you disciple ${firstName(r.other.fullName)}. It only goes ahead if you both accept. Take time to pray about it.`
-              : `You accepted your church's suggestion. Waiting for ${firstName(r.other.fullName)} to accept.`
+              ? `Your organization suggested you disciple ${firstName(r.other.fullName)}. It only goes ahead if you both accept. Take time to pray about it.`
+              : `You accepted your organization's suggestion. Waiting for ${firstName(r.other.fullName)} to accept.`
             : mustReply
               ? `${firstName(r.other.fullName)} would like you to disciple them. Take time to pray about it before you reply.`
               : `You invited ${firstName(r.other.fullName)}. They have not replied yet.`}

@@ -202,14 +202,14 @@ export async function relationshipRoutes(app: FastifyInstance) {
         discipleId = ctx.personId;
         initiatedBy = "disciple";
         if (!(await isApprovedDiscipler(tx, disciplerId)) || !(await isApprovedMember(tx, disciplerId))) {
-          throw notFound("That person is not an approved discipler in your church");
+          throw notFound("That person is not an approved discipler in your organization");
         }
       } else {
         disciplerId = ctx.personId;
         discipleId = body.discipleId;
         initiatedBy = "discipler";
         if (!(await isApprovedDiscipler(tx, ctx.personId))) throw forbidden("You need approved discipler status to invite someone");
-        if (!(await isApprovedMember(tx, discipleId))) throw notFound("That person is not an approved member of your church");
+        if (!(await isApprovedMember(tx, discipleId))) throw notFound("That person is not an approved member of your organization");
       }
       if (disciplerId === discipleId) throw badRequest("SELF", "You cannot disciple yourself");
       if (await hasPrimaryDiscipler(tx, discipleId)) {

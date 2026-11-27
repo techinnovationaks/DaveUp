@@ -40,14 +40,14 @@ export default function Billing() {
 
   return (
     <ConsoleScreen narrow>
-      <H1 sub="Only church administrators see this. Billing is separate from discipler approval.">Plan and billing</H1>
+      <H1 sub="Only organization administrators see this. Billing is separate from discipler approval.">Plan and billing</H1>
       <ErrorText>{error}</ErrorText>
 
       {b.status === "grace" && (
         <section className="mb-4 rounded-card border border-danger-line bg-danger-soft p-5">
           <p className="text-[17px] font-bold text-danger">Payment needed by {fmtDate(b.graceUntil)}</p>
           <p className="mt-1 text-[15px] text-ink">
-            The last renewal was not paid. Everything keeps working until then. After that your church returns to Basic: nothing is deleted and nobody already in loses access.
+            The last renewal was not paid. Everything keeps working until then. After that your organization returns to Basic: nothing is deleted and nobody already in loses access.
           </p>
           <div className="mt-3">
             <LinkButton href="/admin/billing/change">Pay now</LinkButton>
@@ -96,7 +96,7 @@ export default function Billing() {
         {confirmCancel && (
           <div className="mt-4 rounded-[12px] border border-surface-line bg-surface p-4">
             <p className="text-[15px] text-ink">
-              {PLAN_NAME[b.plan]} stays until {fmtDate(b.periodEnd)}, then your church moves to Basic. Nothing is deleted, and everyone already in keeps their access.
+              {PLAN_NAME[b.plan]} stays until {fmtDate(b.periodEnd)}, then your organization moves to Basic. Nothing is deleted, and everyone already in keeps their access.
             </p>
             <div className="mt-3 flex flex-wrap gap-3">
               <Button variant="danger" disabled={busy} onClick={() => void post("/billing/cancel")}>
@@ -190,7 +190,7 @@ export default function Billing() {
             <strong>Days 1 to {GRACE_DAYS}.</strong> Grace period. Everything keeps working.
           </li>
           <li>
-            <strong>Day {GRACE_DAYS + 1} on.</strong> Your church returns to Basic. No new disciples, disciplers or cells beyond the Basic limits. People already in keep their access, and assessments, care and approvals keep working.
+            <strong>Day {GRACE_DAYS + 1} on.</strong> Your organization returns to Basic. No new disciples, disciplers or cells beyond the Basic limits. People already in keep their access, and assessments, care and approvals keep working.
           </li>
           <li>
             <strong>Always.</strong> Nothing is deleted, and nobody is locked out of their own journal.
@@ -231,7 +231,7 @@ export default function Billing() {
       </Card>
 
       <p className="text-[14px] text-ink-muted">
-        Pro, Network and larger churches:{" "}
+        Pro, Network and larger organizations:{" "}
         <a className="font-semibold text-brand underline" href="/admin/billing/talk?plan=pro">
           talk to us
         </a>

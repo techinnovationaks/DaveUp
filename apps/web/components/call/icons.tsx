@@ -10,6 +10,11 @@ const icon = {
   screen: <path d="M2 4h20v12H2zM8 20h8M12 16v4" />,
   min: <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" />,
   max: <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />,
+  react: <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" />,
+  eyeOff: <path d="M17.9 17.9A10 10 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.1-5.9M9.9 4.2A9 9 0 0 1 12 4c7 0 11 8 11 8a18.6 18.6 0 0 1-2.2 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2M1 1l22 22" />,
+  eye: <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />,
+  chevL: <path d="M15 18l-6-6 6-6" />,
+  chevR: <path d="M9 18l6-6-6-6" />,
 };
 
 export function CallIcon({ name, size = 22 }: { name: keyof typeof icon; size?: number }) {

@@ -143,7 +143,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
           if (activeRef.current?.room === room) finish("Call ended");
         });
         await room.connect(j.url, j.token);
-        const a: Active = { callId: j.call.id, conversationId: j.call.conversationId, title, media: j.call.media, room, startedAt: Date.now() };
+        const a: Active = { callId: j.call.id, conversationId: j.call.conversationId, title, media: j.call.media, room, startedAt: Date.now(), canModerate: j.canModerate };
         activeRef.current = a;
         setActive(a);
         try {

@@ -37,6 +37,7 @@ export interface SessionTable {
   created_at: Timestamp;
   expires_at: Timestamp;
   revoked_at: NullableTimestamp;
+  active_church_id: string | null;
 }
 
 export interface ChurchTable {
@@ -50,6 +51,7 @@ export interface ChurchTable {
   created_by: string;
   settings: Generated<Record<string, unknown>>;
   extra_blocks: Generated<number>;
+  listed: Generated<boolean>;
   created_at: Timestamp;
 }
 
@@ -361,6 +363,78 @@ export interface BillingPaymentTable {
   created_at: Timestamp;
 }
 
+export interface JournalEntryTable {
+  id: Generated<string>;
+  person_id: string;
+  title: string | null;
+  body: string;
+  shared_relationship_id: string | null;
+  shared_at: NullableTimestamp;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface LibraryFileTable {
+  id: string;
+  church_id: string | null;
+  uploader_id: string;
+  name: string;
+  mime: string;
+  size_bytes: ColumnType<string, number | string, number | string>;
+  storage_key: string;
+  status: Generated<"pending" | "ready">;
+  created_at: Timestamp;
+}
+
+export interface ResourceTable {
+  id: Generated<string>;
+  church_id: string | null;
+  title: string;
+  description: string | null;
+  category: Generated<string>;
+  kind: "file" | "link" | "video";
+  url: string | null;
+  file_id: string | null;
+  created_by: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface CourseTable {
+  id: Generated<string>;
+  church_id: string | null;
+  title: string;
+  summary: string | null;
+  published: Generated<boolean>;
+  created_by: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface LessonTable {
+  id: Generated<string>;
+  course_id: string;
+  position: number;
+  title: string;
+  body: Generated<string>;
+  video_url: string | null;
+  file_id: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface LessonProgressTable {
+  person_id: string;
+  lesson_id: string;
+  completed_at: Timestamp;
+}
+
+export interface PersonBlockTable {
+  blocker_id: string;
+  blocked_id: string;
+  created_at: Timestamp;
+}
+
 export interface DB {
   person: PersonTable;
   otp_challenge: OtpChallengeTable;
@@ -387,4 +461,11 @@ export interface DB {
   message: MessageTable;
   church_billing: ChurchBillingTable;
   billing_payment: BillingPaymentTable;
+  journal_entry: JournalEntryTable;
+  library_file: LibraryFileTable;
+  resource: ResourceTable;
+  course: CourseTable;
+  lesson: LessonTable;
+  lesson_progress: LessonProgressTable;
+  person_block: PersonBlockTable;
 }

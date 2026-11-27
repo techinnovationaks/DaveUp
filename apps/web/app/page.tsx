@@ -68,7 +68,7 @@ const AUDIENCES = [
 const PLANS = [
   { name: "Basic", price: "Free forever", note: "3 disciplers, 36 disciples and 3 cells. No card, no time limit." },
   { name: "Standard", price: "₦70,000 / month", note: "Founding price, locked for 12 months (list price ₦100,000). 12 disciplers, 144 disciples, unlimited cells." },
-  { name: "Pro and Network", price: "Talk to us", note: "Up to 1,440 disciples and 120 disciplers, or many churches under one agreement." },
+  { name: "Pro and Network", price: "Talk to us", note: "Up to 1,440 disciples and 120 disciplers, or many organizations under one agreement." },
 ];
 
 const COMING = [
@@ -79,7 +79,7 @@ const COMING = [
 
 const FAQ = [
   { q: "What does it cost?", a: "Basic is free forever. Standard and above are paid, with a founding price for early organizations." },
-  { q: "Do I need a church to use DaveUp?", a: "No. Any organization can create a space and invite people." },
+  { q: "Do I need an organization to use DaveUp?", a: "No. Any organization can create a space and invite people." },
   { q: "Is DaveUp only for Christians?", a: "DaveUp is Christian-first. Its default framework is built on faith, and any organization can adapt labels to fit." },
   { q: "What are Priest and King?", a: "Two lenses for growth. Priest covers your walk with God. King covers your work and impact in the world. Each gets its own score out of 120." },
   { q: "Who sees my answers?", a: "You and the person walking with you. Leaders and administrators never read private chats." },

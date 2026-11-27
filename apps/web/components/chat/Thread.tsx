@@ -265,11 +265,11 @@ export function Thread({ id }: { id: string }) {
             <span className="min-w-0">
               <span className="block truncate text-[16px] font-bold text-ink">{c.title}</span>
               <span className="block truncate text-[13px] text-ink-muted">
-                {typingNames.length ? `${typingNames.join(", ")} ${typingNames.length > 1 ? "are" : "is"} typing…` : c.kind === "cell" ? `${c.memberCount} members${c.archived ? " · Archived" : ""}` : c.readOnly ? "No longer in your church" : "Tap for files and details"}
+                {typingNames.length ? `${typingNames.join(", ")} ${typingNames.length > 1 ? "are" : "is"} typing…` : c.kind === "cell" ? `${c.memberCount} members${c.archived ? " · Archived" : ""}` : c.blockedByMe ? "Blocked" : c.readOnly && !c.blocked ? "No longer in your organization" : "Tap for files and details"}
               </span>
             </span>
           </button>
-          {features?.calls && writable && !c.activeCall && (
+          {features?.calls && writable && !c.activeCall && c.canStartCall && (
             <>
               <HeaderButton label="Voice call" onClick={() => void calls.start(id, "audio", c.title)}>
                 <CallIcon name="phone" size={20} />
@@ -404,7 +404,13 @@ export function Thread({ id }: { id: string }) {
             />
           ) : (
             <p className="shrink-0 border-t border-surface-line bg-white px-4 py-4 text-center text-[14px] text-ink-muted">
-              {c.archived ? "This cell is archived. You can read it, but not send messages." : "You can no longer send messages here."}
+              {c.archived
+                ? "This cell is archived. You can read it, but not send messages."
+                : c.blockedByMe
+                  ? "You blocked this person. Unblock them from the details panel to message or call."
+                  : c.blocked
+                    ? "You cannot message or call this person."
+                    : "You can no longer send messages here."}
             </p>
           ))}
       </div>

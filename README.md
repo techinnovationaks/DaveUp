@@ -20,6 +20,7 @@ Churches register on DaveUp and approve their own members and disciplers. Each c
 - [What is built](#what-is-built)
 - [Chat, cells, calls and files](#chat-cells-calls-and-files)
 - [DaveUp staff console](#daveup-staff-console)
+- [Organizations, Journal, Training and Resources](#organizations-journal-training-and-resources)
 - [Key product rules](#key-product-rules)
 - [API overview](#api-overview)
 - [Web app](#web-app)
@@ -365,6 +366,21 @@ The staff console (`/staff`) is for DaveUp's own team, not churches.
 Staff see who belongs where and how much DaveUp is used. They never see message text, files, assessment answers, reflections or meeting notes.
 
 **The first staff member:** set `SUPER_ADMIN_EMAILS=you@example.org` on the API and sign in with that email. Staff named there can't be removed from inside the app; others can be added and removed in the console. Staff who are not in a church land in the staff console after signing in; staff who are church members reach it from the sidebar or Account settings.
+
+## Organizations, Journal, Training and Resources
+
+The member app has five sections: **Home** (discipleship and assessments), **Spaces** (chats and cells, at `/messages`), **Journal**, **Training** and **Resource Centre**. On phones, a top bar holds the organization switcher, the console (admins and staff) and the account.
+
+**Several organizations, one account (migration 0011).**
+- One email or phone can belong to many organizations. Each signed-in session remembers which one it is looking at (`session.active_church_id`); `POST /me/organization` switches. Every request still runs inside one organization, so chats, cells, calls and people lists never cross between them.
+- Join with a code, an **invite link** (`/join?code=CODE`) or a **QR code** (admins find both on the console overview), or by **organization search** (name or city). Admins can hide their organization from search in Settings. Every join waits for an administrator's approval. Someone who opens an invite link before signing in is brought back to it afterwards.
+- **Blocking** (`/blocks`) works both ways and across organizations: no new chats, messages, files or calls between the two, and each drops out of the other's people list. Shared cells are unchanged. Manage blocked people in Account settings.
+
+**Calls.** In cells, only leaders start a call: the cell's leaders, approved disciplers in the cell and organization administrators. Anyone in the cell can join. Leaders can mute one person or everyone else (people can unmute themselves). Everyone can send reactions. Calls hold up to 100 people; the grid pages, with whoever is speaking first. Video is shown whole (not cropped). Tap a person to enlarge them. Your own window can be dragged to any corner or hidden.
+
+**Journal (migration 0009).** Private entries that belong to the person, not an organization. Any entry can be shared with the discipler in one of their relationships, and unshared again; disciplers read shared entries in the relationship's Journal tab. Sharing ends when the relationship does.
+
+**Training and Resource Centre (migration 0010).** Content is DaveUp's (every organization sees it; DaveUp staff add it) or an organization's own (its members see it; its administrators add it). Resources are documents (uploaded to the same storage as chat files), videos (YouTube and Vimeo play inline) or links, in categories. Courses are lessons with text, a video and a handout; they stay drafts until published, and each person's progress is kept.
 
 ## Email notifications
 

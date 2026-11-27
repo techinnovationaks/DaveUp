@@ -21,7 +21,7 @@ function PersonRow({ p, meId, busy, onToggle }: { p: StaffPersonDto; meId: strin
             {[p.email ? `${p.email}${p.emailVerified ? "" : " (unverified)"}` : null, p.phone ? formatPhone(p.phone) : null].filter(Boolean).join(" · ")}
           </p>
           <p className="text-[13px] text-ink-muted">
-            {p.church ? `${p.church.name}${p.church.isAdmin ? " · Administrator" : ""}` : "Not in a church"} · joined {fmtDate(p.createdAt)}
+            {p.church ? `${p.church.name}${p.church.isAdmin ? " · Administrator" : ""}` : "Not in an organization"} · joined {fmtDate(p.createdAt)}
           </p>
         </div>
       </div>
@@ -51,7 +51,7 @@ export default function StaffPeople() {
 
   if (!ready || !me) return <Loading />;
   const toggle = (p: StaffPersonDto) => {
-    if (!confirm(p.isSuperAdmin ? `Remove staff access for ${p.fullName}?` : `Give ${p.fullName} DaveUp staff access? They will be able to verify and suspend any church.`)) return;
+    if (!confirm(p.isSuperAdmin ? `Remove staff access for ${p.fullName}?` : `Give ${p.fullName} DaveUp staff access? They will be able to verify and suspend any organization.`)) return;
     void run(async () => {
       await api("/staff/super-admins", { method: "POST", body: { personId: p.personId, grant: !p.isSuperAdmin } });
       await Promise.all([people.reload(), staff.reload()]);

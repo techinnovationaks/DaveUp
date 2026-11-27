@@ -9,6 +9,7 @@ import { IntroSlides } from "./IntroSlides";
 import { SITE_IMAGES } from "@/lib/site-images";
 import { Icon, accountItem, adminNav, isActive, mainNav, staffNav, titleFor } from "./nav";
 import { useRealtime } from "@/lib/realtime";
+import { OrgSwitcher } from "./OrgSwitcher";
 
 /** Unread count on the Messages item. */
 export function NavBadge({ count, dot = false }: { count: number; dot?: boolean }) {
@@ -43,6 +44,30 @@ function initialsOf(name: string | null | undefined) {
     .slice(0, 2)
     .map((w) => w[0]!.toUpperCase())
     .join("") || "?";
+}
+
+/**
+ * Phones: a slim bar above the page with the organization, the console (for
+ * administrators and DaveUp staff) and your account. Tablet and desktop have
+ * these in the side rail.
+ */
+function MobileTopBar() {
+  const { me } = useSession();
+  const extra = [...adminNav(me), ...staffNav(me)];
+  return (
+    <div className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-surface-line bg-white/95 px-4 backdrop-blur md:hidden">
+      <Logo size={30} markOnly />
+      <div className="min-w-0 flex-1">{me ? <OrgSwitcher me={me} compact /> : <span className="text-[15px] font-bold text-ink">DaveUp</span>}</div>
+      {extra.map((it) => (
+        <Link key={it.href} href={it.href} aria-label={it.label} title={it.label} className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted hover:bg-surface hover:text-brand">
+          <Icon size={22}>{it.icon}</Icon>
+        </Link>
+      ))}
+      <Link href="/account" aria-label="Account settings" className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-[14px] font-bold text-brand">
+        {initialsOf(me?.person.fullName)}
+      </Link>
+    </div>
+  );
 }
 
 /**
@@ -89,12 +114,16 @@ function SideRail() {
           <Logo />
         </span>
       </Link>
-      {me?.membership && <p className="mt-1 hidden truncate px-2 text-[13px] text-ink-muted lg:block">{me.membership.churchName}, {me.membership.churchCity}</p>}
+      {me?.membership && (
+        <div className="mt-3 hidden lg:block">
+          <OrgSwitcher me={me} />
+        </div>
+      )}
       <nav className="mt-10 flex flex-col gap-3" aria-label="Main">
         {items.map(link)}
       </nav>
       {admin.length > 0 && (
-        <nav className="mt-8 flex flex-col gap-3 border-t border-surface-line pt-6 lg:border-0 lg:pt-0" aria-label="Church admin">
+        <nav className="mt-8 flex flex-col gap-3 border-t border-surface-line pt-6 lg:border-0 lg:pt-0" aria-label="Organization admin">
           {admin.map(link)}
         </nav>
       )}
@@ -140,6 +169,7 @@ export function AppShell({ children, nav = false, aside, narrow = false, fill = 
     <div className="min-h-dvh md:flex">
       <SideRail />
       <div className="min-w-0 flex-1">
+        {nav && <MobileTopBar />}
         <header className="sticky top-0 z-10 hidden h-16 items-center border-b border-surface-line bg-white/90 px-8 backdrop-blur md:flex">
           <p className="text-[17px] font-bold text-ink">{titleFor(path)}</p>
         </header>
@@ -182,7 +212,7 @@ export function BrandPanel({ className = "" }: { className?: string }) {
       <div className="relative flex h-full flex-col justify-between p-10 lg:p-14">
         <span />
         <IntroSlides onDark />
-        <p className="text-[14px] text-white/75">Provided through your church.</p>
+        <p className="text-[14px] text-white/75">Provided through your organization.</p>
       </div>
     </div>
   );

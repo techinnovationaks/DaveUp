@@ -40,7 +40,7 @@ export default function TalkToUs() {
   return (
     <ConsoleScreen narrow>
       <TopBar back="/admin/billing/change" title="Talk to us" />
-      <H1 sub="Tell us about your church or network. We agree Pro and Network plans with each church.">Talk to us</H1>
+      <H1 sub="Tell us about your organization or network. We agree Pro and Network plans with each organization.">Talk to us</H1>
       <Segmented
         value={plan}
         onChange={setPlan}
@@ -52,8 +52,8 @@ export default function TalkToUs() {
       <Card className="mb-4" tone="soft">
         <p className="text-[15px] text-ink">
           {plan === "pro"
-            ? `Pro: up to ${PLAN_LIMITS.pro.disciples!.toLocaleString("en-NG")} disciples and ${PLAN_LIMITS.pro.disciplers} disciplers, a larger AI allowance, church-approved content, your own terminology and priority support.`
-            : "Network: many churches under one annual agreement (at least 10), network views that respect each church's privacy, a shared content library and dedicated onboarding."}
+            ? `Pro: up to ${PLAN_LIMITS.pro.disciples!.toLocaleString("en-NG")} disciples and ${PLAN_LIMITS.pro.disciplers} disciplers, a larger AI allowance, organization-approved content, your own terminology and priority support.`
+            : "Network: many organizations under one annual agreement (at least 10), network views that respect each organization's privacy, a shared content library and dedicated onboarding."}
         </p>
       </Card>
       <form
@@ -65,7 +65,7 @@ export default function TalkToUs() {
           });
         }}
       >
-        <Field label="Your message" hint="How many people, how many churches, and what you need.">
+        <Field label="Your message" hint="How many people, how many organizations, and what you need.">
           <textarea className={`${inputClass} min-h-[140px] py-3`} value={message} onChange={(e) => setMessage(e.target.value)} required minLength={10} maxLength={2000} />
         </Field>
         <Field label="Phone (optional)" hint={me!.person.email ? `We reply to ${me!.person.email}.` : "Add a phone number so we can reach you."}>

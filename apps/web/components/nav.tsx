@@ -20,7 +20,12 @@ const icons = {
   me: <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0" />,
   chat: <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 20.5l1.5-4.6A8.4 8.4 0 0 1 3 11.5 8.6 8.6 0 0 1 12 3a8.6 8.6 0 0 1 9 8.5z" />,
   staff: <path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3zM9 12l2 2 4-4" />,
+  journal: <path d="M5 4a2 2 0 0 1 2-2h11v18H7a2 2 0 0 0-2 2V4zM5 20a2 2 0 0 1 2-2h11M9 7h5M9 11h5" />,
+  training: <path d="M22 9 12 4 2 9l10 5 10-5zM6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5M22 9v6" />,
+  resources: <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7zM8 13h8M8 16h5" />,
 };
+
+export const navIcons = icons;
 
 export function Icon({ children, size = 24 }: { children: ReactNode; size?: number }) {
   return (
@@ -33,9 +38,11 @@ export function Icon({ children, size = 24 }: { children: ReactNode; size?: numb
 /** Member features: everyone. */
 export function mainNav(): NavItem[] {
   return [
-    { href: "/home", label: "Discipleship", short: "Home", icon: icons.home, also: ["/relationships", "/disciplers", "/invite", "/discipler-request"] },
-    { href: "/assessments", label: "Assessments", short: "Assessments", icon: icons.assess },
-    { href: "/messages", label: "Messages & cells", short: "Messages", icon: icons.chat },
+    { href: "/home", label: "Home", short: "Home", icon: icons.home, also: ["/relationships", "/disciplers", "/invite", "/discipler-request", "/assessments"] },
+    { href: "/messages", label: "Spaces", short: "Spaces", icon: icons.chat },
+    { href: "/journal", label: "Journal", short: "Journal", icon: icons.journal },
+    { href: "/training", label: "Training", short: "Training", icon: icons.training },
+    { href: "/resources", label: "Resource Centre", short: "Resources", icon: icons.resources },
   ];
 }
 
@@ -52,12 +59,12 @@ export function isAdmin(me: MeDto | null): boolean {
 /** In the member app, administrators get one way back to the Church console. */
 export function adminNav(me: MeDto | null): NavItem[] {
   if (!isAdmin(me)) return [];
-  return [{ href: "/admin", label: "Church console", short: "Console", icon: icons.church }];
+  return [{ href: "/admin", label: "Organization console", short: "Console", icon: icons.church }];
 }
 
-/** Mobile bottom bar: one Church tab for admins; Members is reached from the console tabs. */
-export function bottomNav(me: MeDto | null): NavItem[] {
-  return [...mainNav(), ...adminNav(me), accountItem];
+/** Mobile bottom bar: the five sections. Account and the console are in the top bar. */
+export function bottomNav(_me: MeDto | null): NavItem[] {
+  return mainNav();
 }
 
 export const accountItem: NavItem = { href: "/account", label: "Account settings", short: "Account", icon: icons.me, also: ["/profile"] };
@@ -75,6 +82,9 @@ export function titleFor(path: string): string {
   if (path.startsWith("/invite")) return "Invite someone";
   if (path.startsWith("/discipler-request")) return "Discipler status";
   if (path.startsWith("/account")) return "Account settings";
-  if (path.startsWith("/messages")) return "Messages & cells";
-  return "Discipleship";
+  if (path.startsWith("/messages")) return "Spaces";
+  if (path.startsWith("/journal")) return "Journal";
+  if (path.startsWith("/training")) return "Training";
+  if (path.startsWith("/resources")) return "Resource Centre";
+  return "Home";
 }

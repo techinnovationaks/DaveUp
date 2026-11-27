@@ -1,7 +1,7 @@
 "use client";
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { END_REASONS, getArea, type ComparisonDto, type EndReason, type RelationshipDto, type RelationshipProgressDto } from "@daveup/shared";
+import { END_REASONS, getArea, type SharedJournalEntryDto, type ComparisonDto, type EndReason, type RelationshipDto, type RelationshipProgressDto } from "@daveup/shared";
 import { Button, Card, ErrorText, Eyebrow, H1, Initials, LinkButton, Loading, Pill, Screen, Segmented, TopBar } from "@/components/ui";
 import { Disclosure } from "@/components/Disclosure";
 import { api, useAction, useApi } from "@/lib/api";
@@ -13,8 +13,8 @@ import { GrowthResults } from "@/components/rel/Growth";
 import { PlanPanel } from "@/components/rel/PlanPanel";
 import { MeetingsPanel } from "@/components/rel/MeetingsPanel";
 
-type Tab = "results" | "plan" | "meetings";
-const TABS: Tab[] = ["results", "plan", "meetings"];
+type Tab = "results" | "plan" | "meetings" | "journal";
+const TABS: Tab[] = ["results", "plan", "meetings", "journal"];
 
 export default function RelationshipPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -88,6 +88,7 @@ export default function RelationshipPage({ params }: { params: Promise<{ id: str
                 ),
               },
               { value: "meetings", label: "Meetings" },
+              { value: "journal", label: "Journal" },
             ]}
           />
           {tab === "results" && (
@@ -102,6 +103,7 @@ export default function RelationshipPage({ params }: { params: Promise<{ id: str
           )}
           {tab === "plan" && <PlanPanel relationshipId={r.id} otherName={r.other.fullName} />}
           {tab === "meetings" && <MeetingsPanel relationshipId={r.id} canRecord />}
+          {tab === "journal" && <SharedJournal r={r} />}
           <div className="mb-6" />
         </>
       )}
@@ -124,7 +126,7 @@ function RequestPanel({ r, onDone }: { r: RelationshipDto; onDone: () => Promise
       <Card className="mb-4">
         <p className="text-[16px] text-ink">
           {fromChurch
-            ? `You accepted your church's suggestion. Waiting for ${r.other.fullName} to accept too.`
+            ? `You accepted your organization's suggestion. Waiting for ${r.other.fullName} to accept too.`
             : `${iAmDisciple ? `Your request has been sent to ${r.other.fullName}.` : `Your invitation has been sent to ${r.other.fullName}.`} You will be told when they reply.`}
         </p>
         <ErrorText>{error}</ErrorText>
@@ -140,7 +142,7 @@ function RequestPanel({ r, onDone }: { r: RelationshipDto; onDone: () => Promise
       <H1
         sub={
           fromChurch
-            ? `Your church suggested ${r.other.fullName} as your ${iAmDisciple ? "discipler" : "disciple"}. It only goes ahead if you both accept.`
+            ? `Your organization suggested ${r.other.fullName} as your ${iAmDisciple ? "discipler" : "disciple"}. It only goes ahead if you both accept.`
             : iAmDisciple
               ? `${r.other.fullName} has invited you to be their disciple.`
               : `${r.other.fullName} would like you to disciple them.`
@@ -198,7 +200,7 @@ function ClosedPanel({ r }: { r: RelationshipDto }) {
       <p className="text-[17px] font-bold text-ink">{ended ? "This relationship has ended" : "This request was not taken forward"}</p>
       <p className="mb-4 mt-1 text-[15px] text-ink-muted">
         {ended
-          ? "Its history is kept under your church's policy. Your own assessment stays with you."
+          ? "Its history is kept under your organization's policy. Your own assessment stays with you."
           : "Nothing was shared and no place was used."}
         {iAmDisciple ? " You can choose another discipler whenever you are ready." : ""}
       </p>
@@ -326,7 +328,7 @@ function EndPanel({ r, onDone }: { r: RelationshipDto; onDone: () => Promise<voi
     <Card>
       <p className="text-[17px] font-bold text-ink">End this relationship</p>
       <p className="mt-1 text-[14px] text-ink-muted">
-        {r.myRole === "disciple" ? "You can always leave. Your discipler cannot stop this." : "Your disciple will be told the relationship has ended."} History is kept under your church&apos;s policy.
+        {r.myRole === "disciple" ? "You can always leave. Your discipler cannot stop this." : "Your disciple will be told the relationship has ended."} History is kept under your organization&apos;s policy.
       </p>
       <div className="mt-4 space-y-2">
         {END_REASONS.map((k) => (
@@ -341,7 +343,7 @@ function EndPanel({ r, onDone }: { r: RelationshipDto; onDone: () => Promise<voi
           className="mt-3 w-full rounded-2xl border border-surface-line p-3 text-[15px]"
           rows={3}
           maxLength={500}
-          placeholder="Optional: what should your church administrator know?"
+          placeholder="Optional: what should your organization administrator know?"
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
@@ -356,5 +358,44 @@ function EndPanel({ r, onDone }: { r: RelationshipDto; onDone: () => Promise<voi
         </Button>
       </div>
     </Card>
+  );
+}
+
+/** Journal entries the disciple chose to share in this relationship. */
+function SharedJournal({ r }: { r: RelationshipDto }) {
+  const isDiscipler = r.myRole === "discipler";
+  const shared = useApi<SharedJournalEntryDto[]>(isDiscipler ? `/relationships/${r.id}/journal` : null);
+  if (!isDiscipler) {
+    return (
+      <Card tone="soft" className="mb-4">
+        <p className="text-[16px] text-ink">Your journal is private. You can share any entry with {firstName(r.other.fullName)} from your Journal, and stop sharing it at any time.</p>
+        <div className="mt-4">
+          <LinkButton href="/journal">Open my journal</LinkButton>
+        </div>
+      </Card>
+    );
+  }
+  if (shared.loading) return <Loading />;
+  if (shared.error) return <ErrorText>{shared.error.message}</ErrorText>;
+  const list = shared.data ?? [];
+  if (list.length === 0) {
+    return (
+      <Card tone="soft" className="mb-4">
+        <p className="text-[16px] text-ink">{firstName(r.other.fullName)} has not shared any journal entries with you. Their journal is private unless they choose to share an entry.</p>
+      </Card>
+    );
+  }
+  return (
+    <div className="mb-4 space-y-4">
+      {list.map((e) => (
+        <Card key={e.id}>
+          <p className="mb-2 text-[13px] font-semibold text-ink-muted">
+            Written {new Date(e.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })} · shared {new Date(e.sharedAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })}
+          </p>
+          {e.title && <h3 className="mb-1 text-[18px] font-bold text-ink">{e.title}</h3>}
+          <p className="whitespace-pre-wrap text-[16px] leading-relaxed text-ink">{e.body}</p>
+        </Card>
+      ))}
+    </div>
   );
 }
