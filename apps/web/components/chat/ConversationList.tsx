@@ -57,7 +57,7 @@ export function ConversationList({ selectedId }: { selectedId: string | null }) 
     <div className="flex h-full flex-col bg-white">
       <div className="space-y-3 border-b border-surface-line px-4 pb-3 pt-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-[24px] font-extrabold tracking-tight text-ink md:text-[20px]">Messages</h1>
+          <h1 className="text-[24px] font-extrabold tracking-tight text-ink md:text-[20px]">Spaces</h1>
           <button onClick={() => setPicking(true)} className="flex h-10 items-center gap-2 rounded-xl bg-brand px-3.5 text-[14px] font-bold text-white hover:bg-brand-dark">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
               <path d="M12 5v14M5 12h14" />

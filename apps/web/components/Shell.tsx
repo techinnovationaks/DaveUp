@@ -46,6 +46,30 @@ function initialsOf(name: string | null | undefined) {
 }
 
 /**
+ * Phones: a slim bar above the page with the organization, the console (for
+ * administrators and DaveUp staff) and your account. Tablet and desktop have
+ * these in the side rail.
+ */
+function MobileTopBar() {
+  const { me } = useSession();
+  const extra = [...adminNav(me), ...staffNav(me)];
+  return (
+    <div className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-surface-line bg-white/95 px-4 backdrop-blur md:hidden">
+      <Logo size={30} markOnly />
+      <span className="min-w-0 flex-1 truncate text-[15px] font-bold text-ink">{me?.membership?.churchName ?? "DaveUp"}</span>
+      {extra.map((it) => (
+        <Link key={it.href} href={it.href} aria-label={it.label} title={it.label} className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted hover:bg-surface hover:text-brand">
+          <Icon size={22}>{it.icon}</Icon>
+        </Link>
+      ))}
+      <Link href="/account" aria-label="Account settings" className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-[14px] font-bold text-brand">
+        {initialsOf(me?.person.fullName)}
+      </Link>
+    </div>
+  );
+}
+
+/**
  * Left rail. Hidden on mobile, icons only on tablet (768 to 1023),
  * icons with labels on desktop (1024 and up).
  */
@@ -140,6 +164,7 @@ export function AppShell({ children, nav = false, aside, narrow = false, fill = 
     <div className="min-h-dvh md:flex">
       <SideRail />
       <div className="min-w-0 flex-1">
+        {nav && <MobileTopBar />}
         <header className="sticky top-0 z-10 hidden h-16 items-center border-b border-surface-line bg-white/90 px-8 backdrop-blur md:flex">
           <p className="text-[17px] font-bold text-ink">{titleFor(path)}</p>
         </header>

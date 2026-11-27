@@ -361,6 +361,17 @@ export interface BillingPaymentTable {
   created_at: Timestamp;
 }
 
+export interface JournalEntryTable {
+  id: Generated<string>;
+  person_id: string;
+  title: string | null;
+  body: string;
+  shared_relationship_id: string | null;
+  shared_at: NullableTimestamp;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
 export interface DB {
   person: PersonTable;
   otp_challenge: OtpChallengeTable;
@@ -387,4 +398,5 @@ export interface DB {
   message: MessageTable;
   church_billing: ChurchBillingTable;
   billing_payment: BillingPaymentTable;
+  journal_entry: JournalEntryTable;
 }

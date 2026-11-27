@@ -46,16 +46,18 @@ export default function Home() {
     <Screen nav aside={showLead ? undefined : <UpNext rels={all.filter((r) => OPEN_STATUSES.includes(r.status))} hub={hub.data} />}>
       <div className="mb-5 flex items-start justify-between">
         <div>
-          <p className="flex flex-wrap items-center gap-2 text-[15px] text-ink-muted md:hidden">
-            {me.membership!.churchName}, {me.membership!.churchCity}
-          </p>
           <h1 className="text-[28px] font-extrabold leading-tight text-ink md:text-[34px]">
             {greeting()}, {firstName(me.person.fullName)}
           </h1>
           <p className="mt-1 hidden text-[16px] text-ink-muted md:block">{today}. Your discipleship this week.</p>
         </div>
-        <Link href="/account" aria-label="Account" className="md:hidden">
-          <Initials name={me.person.fullName ?? ""} size={52} />
+      </div>
+      <div className="-mt-2 mb-5 flex flex-wrap gap-2">
+        <Link href="/assessments" className="rounded-full border border-surface-line bg-white px-4 py-2 text-[14px] font-semibold text-ink hover:border-brand-line hover:text-brand">
+          Assessments
+        </Link>
+        <Link href="/journal" className="rounded-full border border-surface-line bg-white px-4 py-2 text-[14px] font-semibold text-ink hover:border-brand-line hover:text-brand">
+          Write in my journal
         </Link>
       </div>
 
