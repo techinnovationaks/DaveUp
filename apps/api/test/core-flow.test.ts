@@ -256,6 +256,8 @@ describe("core discipleship loop", () => {
   });
 
   it("caps a discipler at 12 disciples", async () => {
+    // Room for many members (Basic allows 3), so only the 12-per-discipler rule applies here.
+    await ownerDb.updateTable("church").set({ plan: "standard", seats: 5, member_packs: 0 }).where("id", "=", churchId).execute();
     // relId already holds one place; fill 11 more, then the 13th must fail.
     const extra: { token: string; personId: string }[] = [];
     for (let i = 0; i < 12; i++) {

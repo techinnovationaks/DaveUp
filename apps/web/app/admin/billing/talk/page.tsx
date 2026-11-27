@@ -1,18 +1,18 @@
 "use client";
 // "Talk to us" about Pro or Network (design 72). Emails DaveUp staff.
 import { useEffect, useState } from "react";
-import { PLAN_LIMITS } from "@daveup/shared";
+import { PLAN_INFO, naira } from "@daveup/shared";
 import { ConsoleScreen } from "@/components/ConsoleShell";
 import { Button, Card, ErrorText, Field, H1, LinkButton, Loading, Segmented, TopBar, inputClass } from "@/components/ui";
 import { api, useAction } from "@/lib/api";
 import { useGuard } from "@/lib/session";
 
-type Plan = "pro" | "network";
+type Plan = "campus" | "network";
 
 export default function TalkToUs() {
   const { me, ready } = useGuard("admin");
   const { busy, error, run } = useAction();
-  const [plan, setPlan] = useState<Plan>("pro");
+  const [plan, setPlan] = useState<Plan>("campus");
   const [message, setMessage] = useState("");
   const [phone, setPhone] = useState("");
   const [sent, setSent] = useState(false);
@@ -40,20 +40,20 @@ export default function TalkToUs() {
   return (
     <ConsoleScreen narrow>
       <TopBar back="/admin/billing/change" title="Talk to us" />
-      <H1 sub="Tell us about your organization or network. We agree Pro and Network plans with each organization.">Talk to us</H1>
+      <H1 sub="Tell us about your fellowship, organization or network. We agree Campus and Network plans with each one.">Talk to us</H1>
       <Segmented
         value={plan}
         onChange={setPlan}
         options={[
-          { value: "pro", label: "Pro" },
+          { value: "campus", label: "Campus" },
           { value: "network", label: "Network" },
         ]}
       />
       <Card className="mb-4" tone="soft">
         <p className="text-[15px] text-ink">
-          {plan === "pro"
-            ? `Pro: up to ${PLAN_LIMITS.pro.disciples!.toLocaleString("en-NG")} disciples and ${PLAN_LIMITS.pro.disciplers} disciplers, a larger AI allowance, organization-approved content, your own terminology and priority support.`
-            : "Network: many organizations under one annual agreement (at least 10), network views that respect each organization's privacy, a shared content library and dedicated onboarding."}
+          {plan === "campus"
+            ? `Campus: Standard features at a student rate, ${naira(PLAN_INFO.campus.leaderMonthKobo)} per leader a month, from ${PLAN_INFO.campus.minLeaders} leaders. For campus fellowships and student groups.`
+            : `Network: denominations, ministries and training programs on an annual contract, from ${naira(PLAN_INFO.network.leaderMonthKobo)} per leader a month and at least ${PLAN_INFO.network.minLeaders} leaders. Shared reporting across organizations.`}
         </p>
       </Card>
       <form

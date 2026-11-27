@@ -1,6 +1,6 @@
 "use client";
 import { use, useState } from "react";
-import { PLAN_NAME, naira, type BillingDto, type ChurchPlan, type ChurchStatus, type StaffChurchDetailDto } from "@daveup/shared";
+import { PLAN_INFO, PLAN_NAME, naira, type BillingDto, type ChurchPlan, type ChurchStatus, type StaffChurchDetailDto } from "@daveup/shared";
 import { fmtDate as fmtLongDate, planTitle, standing } from "@/components/console/billing";
 import { actionLabel, fmtDate, fmtDateTime, planLabel, StaffScreen, statusLabel, statusTone } from "@/components/staff/StaffShell";
 import { Button, Card, ErrorText, Field, Loading, Pill, TopBar, inputClass } from "@/components/ui";
@@ -14,7 +14,8 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
   const church = useApi<StaffChurchDetailDto>(ready ? `/staff/churches/${id}` : null);
   const billing = useApi<BillingDto>(ready ? `/staff/churches/${id}/billing` : null);
   const [plan, setPlanChoice] = useState<ChurchPlan | null>(null);
-  const [blocks, setBlocks] = useState(0);
+  const [seats, setSeats] = useState(5);
+  const [packs, setPacks] = useState(0);
   const [until, setUntil] = useState("");
   const [note, setNote] = useState("");
   const { busy, error, run } = useAction();
@@ -41,7 +42,7 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
     });
   const savePlan = () =>
     run(async () => {
-      billing.setData(await api<BillingDto>(`/staff/churches/${id}/plan`, { method: "POST", body: { plan: plan ?? c.plan, extraBlocks: blocks, until, note } }));
+      billing.setData(await api<BillingDto>(`/staff/churches/${id}/plan`, { method: "POST", body: { plan: plan ?? c.plan, seats, memberPacks: packs, until, note } }));
       setPlanChoice(null);
       await church.reload();
     });
@@ -161,11 +162,11 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
             {b && (
               <div className="mb-4">
                 <p className="text-[15px] font-semibold text-ink">
-                  {planTitle(b.plan, b.extraBlocks)} <span className="font-normal text-ink-muted">· {standing(b).pill}</span>
+                  {planTitle(b.plan, b.seats, b.memberPacks)} <span className="font-normal text-ink-muted">· {standing(b).pill}</span>
                 </p>
                 <p className="text-[14px] text-ink-muted">{standing(b).line}</p>
                 <p className="mt-1 text-[13px] text-ink-muted">
-                  Using {b.usage.disciples} disciples, {b.usage.disciplers} disciplers, {b.usage.cells} cells
+                  Using {b.usage.disciplers} leaders, {b.usage.disciples} members in discipleship, {b.usage.cells} cells
                 </p>
               </div>
             )}
@@ -174,7 +175,11 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
                 <button
                   key={p}
                   disabled={busy}
-                  onClick={() => setPlanChoice(p)}
+                  onClick={() => {
+                    setPlanChoice(p);
+                    setSeats(b && b.plan === p ? b.seats : p === "network" ? 0 : PLAN_INFO[p].minLeaders);
+                    setPacks(b && b.plan === p ? b.memberPacks : 0);
+                  }}
                   className={`rounded-xl border px-3 py-2.5 text-[14px] font-semibold ${(plan ?? c.plan) === p ? "border-brand bg-brand-soft text-brand" : "border-surface-line hover:bg-surface"}`}
                 >
                   {planLabel[p]}
@@ -183,9 +188,16 @@ export default function StaffChurch({ params }: { params: Promise<{ id: string }
             </div>
             {plan && (
               <div className="mt-4">
-                <Field label="Extra capacity blocks" hint="Each adds 3 disciplers, 36 disciples and 3 cells.">
-                  <input className={inputClass} type="number" min={0} max={1000} value={blocks} onChange={(e) => setBlocks(Math.max(0, Number(e.target.value) || 0))} />
-                </Field>
+                {plan !== "basic" && (
+                  <>
+                    <Field label="Leader seats" hint={plan === "network" ? "0 means no limit. Each leader includes 12 members." : `Each leader includes 12 members. Usual minimum on ${PLAN_NAME[plan]}: ${PLAN_INFO[plan].minLeaders}.`}>
+                      <input className={inputClass} type="number" min={0} max={100000} value={seats} onChange={(e) => setSeats(Math.max(0, Number(e.target.value) || 0))} />
+                    </Field>
+                    <Field label="Extra member packs" hint="Each adds 12 members.">
+                      <input className={inputClass} type="number" min={0} max={100000} value={packs} onChange={(e) => setPacks(Math.max(0, Number(e.target.value) || 0))} />
+                    </Field>
+                  </>
+                )}
                 <Field label="Until (optional)" hint="On this date the organization returns to Basic by itself. Leave empty for no end.">
                   <input className={inputClass} type="date" value={until} onChange={(e) => setUntil(e.target.value)} />
                 </Field>

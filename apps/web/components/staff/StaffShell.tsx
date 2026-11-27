@@ -102,7 +102,7 @@ export function StaffScreen({ children, title }: { children: ReactNode; title?: 
 
 export const statusTone = { unverified: "amber", verified: "green", suspended: "red" } as const;
 export const statusLabel = { unverified: "Waiting for verification", verified: "Verified", suspended: "Suspended" } as const;
-export const planLabel = { basic: "Basic", standard: "Standard", pro: "Pro", network: "Network" } as const;
+export const planLabel = { basic: "Basic", standard: "Standard", pro: "Pro", campus: "Campus", network: "Network" } as const;
 export const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 export const fmtDateTime = (iso: string) => new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
