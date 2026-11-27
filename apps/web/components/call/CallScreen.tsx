@@ -73,23 +73,107 @@ function AudioTrack({ track }: { track: RemoteTrack }) {
   return <audio ref={ref} autoPlay />;
 }
 
-function Tile({ p, local, big }: { p: Participant; local: boolean; big?: boolean }) {
+/**
+ * One person. Fills whatever box it is given; the layout decides the box.
+ * `initials` is the avatar size when the camera is off.
+ */
+function Tile({ p, local, initials = 72, className = "" }: { p: Participant; local: boolean; initials?: number; className?: string }) {
   const cam = p.getTrackPublication(Track.Source.Camera);
   const camTrack = cam && !cam.isMuted ? cam.track : undefined;
   const micOn = p.isMicrophoneEnabled;
   return (
-    <div className={`relative flex min-h-0 items-center justify-center overflow-hidden rounded-2xl bg-white/5 ${p.isSpeaking ? "ring-2 ring-ok" : ""} ${big ? "" : "aspect-video"}`}>
-      {camTrack ? (
-        <VideoTrack track={camTrack} mirror={local} />
-      ) : (
-        <div className="flex flex-col items-center gap-2">
-          <Initials name={p.name || "?"} size={big ? 96 : 64} />
+    <div className={`relative flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-white/[0.07] ${className}`}>
+      {camTrack ? <VideoTrack track={camTrack} mirror={local} /> : <Initials name={p.name || "?"} size={initials} />}
+      {/* Speaking outline drawn on top, so video never hides it and nothing outside clips it. */}
+      <span className={`pointer-events-none absolute inset-0 rounded-2xl border-2 transition-colors ${p.isSpeaking ? "border-ok" : "border-transparent"}`} />
+      <span className="absolute bottom-2 left-2 flex max-w-[calc(100%-1rem)] items-center gap-1.5 rounded-lg bg-black/55 px-2 py-1 text-[13px] font-semibold">
+        {!micOn && <CallIcon name="micOff" size={14} />}
+        <span className="truncate">{local ? "You" : p.name || "Member"}</span>
+      </span>
+    </div>
+  );
+}
+
+/** Width and height of an element, kept up to date. */
+function useBoxSize<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setSize({ w: e!.contentRect.width, h: e!.contentRect.height }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return { ref, ...size };
+}
+
+const GAP = 12;
+const MIN_TILE_H = 140;
+
+/**
+ * Columns for n tiles in a w x h box: the choice whose tiles hold the largest
+ * picture of the right shape, square-ish on a phone held upright and
+ * widescreen on a laptop (four people: 2 x 2 on both). When even the best choice makes tiles too short (big
+ * groups on a phone), rows keep a minimum height and the grid scrolls.
+ */
+function gridFor(n: number, w: number, h: number) {
+  const aspect = h > w ? 1 : 16 / 9;
+  let best = { cols: 1, rows: n, tileW: w, tileH: h / n, score: -1 };
+  for (let cols = 1; cols <= n; cols++) {
+    const rows = Math.ceil(n / cols);
+    const tileW = (w - GAP * (cols - 1)) / cols;
+    const tileH = (h - GAP * (rows - 1)) / rows;
+    const score = Math.min(tileW / aspect, tileH);
+    if (score > best.score) best = { cols, rows, tileW, tileH, score };
+  }
+  const scroll = best.tileH < MIN_TILE_H;
+  if (scroll) best.tileH = MIN_TILE_H;
+  return { ...best, scroll };
+}
+
+function Gallery({ people }: { people: { p: Participant; local: boolean }[] }) {
+  const box = useBoxSize<HTMLDivElement>();
+  const n = people.length;
+  const g = gridFor(n, box.w, box.h);
+  const initials = Math.round(Math.max(44, Math.min(112, Math.min(g.tileW, g.tileH) * 0.38)));
+  // An odd last tile in a two-column grid sits centred on its own row, the same size as the others.
+  const lastSpans = g.cols === 2 && n % 2 === 1 && n > 1;
+  return (
+    <div ref={box.ref} className={`h-full w-full ${g.scroll ? "overflow-y-auto" : "overflow-hidden"}`}>
+      {box.w > 0 && (
+        <div
+          className="mx-auto grid h-full w-full max-w-6xl"
+          style={{
+            gap: GAP,
+            gridTemplateColumns: `repeat(${g.cols}, minmax(0, 1fr))`,
+            gridAutoRows: g.scroll ? `${MIN_TILE_H}px` : `minmax(0, 1fr)`,
+            height: g.scroll ? "auto" : "100%",
+          }}
+        >
+          {people.map(({ p, local }, i) => (
+            <div
+              key={p.identity}
+              className="min-h-0 min-w-0"
+              style={lastSpans && i === n - 1 ? { gridColumn: "1 / -1", justifySelf: "center", width: `calc(50% - ${GAP / 2}px)` } : undefined}
+            >
+              <Tile p={p} local={local} initials={initials} />
+            </div>
+          ))}
         </div>
       )}
-      <span className="absolute bottom-2 left-2 flex max-w-[85%] items-center gap-1.5 truncate rounded-lg bg-black/55 px-2 py-1 text-[13px] font-semibold">
-        {!micOn && <CallIcon name="micOff" size={14} />}
-        {local ? "You" : p.name || "Member"}
-      </span>
+    </div>
+  );
+}
+
+/** One-to-one: the other person fills the screen, you are a small window in the corner. */
+function OneToOne({ me, other }: { me: Participant; other: Participant }) {
+  return (
+    <div className="relative h-full w-full">
+      <Tile p={other} local={false} initials={112} />
+      <div className="absolute bottom-3 right-3 aspect-[3/4] w-[30%] min-w-[96px] max-w-[200px] shadow-2xl md:aspect-video md:w-[24%] md:max-w-[280px]">
+        <Tile p={me} local initials={48} className="ring-1 ring-white/20" />
+      </div>
     </div>
   );
 }
@@ -116,7 +200,6 @@ export default function CallScreen({ call, onLeave }: { call: ActiveCall; onLeav
       setBusy(false);
     }
   };
-  const cols = people.length <= 1 ? "grid-cols-1" : people.length <= 4 ? "grid-cols-1 sm:grid-cols-2" : people.length <= 9 ? "grid-cols-2 md:grid-cols-3" : "grid-cols-3 md:grid-cols-4";
 
   const audioEls = audio.map((t) => <AudioTrack key={t.sid} track={t} />);
 
@@ -162,31 +245,29 @@ export default function CallScreen({ call, onLeave }: { call: ActiveCall; onLeav
         </button>
       )}
 
-      <main className="min-h-0 flex-1 overflow-auto px-3 pb-3 md:px-8">
+      <main className="min-h-0 flex-1 px-3 pb-1 md:px-8">
         {share ? (
           <div className="flex h-full flex-col gap-3 md:flex-row">
             <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl bg-black">
               <VideoTrack track={share.pub!.track!} contain />
               <span className="absolute left-2 top-2 rounded-lg bg-black/55 px-2 py-1 text-[13px] font-semibold">{share.p === local ? "You are sharing your screen" : `${share.p.name}'s screen`}</span>
             </div>
-            <div className="flex shrink-0 gap-3 overflow-auto md:w-56 md:flex-col">
+            <div className="flex shrink-0 gap-3 overflow-x-auto md:w-56 md:flex-col md:overflow-y-auto md:overflow-x-hidden">
               {people.map(({ p, local: l }) => (
-                <div key={p.identity} className="w-40 shrink-0 md:w-full">
-                  <Tile p={p} local={l} />
+                <div key={p.identity} className="aspect-video w-36 shrink-0 md:w-full">
+                  <Tile p={p} local={l} initials={44} />
                 </div>
               ))}
             </div>
           </div>
+        ) : people.length === 2 ? (
+          <OneToOne me={local} other={remotes[0]!} />
         ) : (
-          <div className={`mx-auto grid h-full max-w-6xl content-center gap-3 ${cols}`}>
-            {people.map(({ p, local: l }) => (
-              <Tile key={p.identity} p={p} local={l} big={people.length === 1} />
-            ))}
-          </div>
+          <Gallery people={people} />
         )}
       </main>
 
-      <footer className="flex items-center justify-center gap-3 px-4 pb-8 pt-3 md:gap-4">
+      <footer className="flex shrink-0 items-center justify-center gap-3 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 md:gap-4 md:pb-8">
         <RoundButton label={local.isMicrophoneEnabled ? "Mute" : "Unmute"} off={!local.isMicrophoneEnabled} disabled={busy} onClick={() => toggle(() => local.setMicrophoneEnabled(!local.isMicrophoneEnabled))}>
           <CallIcon name={local.isMicrophoneEnabled ? "mic" : "micOff"} />
         </RoundButton>
