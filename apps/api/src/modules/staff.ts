@@ -195,7 +195,9 @@ export async function staffRoutes(app: FastifyInstance) {
     } else {
       query = query.orderBy("p.created_at", "desc");
     }
-    const rows = await query.execute();
+    // Someone in several organizations is listed once, with the first of them.
+    const seen = new Set<string>();
+    const rows = (await query.execute()).filter((r) => !seen.has(r.id) && !!seen.add(r.id));
     return rows.map((r) => {
       const fromConfig = isConfigSuperAdmin(r.email, r.email_verified_at);
       return {

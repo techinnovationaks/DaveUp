@@ -48,8 +48,8 @@ interface Viewer {
 
 /** Members see DaveUp's and their organization's content; DaveUp staff see DaveUp's even without an organization. */
 async function viewer(req: FastifyRequest): Promise<Viewer> {
-  const { personId } = requireAuth(req);
-  const [m, staff] = await Promise.all([currentMembership(personId), isSuperAdmin(personId)]);
+  const { personId, activeChurchId } = requireAuth(req);
+  const [m, staff] = await Promise.all([currentMembership(personId, activeChurchId), isSuperAdmin(personId)]);
   const member = m && m.status === "approved" && m.churchStatus !== "suspended" ? m : null;
   if (!member && !staff) throw forbidden("Join your organization first");
   const org = member ? await ownerDb.selectFrom("church").select("name").where("id", "=", member.churchId).executeTakeFirst() : null;

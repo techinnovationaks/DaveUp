@@ -18,7 +18,7 @@ import {
   type MessagesPageDto,
 } from "@daveup/shared";
 import { withTenant } from "../db/pool";
-import { detail, loadConversation, loadMessage, loadMessages, postMessage, requireConversationMember, requireWritable, summaries } from "../lib/chat";
+import { blockedEitherWay, blockState, detail, loadConversation, loadMessage, loadMessages, postMessage, requireConversationMember, requireNotBlocked, requireWritable, summaries } from "../lib/chat";
 import { requireMember } from "../lib/context";
 import { badRequest, forbidden, notFound, parse } from "../lib/errors";
 import { livekitEnabled } from "../lib/livekit";
@@ -57,7 +57,8 @@ export async function chatRoutes(app: FastifyInstance) {
         .limit(q ? 50 : 500);
       if (q) query = query.where("p.full_name", "ilike", `%${q.replace(/[\\%_]/g, (c) => "\\" + c)}%`);
       const rows = await query.execute();
-      return rows.map((r) => ({ personId: r.id, fullName: r.full_name!, department: r.department, isAdmin: r.is_admin }));
+      const hidden = await blockedEitherWay(ctx.personId);
+      return rows.filter((r) => !hidden.has(r.id)).map((r) => ({ personId: r.id, fullName: r.full_name!, department: r.department, isAdmin: r.is_admin }));
     });
   });
 
@@ -88,6 +89,9 @@ export async function chatRoutes(app: FastifyInstance) {
     const ctx = await requireMember(req);
     const { personId } = parse(DirectChatSchema, req.body);
     if (personId === ctx.personId) throw badRequest("SELF", "You cannot start a chat with yourself");
+    const b = await blockState(ctx.personId, personId);
+    if (b.byMe) throw forbidden("You blocked this person. Unblock them in Account settings to chat.");
+    if (b.byThem) throw forbidden("You cannot message this person.");
     const churchId = ctx.membership.churchId;
     return withTenant(churchId, async (tx) => {
       const other = await tx.selectFrom("membership").select("id").where("person_id", "=", personId).where("status", "=", "approved").executeTakeFirst();
@@ -147,6 +151,7 @@ export async function chatRoutes(app: FastifyInstance) {
       const { conv } = await requireConversationMember(tx, id, ctx.personId);
       requireWritable(conv);
       await requireOtherStillMember(tx, conv, ctx.personId);
+      await requireNotBlocked(tx, conv, ctx.personId);
       if (body.clientId) {
         // A retried send (for example after a dropped connection) is not posted twice.
         const dup = await tx

@@ -9,6 +9,7 @@ import { IntroSlides } from "./IntroSlides";
 import { SITE_IMAGES } from "@/lib/site-images";
 import { Icon, accountItem, adminNav, isActive, mainNav, staffNav, titleFor } from "./nav";
 import { useRealtime } from "@/lib/realtime";
+import { OrgSwitcher } from "./OrgSwitcher";
 
 /** Unread count on the Messages item. */
 export function NavBadge({ count, dot = false }: { count: number; dot?: boolean }) {
@@ -56,7 +57,7 @@ function MobileTopBar() {
   return (
     <div className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-surface-line bg-white/95 px-4 backdrop-blur md:hidden">
       <Logo size={30} markOnly />
-      <span className="min-w-0 flex-1 truncate text-[15px] font-bold text-ink">{me?.membership?.churchName ?? "DaveUp"}</span>
+      <div className="min-w-0 flex-1">{me ? <OrgSwitcher me={me} compact /> : <span className="text-[15px] font-bold text-ink">DaveUp</span>}</div>
       {extra.map((it) => (
         <Link key={it.href} href={it.href} aria-label={it.label} title={it.label} className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted hover:bg-surface hover:text-brand">
           <Icon size={22}>{it.icon}</Icon>
@@ -113,7 +114,11 @@ function SideRail() {
           <Logo />
         </span>
       </Link>
-      {me?.membership && <p className="mt-1 hidden truncate px-2 text-[13px] text-ink-muted lg:block">{me.membership.churchName}, {me.membership.churchCity}</p>}
+      {me?.membership && (
+        <div className="mt-3 hidden lg:block">
+          <OrgSwitcher me={me} />
+        </div>
+      )}
       <nav className="mt-10 flex flex-col gap-3" aria-label="Main">
         {items.map(link)}
       </nav>

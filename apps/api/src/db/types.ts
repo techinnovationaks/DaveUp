@@ -37,6 +37,7 @@ export interface SessionTable {
   created_at: Timestamp;
   expires_at: Timestamp;
   revoked_at: NullableTimestamp;
+  active_church_id: string | null;
 }
 
 export interface ChurchTable {
@@ -50,6 +51,7 @@ export interface ChurchTable {
   created_by: string;
   settings: Generated<Record<string, unknown>>;
   extra_blocks: Generated<number>;
+  listed: Generated<boolean>;
   created_at: Timestamp;
 }
 
@@ -427,6 +429,12 @@ export interface LessonProgressTable {
   completed_at: Timestamp;
 }
 
+export interface PersonBlockTable {
+  blocker_id: string;
+  blocked_id: string;
+  created_at: Timestamp;
+}
+
 export interface DB {
   person: PersonTable;
   otp_challenge: OtpChallengeTable;
@@ -459,4 +467,5 @@ export interface DB {
   course: CourseTable;
   lesson: LessonTable;
   lesson_progress: LessonProgressTable;
+  person_block: PersonBlockTable;
 }

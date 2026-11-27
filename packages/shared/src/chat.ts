@@ -134,6 +134,10 @@ export interface ConversationDetailDto extends ConversationSummaryDto {
   canManage: boolean;
   /** The other person in a direct chat has left the church. */
   readOnly: boolean;
+  /** Direct chats: the viewer blocked the other person. */
+  blockedByMe: boolean;
+  /** Direct chats: either person blocked the other, so nobody can send. */
+  blocked: boolean;
   /** The viewer may start a call here: anyone in a direct chat; in a cell, its leaders, disciplers and admins. */
   canStartCall: boolean;
 }

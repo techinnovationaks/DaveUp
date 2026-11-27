@@ -6,6 +6,7 @@ import { normalisePhone, type AuthMethodsDto, type MeDto } from "@daveup/shared"
 import { AuthScreen, Button, ErrorText, Field, H1, LinkButton, Loading, TopBar, inputClass } from "@/components/ui";
 import { api, useAction, useApi } from "@/lib/api";
 import { nextStep, useSession } from "@/lib/session";
+import { takeJoinRedirect } from "./OrgSwitcher";
 
 type Mode = "signin" | "signup";
 type Method = "email" | "phone";
@@ -98,7 +99,7 @@ export function AuthFlow({ mode }: { mode: Mode }) {
     }
     await reload();
     const me = await api<MeDto>("/me");
-    router.replace(nextStep(me));
+    router.replace(takeJoinRedirect(me) ?? nextStep(me));
   };
 
   const switchTo = (m: Method) => {

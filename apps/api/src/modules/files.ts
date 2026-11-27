@@ -10,7 +10,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { FileCompleteSchema, FileUploadRequestSchema, FILE_MAX_BYTES, type FileDto, type MessageDto, type UploadTicketDto } from "@daveup/shared";
 import { withTenant } from "../db/pool";
-import { fileUrl, loadMessage, postMessage, requireConversationMember, requireWritable } from "../lib/chat";
+import { fileUrl, loadMessage, postMessage, requireConversationMember, requireNotBlocked, requireWritable } from "../lib/chat";
 import { requireMember } from "../lib/context";
 import { AppError, badRequest, conflict, forbidden, notFound, parse } from "../lib/errors";
 import { contentDisposition, getStorage, isInlineSafe, isS3, LocalStorage, storageKey } from "../lib/storage";
@@ -46,6 +46,7 @@ export async function fileRoutes(app: FastifyInstance) {
     const out = await withTenant(churchId, async (tx) => {
       const { conv } = await requireConversationMember(tx, id, ctx.personId);
       requireWritable(conv);
+      await requireNotBlocked(tx, conv, ctx.personId);
       const fileId = crypto.randomUUID();
       const key = storageKey(churchId, id, fileId);
       const mime = cleanMime(body.mime);
@@ -106,6 +107,7 @@ export async function fileRoutes(app: FastifyInstance) {
       if (locked.status !== "pending") throw conflict("ALREADY_UPLOADED", "This file is already shared");
       const { conv } = await requireConversationMember(tx, f.conversation_id, ctx.personId);
       requireWritable(conv);
+      await requireNotBlocked(tx, conv, ctx.personId);
       await tx.updateTable("shared_file").set({ status: "ready", ready_at: new Date() }).where("id", "=", id).execute();
       const m = await postMessage(tx, { churchId, conversationId: f.conversation_id, senderId: ctx.personId, kind: "file", fileId: id, body: caption || null });
       return (await loadMessage(tx, m.id))!;

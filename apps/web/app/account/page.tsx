@@ -1,7 +1,77 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Button, Card, H1, Loading, Row, Screen } from "@/components/ui";
-import { api, useAction } from "@/lib/api";
+import { api, useAction, useApi } from "@/lib/api";
+import type { BlockedPersonDto, MeDto } from "@daveup/shared";
+import { switchOrganization } from "@/components/OrgSwitcher";
+
+/** Every organization the person belongs to, with a way to switch or join another. */
+function Organizations({ me }: { me: MeDto }) {
+  return (
+    <Card className="mb-4">
+      <p className="mb-2 text-[13px] font-bold uppercase tracking-wider text-brand">Your organizations</p>
+      <div className="divide-y divide-surface-line">
+        {me.memberships.map((o) => {
+          const active = o.churchId === me.membership?.churchId;
+          return (
+            <div key={o.churchId} className="flex items-center gap-3 py-3">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[16px] font-semibold text-ink">{o.churchName}</span>
+                <span className="text-[14px] text-ink-muted">
+                  {o.churchCity}
+                  {o.status === "pending" ? " · Waiting for approval" : o.isAdmin ? " · Administrator" : ""}
+                  {o.suspended ? " · Paused" : ""}
+                </span>
+              </span>
+              {active ? (
+                <span className="text-[14px] font-bold text-brand">Open now</span>
+              ) : (
+                <button onClick={() => void switchOrganization(o.churchId)} className="rounded-xl px-3 py-2 text-[14px] font-semibold text-brand hover:bg-brand-soft">
+                  Switch
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <a href="/join" className="mt-2 inline-block text-[15px] font-semibold text-brand hover:underline">
+        + Join another organization
+      </a>
+    </Card>
+  );
+}
+
+/** People I blocked, to unblock. */
+function Blocked() {
+  const list = useApi<BlockedPersonDto[]>("/blocks");
+  const { busy, run } = useAction();
+  if (!list.data?.length) return null;
+  return (
+    <Card className="mb-4">
+      <p className="mb-1 text-[13px] font-bold uppercase tracking-wider text-brand">Blocked people</p>
+      <p className="mb-2 text-[14px] text-ink-muted">You and they cannot message or call each other, in any organization.</p>
+      <div className="divide-y divide-surface-line">
+        {list.data.map((b) => (
+          <div key={b.personId} className="flex items-center gap-3 py-3">
+            <span className="min-w-0 flex-1 truncate text-[16px] font-semibold text-ink">{b.fullName}</span>
+            <button
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  await api(`/blocks/${b.personId}`, { method: "DELETE" });
+                  list.setData(list.data!.filter((x) => x.personId !== b.personId));
+                })
+              }
+              className="rounded-xl px-3 py-2 text-[14px] font-semibold text-brand hover:bg-brand-soft"
+            >
+              Unblock
+            </button>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
 import { useGuard, useSession } from "@/lib/session";
 import { contactsOf } from "@/lib/labels";
 import { NotifyToggle } from "@/components/EmailSettings";
@@ -33,9 +103,11 @@ export default function Account() {
           {me.person.isSuperAdmin && <Row href="/staff" title="DaveUp staff console" sub="Organizations, verification and staff access" />}
         </div>
       </Card>
+      <Organizations me={me} />
       <Card className="mb-4">
         <NotifyToggle me={me} />
       </Card>
+      <Blocked />
       <Button
         variant="secondary"
         disabled={busy}

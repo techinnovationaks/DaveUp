@@ -10,7 +10,7 @@ import { z } from "zod";
 import { CALL_MAX_PARTICIPANTS, CALL_RING_SECONDS, CallMuteSchema, StartCallSchema, type ActiveCallDto, type CallJoinDto } from "@daveup/shared";
 import { config } from "../config";
 import { ownerDb, withTenant, type Tx } from "../db/pool";
-import { activeCalls, isCallLeader, personName, postMessage, requireConversationMember, requireWritable } from "../lib/chat";
+import { activeCalls, isCallLeader, personName, postMessage, requireConversationMember, requireNotBlocked, requireWritable } from "../lib/chat";
 import { requireMember } from "../lib/context";
 import { AppError, conflict, forbidden, notFound, parse } from "../lib/errors";
 import { closeRoom, joinToken, livekitEnabled, muteMicrophone, roomParticipants } from "../lib/livekit";
@@ -103,6 +103,7 @@ export async function callRoutes(app: FastifyInstance) {
       const existing = await tx.selectFrom("call_session").selectAll().where("conversation_id", "=", id).where("ended_at", "is", null).executeTakeFirst();
       if (existing) return joinCall(tx, existing, ctx.personId, role);
       requireWritable(conv);
+      await requireNotBlocked(tx, conv, ctx.personId);
       if (!role.leader) throw forbidden("Only the cell's leaders, disciplers and administrators can start a group call. You can join one once it starts.");
       const callId = crypto.randomUUID();
       const call = await tx

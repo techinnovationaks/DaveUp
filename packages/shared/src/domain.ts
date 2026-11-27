@@ -76,6 +76,16 @@ export const RegisterChurchSchema = z.object({
   department: z.string().trim().max(80).optional(),
 });
 
+/** Join an organization found in the search (approval still needed). */
+export const JoinOrganizationSchema = z.object({
+  participation: z.enum(PARTICIPATION),
+  department: z.string().trim().max(80).optional(),
+});
+
+export const SwitchOrganizationSchema = z.object({ churchId: z.string().uuid() });
+export const BlockSchema = z.object({ personId: z.string().uuid() });
+export const OrganizationSearchSchema = z.object({ q: z.string().trim().min(2).max(80) });
+
 export const JoinChurchSchema = z.object({
   code: z.string().trim().toUpperCase().min(4).max(16),
   participation: z.enum(PARTICIPATION),
