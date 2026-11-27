@@ -22,19 +22,18 @@ export function NavBadge({ count, dot = false }: { count: number; dot?: boolean 
   );
 }
 
-/** Heart-and-cross mark from the design boards. */
+/**
+ * The DaveUp logo: the full wordmark, or just the "U" mark. `light` is the white
+ * version for dark backgrounds. `size` is the height in pixels.
+ */
 export function Logo({ size = 36, light = false, markOnly = false }: { size?: number; light?: boolean; markOnly?: boolean }) {
-  return (
-    <span className="flex items-center gap-2.5">
-      <span style={{ width: size, height: size }} className={`flex items-center justify-center rounded-xl ${light ? "bg-white" : "bg-brand"}`}>
-        <svg width={size * 0.62} height={size * 0.58} viewBox="0 0 24 22" aria-hidden>
-          <path d="M12 21s-9-5.6-11-11.2C-.3 5.5 2.7 1 7 1c2.2 0 3.9 1.2 5 2.8C13.1 2.2 14.8 1 17 1c4.3 0 7.3 4.5 6 8.8C21 15.4 12 21 12 21z" fill={light ? "#1E3A8A" : "#fff"} />
-          <path d="M12 6v9M8.8 9.4h6.4" stroke={light ? "#fff" : "#1E3A8A"} strokeWidth="2.2" strokeLinecap="round" />
-        </svg>
-      </span>
-      {!markOnly && <span className={`text-[20px] font-extrabold tracking-tight ${light ? "text-white" : "text-ink"}`}>DaveUp</span>}
-    </span>
-  );
+  if (markOnly) {
+    // The mark is taller than wide (760 x 1045).
+    return <Image src={light ? "/brand/daveup-mark-white.png" : "/brand/daveup-mark.png"} alt="DaveUp" width={Math.round(size * 0.727)} height={size} priority className="shrink-0" />;
+  }
+  // The wordmark is about 2.9 times as wide as it is tall.
+  const h = Math.round(size * 0.95);
+  return <Image src={light ? "/brand/daveup-logo-white.png" : "/brand/daveup-logo.png"} alt="DaveUp" width={Math.round(h * 2.9)} height={h} priority className="shrink-0" />;
 }
 
 function initialsOf(name: string | null | undefined) {

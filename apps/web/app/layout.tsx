@@ -8,6 +8,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://daveup.app"),
   title: "DaveUp: Growth you can see",
   description:
     "Level up in faith, work and life with people who have your back. DaveUp pairs you with a discipler, mentor or coach and shows your progress month by month.",
@@ -18,7 +19,9 @@ export const metadata: Metadata = {
     description: "Faith and impact, in one picture. Join or create an organization and grow together.",
     siteName: "DaveUp",
     type: "website",
+    images: [{ url: "/brand/og.png", width: 1200, height: 630, alt: "DaveUp" }],
   },
+  twitter: { card: "summary_large_image", images: ["/brand/og.png"] },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#1E3A8A" };

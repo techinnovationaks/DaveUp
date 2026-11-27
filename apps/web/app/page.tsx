@@ -28,9 +28,11 @@ export const metadata: Metadata = {
     description: "Faith and impact, in one picture. Join or create an organization and grow together.",
     siteName: "DaveUp",
     type: "website",
+    images: [{ url: "/brand/og.png", width: 1200, height: 630, alt: "DaveUp" }],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
+    images: ["/brand/og.png"],
     title: "DaveUp: Growth you can see",
     description: "Faith and impact, in one picture. Join or create an organization and grow together.",
   },
