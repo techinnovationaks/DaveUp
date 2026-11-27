@@ -57,6 +57,18 @@ export function canManageCell(member: MemberRow | null, isAdmin: boolean): boole
   return isAdmin || member?.role === "leader";
 }
 
+/**
+ * Leads calls here: anyone in a direct chat; in a cell, its leaders, the
+ * organization's administrators, and approved disciplers who are in the cell.
+ */
+export async function isCallLeader(tx: Tx, conv: ConversationRow, member: MemberRow | null, personId: string, isAdmin: boolean): Promise<boolean> {
+  if (conv.kind === "direct") return true;
+  if (canManageCell(member, isAdmin)) return true;
+  if (!member) return false;
+  const d = await tx.selectFrom("discipler_status").select("id").where("person_id", "=", personId).where("church_id", "=", conv.church_id).where("status", "=", "approved").executeTakeFirst();
+  return !!d;
+}
+
 export function fileUrl(fileId: string): string {
   return `/api/files/${fileId}/download`;
 }
@@ -358,6 +370,7 @@ export async function detail(tx: Tx, conv: ConversationRow, member: MemberRow | 
     ...base,
     members: people.map((p) => ({ personId: p.person_id, fullName: p.full_name ?? "Member", role: p.role, department: p.department ?? null })),
     canManage: conv.kind === "cell" && canManageCell(member, isAdmin),
+    canStartCall: !!member && (await isCallLeader(tx, conv, member, personId, isAdmin)),
     readOnly: conv.kind === "direct" ? !other?.membership_id : !!conv.archived_at,
   };
 }

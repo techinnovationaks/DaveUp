@@ -7,13 +7,13 @@
 import type { FastifyInstance } from "fastify";
 import { sql } from "kysely";
 import { z } from "zod";
-import { CALL_MAX_PARTICIPANTS, CALL_RING_SECONDS, StartCallSchema, type ActiveCallDto, type CallJoinDto } from "@daveup/shared";
+import { CALL_MAX_PARTICIPANTS, CALL_RING_SECONDS, CallMuteSchema, StartCallSchema, type ActiveCallDto, type CallJoinDto } from "@daveup/shared";
 import { config } from "../config";
 import { ownerDb, withTenant, type Tx } from "../db/pool";
-import { activeCalls, personName, postMessage, requireConversationMember, requireWritable } from "../lib/chat";
+import { activeCalls, isCallLeader, personName, postMessage, requireConversationMember, requireWritable } from "../lib/chat";
 import { requireMember } from "../lib/context";
-import { AppError, conflict, notFound, parse } from "../lib/errors";
-import { closeRoom, joinToken, livekitEnabled, roomParticipants } from "../lib/livekit";
+import { AppError, conflict, forbidden, notFound, parse } from "../lib/errors";
+import { closeRoom, joinToken, livekitEnabled, muteMicrophone, roomParticipants } from "../lib/livekit";
 import { publish } from "../lib/realtime";
 import { getStorage } from "../lib/storage";
 
@@ -26,7 +26,7 @@ function requireCalls() {
 type CallRow = { id: string; church_id: string; conversation_id: string; room_name: string; started_by: string; answered_at: Date | null; ended_at: Date | null; media: "audio" | "video" };
 
 /** Add (or re-add) a person to a live call and sign their LiveKit token. */
-async function joinCall(tx: Tx, call: CallRow, personId: string): Promise<CallJoinDto> {
+async function joinCall(tx: Tx, call: CallRow, personId: string, role: { leader: boolean; group: boolean }): Promise<CallJoinDto> {
   const live = await tx.selectFrom("call_participant").select((e) => e.fn.countAll<string>().as("n")).where("call_id", "=", call.id).where("left_at", "is", null).where("person_id", "!=", personId).executeTakeFirst();
   if (Number(live?.n ?? 0) >= CALL_MAX_PARTICIPANTS) throw conflict("CALL_FULL", `This call is full (${CALL_MAX_PARTICIPANTS} people)`);
   await tx
@@ -43,7 +43,13 @@ async function joinCall(tx: Tx, call: CallRow, personId: string): Promise<CallJo
   }
   const name = await personName(tx, personId);
   const dto = (await activeCalls(tx, [call.conversation_id])).get(call.conversation_id)!;
-  return { call: { ...dto, conversationId: call.conversation_id }, url: config.livekit.url, token: joinToken(call.room_name, personId, name) };
+  const moderator = role.group && role.leader;
+  return {
+    call: { ...dto, conversationId: call.conversation_id },
+    canModerate: moderator,
+    url: config.livekit.url,
+    token: joinToken(call.room_name, personId, name, { leader: moderator }),
+  };
 }
 
 async function publishMessageChanged(db: Tx, call: CallRow) {
@@ -90,12 +96,14 @@ export async function callRoutes(app: FastifyInstance) {
     const { media } = parse(StartCallSchema, req.body);
     const churchId = ctx.membership.churchId;
     const out = await withTenant(churchId, async (tx) => {
-      const { conv } = await requireConversationMember(tx, id, ctx.personId);
+      const { conv, member } = await requireConversationMember(tx, id, ctx.personId);
+      const role = { leader: await isCallLeader(tx, conv, member, ctx.personId, ctx.membership.isAdmin), group: conv.kind === "cell" };
       // Lock the conversation so two people pressing "call" together share one call.
       await tx.selectFrom("conversation").select("id").where("id", "=", id).forUpdate().execute();
       const existing = await tx.selectFrom("call_session").selectAll().where("conversation_id", "=", id).where("ended_at", "is", null).executeTakeFirst();
-      if (existing) return joinCall(tx, existing, ctx.personId);
+      if (existing) return joinCall(tx, existing, ctx.personId, role);
       requireWritable(conv);
+      if (!role.leader) throw forbidden("Only the cell's leaders, disciplers and administrators can start a group call. You can join one once it starts.");
       const callId = crypto.randomUUID();
       const call = await tx
         .insertInto("call_session")
@@ -110,7 +118,7 @@ export async function callRoutes(app: FastifyInstance) {
         exclude: ctx.personId,
         event: { type: "call.ring", callId, conversationId: id, media, fromId: ctx.personId, fromName: name, title: conv.kind === "cell" ? conv.name! : name },
       });
-      return joinCall(tx, call, ctx.personId);
+      return joinCall(tx, call, ctx.personId, role);
     });
     reply.code(201);
     return out;
@@ -133,10 +141,36 @@ export async function callRoutes(app: FastifyInstance) {
     return withTenant(ctx.membership.churchId, async (tx) => {
       const call = await tx.selectFrom("call_session").selectAll().where("id", "=", id).forUpdate().executeTakeFirst();
       if (!call) throw notFound("Call not found");
-      await requireConversationMember(tx, call.conversation_id, ctx.personId);
+      const { conv, member } = await requireConversationMember(tx, call.conversation_id, ctx.personId);
       if (call.ended_at) throw conflict("CALL_ENDED", "This call has ended");
-      return joinCall(tx, call, ctx.personId);
+      const role = { leader: await isCallLeader(tx, conv, member, ctx.personId, ctx.membership.isAdmin), group: conv.kind === "cell" };
+      return joinCall(tx, call, ctx.personId, role);
     });
+  });
+
+  /**
+   * A leader mutes someone's microphone (body: personId), or everyone else's
+   * (no body). Group calls only. People can unmute themselves afterwards.
+   */
+  app.post("/calls/:id/mute", async (req): Promise<{ muted: number }> => {
+    const ctx = await requireMember(req);
+    requireCalls();
+    const { id } = parse(IdParam, req.params);
+    const target = req.body && typeof req.body === "object" && "personId" in req.body ? parse(CallMuteSchema, req.body).personId : null;
+    const call = await withTenant(ctx.membership.churchId, async (tx) => {
+      const c = await tx.selectFrom("call_session").selectAll().where("id", "=", id).executeTakeFirst();
+      if (!c) throw notFound("Call not found");
+      const { conv, member } = await requireConversationMember(tx, c.conversation_id, ctx.personId);
+      if (c.ended_at) throw conflict("CALL_ENDED", "This call has ended");
+      if (conv.kind !== "cell" || !(await isCallLeader(tx, conv, member, ctx.personId, ctx.membership.isAdmin))) {
+        throw forbidden("Only the call's leaders can mute other people");
+      }
+      return c;
+    });
+    const everyone = target ? [target] : (await roomParticipants(call.room_name)).filter((p) => p !== ctx.personId);
+    let muted = 0;
+    for (const who of everyone) if (await muteMicrophone(call.room_name, who)) muted++;
+    return { muted };
   });
 
   /** Leave a call. The call ends when nobody is left. */

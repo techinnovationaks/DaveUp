@@ -40,11 +40,13 @@ export function signToken(opts: { identity?: string; name?: string; grant: Video
 }
 
 /** Token for one person to join one room for one call (valid long enough to connect and stay). */
-export function joinToken(room: string, personId: string, name: string, ttlSeconds = 6 * 3600): string {
+export function joinToken(room: string, personId: string, name: string, opts: { leader?: boolean; ttlSeconds?: number } = {}): string {
   return signToken({
     identity: personId,
     name,
-    ttlSeconds,
+    ttlSeconds: opts.ttlSeconds ?? 6 * 3600,
+    // Everyone in the call can see who leads it.
+    metadata: JSON.stringify({ leader: !!opts.leader }),
     grant: { room, roomJoin: true, canPublish: true, canSubscribe: true, canPublishData: true },
   });
 }
@@ -76,4 +78,26 @@ export async function roomParticipants(room: string): Promise<string[]> {
 /** Close a room and disconnect everyone in it. */
 export async function closeRoom(room: string): Promise<void> {
   await roomService("DeleteRoom", { room }, { room, roomCreate: true });
+}
+
+type LkTrack = { sid: string; type?: string | number; source?: string | number; muted?: boolean };
+
+/** A published track is a microphone (enum values may come as names or numbers; AUDIO = 0 may be left out). */
+function isMicrophone(t: LkTrack): boolean {
+  if (t.source !== undefined) return t.source === "MICROPHONE" || t.source === 2;
+  return t.type === undefined || t.type === "AUDIO" || t.type === 0;
+}
+
+/**
+ * Mute someone's microphone from the server. They can unmute themselves
+ * afterwards (LiveKit does not let others unmute you). Returns false when
+ * they are not in the room or have no microphone on.
+ */
+export async function muteMicrophone(room: string, identity: string): Promise<boolean> {
+  const p = await roomService<{ tracks?: LkTrack[] }>("GetParticipant", { room, identity }, { room, roomAdmin: true }).catch(() => null);
+  const mics = (p?.tracks ?? []).filter((t) => isMicrophone(t) && !t.muted);
+  for (const t of mics) {
+    await roomService("MutePublishedTrack", { room, identity, track_sid: t.sid, muted: true }, { room, roomAdmin: true });
+  }
+  return mics.length > 0;
 }

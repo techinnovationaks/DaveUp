@@ -269,7 +269,7 @@ export function Thread({ id }: { id: string }) {
               </span>
             </span>
           </button>
-          {features?.calls && writable && !c.activeCall && (
+          {features?.calls && writable && !c.activeCall && c.canStartCall && (
             <>
               <HeaderButton label="Voice call" onClick={() => void calls.start(id, "audio", c.title)}>
                 <CallIcon name="phone" size={20} />

@@ -10,7 +10,9 @@ export const FILE_MAX_BYTES = 50 * 1024 * 1024;
 export const CELL_NAME_MAX = 80;
 export const CELL_DESCRIPTION_MAX = 500;
 /** A cell call can hold this many people at once. */
-export const CALL_MAX_PARTICIPANTS = 50;
+export const CALL_MAX_PARTICIPANTS = 100;
+/** Reactions people can send during a call. */
+export const CALL_REACTIONS = ["👍", "❤️", "😂", "🙏", "👏", "🎉", "🙌", "😮"] as const;
 /** An unanswered direct call stops ringing after this long. */
 export const CALL_RING_SECONDS = 45;
 
@@ -23,6 +25,8 @@ export type ChurchPlan = "basic" | "standard" | "pro" | "network";
 // ---- Requests ----
 
 const Uuid = z.string().uuid();
+
+export const CallMuteSchema = z.object({ personId: Uuid });
 
 export const DirectChatSchema = z.object({ personId: Uuid });
 
@@ -130,6 +134,8 @@ export interface ConversationDetailDto extends ConversationSummaryDto {
   canManage: boolean;
   /** The other person in a direct chat has left the church. */
   readOnly: boolean;
+  /** The viewer may start a call here: anyone in a direct chat; in a cell, its leaders, disciplers and admins. */
+  canStartCall: boolean;
 }
 
 export interface FileDto {
@@ -173,6 +179,8 @@ export interface UploadTicketDto {
 
 export interface CallJoinDto {
   call: ActiveCallDto & { conversationId: string };
+  /** A leader in a group call: may mute other people. */
+  canModerate: boolean;
   /** LiveKit server address (wss://...). */
   url: string;
   token: string;

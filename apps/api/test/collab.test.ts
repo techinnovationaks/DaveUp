@@ -376,6 +376,49 @@ describe("calls", () => {
     expect((await call(ben.token, "POST", `/calls/${callId}/join`)).status).toBe(409);
   });
 
+  it("lets only leaders start a group call, and lets them mute people", async () => {
+    const muted: { identity: string; track_sid: string }[] = [];
+    (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockImplementation(async (input: unknown, init?: RequestInit) => {
+      const url = String(input);
+      const body = JSON.parse(String(init?.body));
+      if (url.endsWith("/ListParticipants")) return new Response(JSON.stringify({ participants: (rooms.get(body.room) ?? []).map((identity) => ({ identity })) }));
+      if (url.endsWith("/GetParticipant")) return new Response(JSON.stringify({ identity: body.identity, tracks: [{ sid: `TR_${body.identity}`, source: "MICROPHONE" }, { sid: "TR_cam", type: "VIDEO", source: "CAMERA" }] }));
+      if (url.endsWith("/MutePublishedTrack")) muted.push(body);
+      return new Response("{}");
+    });
+    const bible = (await call(grace.admin.token, "POST", "/cells", { name: "Bible Cell", leaderIds: [ada.personId], memberIds: [ben.personId, cy.personId] })).body.id;
+    expect((await call(ben.token, "GET", `/conversations/${bible}`)).body.canStartCall).toBe(false);
+    expect((await call(ada.token, "GET", `/conversations/${bible}`)).body.canStartCall).toBe(true);
+    const refused = await call(ben.token, "POST", `/conversations/${bible}/calls`, { media: "audio" });
+    expect(refused.status).toBe(403);
+
+    const start = await call(ada.token, "POST", `/conversations/${bible}/calls`, { media: "audio" });
+    expect(start.status).toBe(201);
+    expect(start.body.canModerate).toBe(true);
+    const callId = start.body.call.id;
+    const benIn = await call(ben.token, "POST", `/calls/${callId}/join`);
+    expect(benIn.body.canModerate).toBe(false);
+    expect(JSON.parse(JSON.parse(Buffer.from(benIn.body.token.split(".")[1], "base64url").toString()).metadata)).toEqual({ leader: false });
+    rooms.set(`daveup-${callId}`, [ada.personId, ben.personId, cy.personId]);
+
+    expect((await call(ben.token, "POST", `/calls/${callId}/mute`, { personId: cy.personId })).status).toBe(403);
+    expect((await call(ada.token, "POST", `/calls/${callId}/mute`, { personId: ben.personId })).body).toEqual({ muted: 1 });
+    expect(muted).toEqual([expect.objectContaining({ identity: ben.personId, track_sid: `TR_${ben.personId}`, muted: true })]);
+    expect((await call(ada.token, "POST", `/calls/${callId}/mute`)).body).toEqual({ muted: 2 });
+    expect(muted.slice(1).map((m) => m.identity).sort()).toEqual([ben.personId, cy.personId].sort());
+
+    // In a one-to-one chat anyone may call, and nobody moderates.
+    const dm = (await call(cy.token, "POST", "/conversations/direct", { personId: ben.personId })).body.id;
+    const direct = await call(cy.token, "POST", `/conversations/${dm}/calls`, { media: "audio" });
+    expect(direct.status).toBe(201);
+    expect(direct.body.canModerate).toBe(false);
+    expect((await call(cy.token, "POST", `/calls/${direct.body.call.id}/mute`, { personId: ben.personId })).status).toBe(403);
+    await call(cy.token, "POST", `/calls/${direct.body.call.id}/leave`);
+    rooms.set(`daveup-${callId}`, []);
+    await call(ada.token, "POST", `/calls/${callId}/leave`);
+    await call(ben.token, "POST", `/calls/${callId}/leave`);
+  });
+
   it("ends a declined or unanswered one-to-one call", async () => {
     const dm = (await call(ada.token, "POST", "/conversations/direct", { personId: ben.personId })).body.id;
     const c1 = (await call(ada.token, "POST", `/conversations/${dm}/calls`, { media: "audio" })).body.call.id;
@@ -429,10 +472,10 @@ describe("staff console", () => {
     expect((await call(staff.token, "GET", "/me")).body.person.isSuperAdmin).toBe(true);
     const ov = (await call(staff.token, "GET", "/staff/overview")).body;
     expect(ov.churches).toMatchObject({ total: 2, unverified: 2 });
-    expect(ov.cells).toBe(2);
+    expect(ov.cells).toBe(3);
     expect(ov.messagesLast7Days).toBeGreaterThan(50);
     const list = (await call(staff.token, "GET", "/staff/churches")).body;
-    expect(list.find((c: any) => c.name === "Grace Chapel")).toMatchObject({ members: 4, cells: 2, admins: [{ fullName: "Grace Chapel Admin" }] });
+    expect(list.find((c: any) => c.name === "Grace Chapel")).toMatchObject({ members: 4, cells: 3, admins: [{ fullName: "Grace Chapel Admin" }] });
   });
 
   it("verifies a church and tells its admins", async () => {
