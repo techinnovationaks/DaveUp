@@ -115,8 +115,6 @@ export const config = {
     clientId: env.GOOGLE_CLIENT_ID || "",
     clientSecret: env.GOOGLE_CLIENT_SECRET || "",
   },
-  /** While true, a church that starts Standard gets the founding price, locked for 12 months. */
-  foundingPriceOpen: env.FOUNDING_PRICE_OPEN !== "false",
   /**
    * Shared files. "s3": any S3-compatible bucket (Cloudflare R2, AWS S3,
    * Backblaze B2), used when S3_BUCKET is set. "local": a folder on this

@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Bricolage_Grotesque, Inter } from "next/font/google";
 import { SessionProvider } from "@/lib/session";
 import { RealtimeProvider } from "@/lib/realtime";
 import { CallProvider } from "@/components/call/CallProvider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+/** Display face for the website's headings (DaveUp.html). */
+const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-display", display: "swap", weight: ["600", "700", "800"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://daveup.app"),
@@ -29,7 +31,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // suppressHydrationWarning: the motion script below adds a class to <html> before React loads.
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${display.variable}`} suppressHydrationWarning>
       <head>
         {/* Turn on homepage motion only when JavaScript runs and reduced motion is not requested.
             If the reveal watcher has not started within 3 seconds, switch it off so nothing stays hidden. */}

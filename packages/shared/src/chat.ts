@@ -20,7 +20,7 @@ export type ConversationKind = "direct" | "cell";
 export type CellRole = "leader" | "member";
 export type CallMedia = "audio" | "video";
 export type ChurchStatus = "unverified" | "verified" | "suspended";
-export type ChurchPlan = "basic" | "standard" | "pro" | "network";
+export type ChurchPlan = "basic" | "standard" | "pro" | "campus" | "network";
 
 // ---- Requests ----
 
@@ -76,7 +76,7 @@ export const ChurchStatusSchema = z.object({
   status: z.enum(["unverified", "verified", "suspended"]),
   reason: z.string().trim().max(500).optional(),
 });
-export const ChurchPlanSchema = z.object({ plan: z.enum(["basic", "standard", "pro", "network"]) });
+export const ChurchPlanSchema = z.object({ plan: z.enum(["basic", "standard", "pro", "campus", "network"]) });
 export const SuperAdminSchema = z.object({ personId: Uuid, grant: z.boolean() });
 
 // ---- Responses ----

@@ -1,7 +1,7 @@
 "use client";
 // Plan and billing (design 70), with "If a payment fails" (design 71).
 import { useState } from "react";
-import { GRACE_DAYS, PLAN_NAME, naira, type BillingDto } from "@daveup/shared";
+import { GRACE_DAYS, MEMBER_PACK_MONTH_KOBO, MEMBER_PACK_SIZE, MEMBERS_PER_LEADER, PLAN_NAME, naira, type BillingDto } from "@daveup/shared";
 import { ConsoleScreen } from "@/components/ConsoleShell";
 import { Button, Card, ErrorText, Eyebrow, Field, H1, LinkButton, Loading, Pill, inputClass } from "@/components/ui";
 import { fmtDate, planTitle, standing, UsageBar } from "@/components/console/billing";
@@ -57,21 +57,18 @@ export default function Billing() {
 
       {!b.onlinePayments && b.status !== "granted" && (
         <Card tone="soft" className="mb-4">
-          <p className="text-[15px] text-ink">Online payment is being set up. To move to Standard now, <a className="font-semibold text-brand underline" href="/admin/billing/talk?plan=pro">contact DaveUp</a>.</p>
+          <p className="text-[15px] text-ink">Online payment is being set up. To change plan now, <a className="font-semibold text-brand underline" href="/admin/billing/talk">contact DaveUp</a>.</p>
         </Card>
       )}
 
       <Card className="mb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[22px] font-extrabold text-ink">{planTitle(b.plan, b.extraBlocks)}</p>
+            <p className="text-[22px] font-extrabold text-ink">{planTitle(b.plan, b.seats, b.memberPacks)}</p>
             <p className="mt-1 text-[15px] text-ink-muted">{s.line}</p>
-            {b.plan === "standard" && b.foundingUntil && b.status !== "free" && (
-              <p className="mt-1 text-[14px] font-semibold text-ok">Founding price locked to {fmtDate(b.foundingUntil)}. List price {naira(100_000_00)} / month after that.</p>
-            )}
             {b.nextChange && (
               <p className="mt-2 text-[14px] text-ink">
-                Changes to <strong>{planTitle(b.nextChange.plan, b.nextChange.extraBlocks)}</strong>, paid {b.nextChange.interval === "year" ? "yearly" : "monthly"}, on {fmtDate(b.periodEnd)}.{" "}
+                Changes to <strong>{planTitle(b.nextChange.plan, b.nextChange.seats, b.nextChange.memberPacks)}</strong>, paid {b.nextChange.interval === "year" ? "yearly" : "monthly"}, on {fmtDate(b.periodEnd)}.{" "}
                 <button className="font-semibold text-brand underline" disabled={busy} onClick={() => void post("/billing/resume")}>
                   Keep the current plan
                 </button>
@@ -113,12 +110,12 @@ export default function Billing() {
       <Card className="mb-4">
         <Eyebrow className="mb-1">What you are using</Eyebrow>
         <div className="divide-y divide-surface-line">
-          <UsageBar label="Disciples" used={b.usage.disciples} limit={b.limits.disciples} />
-          <UsageBar label="Approved disciplers" used={b.usage.disciplers} limit={b.limits.disciplers} />
-          <UsageBar label="Cells" used={b.usage.cells} limit={b.limits.cells} />
+          <UsageBar label="Leaders (approved disciplers)" used={b.usage.disciplers} limit={b.limits.disciplers} />
+          <UsageBar label="Members in discipleship" used={b.usage.disciples} limit={b.limits.disciples} />
+          <UsageBar label="Cells and departments" used={b.usage.cells} limit={b.limits.cells} />
         </div>
         <p className="mt-2 text-[14px] text-ink-muted">
-          At a limit, no more can be added until you add capacity or change plan. Nobody already in DaveUp is affected. Extra capacity is {naira(30_000_00)} a month for 3 disciplers, 36 disciples and 3 cells.
+          At a limit, no more can be added until you add leaders or member packs. Nobody already in DaveUp is affected. Each leader includes {MEMBERS_PER_LEADER} members; extra members are {naira(MEMBER_PACK_MONTH_KOBO)} a month for {MEMBER_PACK_SIZE}.
         </p>
       </Card>
 
@@ -208,7 +205,7 @@ export default function Billing() {
               <div key={p.id} className="flex items-start justify-between gap-3 py-3">
                 <div className="min-w-0">
                   <p className="text-[15px] font-semibold text-ink">
-                    {planTitle(p.plan, p.extraBlocks)}, {p.interval === "year" ? "yearly" : "monthly"}
+                    {planTitle(p.plan, p.seats, p.memberPacks)}, {p.interval === "year" ? "yearly" : "monthly"}
                     {p.kind === "renewal" ? " renewal" : ""}
                   </p>
                   <p className="mt-0.5 text-[13px] text-ink-muted">
@@ -232,7 +229,7 @@ export default function Billing() {
 
       <p className="text-[14px] text-ink-muted">
         Pro, Network and larger organizations:{" "}
-        <a className="font-semibold text-brand underline" href="/admin/billing/talk?plan=pro">
+        <a className="font-semibold text-brand underline" href="/admin/billing/talk">
           talk to us
         </a>
         . Prices are reviewed every 6 months.

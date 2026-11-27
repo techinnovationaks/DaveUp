@@ -19,7 +19,6 @@ import {
   BillingContactSchema,
   BillingSelectionSchema,
   BillingVerifySchema,
-  FOUNDING_LOCK_MONTHS,
   GRACE_DAYS,
   PLAN_NAME,
   PlanEnquirySchema,
@@ -30,6 +29,7 @@ import {
   limitsFor,
   naira,
   periodPrice,
+  subscriptionLabel,
   unusedCredit,
   type BillingCheckoutDto,
   type BillingDto,
@@ -69,22 +69,24 @@ async function billingRow(db: Db, churchId: string, lock = false): Promise<Billi
   return q.executeTakeFirstOrThrow();
 }
 
-/** What the church is entitled to under this billing row. */
-function entitlement(b: Pick<Billing, "status" | "plan" | "extra_blocks">): { plan: ChurchPlan; extraBlocks: number } {
-  return b.status === "free" ? { plan: "basic", extraBlocks: 0 } : { plan: b.plan, extraBlocks: b.extra_blocks };
+/** What the organization is entitled to under this billing row. */
+function entitlement(b: Pick<Billing, "status" | "plan" | "seats" | "member_packs">): { plan: ChurchPlan; seats: number; memberPacks: number } {
+  return b.status === "free" ? { plan: "basic", seats: 1, memberPacks: 0 } : { plan: b.plan, seats: b.seats, memberPacks: b.member_packs };
 }
 
-/** Keep church.plan and church.extra_blocks (read by the limit checks) in step with billing. */
+/** Keep church.plan, seats and member_packs (read by the limit checks) in step with billing. */
 async function syncChurch(db: Db, churchId: string): Promise<void> {
-  const b = await db.selectFrom("church_billing").select(["status", "plan", "extra_blocks"]).where("church_id", "=", churchId).executeTakeFirstOrThrow();
+  const b = await db.selectFrom("church_billing").select(["status", "plan", "seats", "member_packs"]).where("church_id", "=", churchId).executeTakeFirstOrThrow();
   const e = entitlement(b);
-  await db.updateTable("church").set({ plan: e.plan, extra_blocks: e.extraBlocks }).where("id", "=", churchId).execute();
+  await db.updateTable("church").set({ plan: e.plan, seats: e.seats, member_packs: e.memberPacks }).where("id", "=", churchId).execute();
 }
 
 const FREE = {
   status: "free" as const,
   plan: "basic" as const,
   extra_blocks: 0,
+  seats: 1,
+  member_packs: 0,
   interval: null,
   period_start: null,
   period_end: null,
@@ -94,14 +96,11 @@ const FREE = {
   granted_note: null,
   next_plan: null,
   next_blocks: null,
+  next_seats: null,
+  next_packs: null,
   next_interval: null,
   last_attempt_at: null,
 };
-
-/** Founding Standard price for a period starting at `at`. */
-function foundingAt(b: Pick<Billing, "founding_until">, at: Date): boolean {
-  return b.founding_until ? at < b.founding_until : config.foundingPriceOpen;
-}
 
 async function adminIds(db: Db, churchId: string): Promise<string[]> {
   const rows = await db.selectFrom("membership").select("person_id").where("church_id", "=", churchId).where("is_admin", "=", true).where("status", "=", "approved").execute();
@@ -130,7 +129,8 @@ function paymentDto(p: Selectable<DB["billing_payment"]>): BillingPaymentDto {
     kind: p.kind,
     plan: p.plan,
     interval: p.interval,
-    extraBlocks: p.extra_blocks,
+    seats: p.seats,
+    memberPacks: p.member_packs,
     amountKobo: p.amount_kobo,
     status: p.status,
     channel: p.channel,
@@ -152,25 +152,24 @@ interface Quote extends BillingQuoteDto {
 }
 
 export function quoteFor(b: Billing, sel: BillingSelection, now: Date): Quote {
-  const founding = sel.plan === "standard" && foundingAt(b, now);
-  const price = periodPrice({ ...sel, founding });
-  const none: Quote = { mode: "none", amountKobo: 0, creditKobo: 0, periodPriceKobo: price, founding, effectiveAt: null, periodEnd: null, periodStartsAt: now };
+  const price = periodPrice(sel);
+  const none: Quote = { mode: "none", amountKobo: 0, creditKobo: 0, periodPriceKobo: price, effectiveAt: null, periodEnd: null, periodStartsAt: now };
 
   if (inPaidPeriod(b, now)) {
-    const from = { plan: b.plan, extraBlocks: b.extra_blocks, interval: b.interval };
-    const same = from.plan === sel.plan && from.extraBlocks === sel.extraBlocks && from.interval === sel.interval;
+    const from = { plan: b.plan, seats: b.seats, memberPacks: b.member_packs, interval: b.interval };
+    const same = from.plan === sel.plan && from.seats === sel.seats && from.memberPacks === sel.memberPacks && from.interval === sel.interval;
     if (same) return none;
     if (changeStartsNow(from, sel)) {
       const credit = unusedCredit(b.period_price_kobo, b.period_start!, b.period_end!, now);
       const amount = Math.max(price - credit, 0);
-      return { mode: "pay", amountKobo: amount, creditKobo: Math.min(credit, price), periodPriceKobo: price, founding, effectiveAt: now.toISOString(), periodEnd: addInterval(now, sel.interval).toISOString(), periodStartsAt: now };
+      return { mode: "pay", amountKobo: amount, creditKobo: Math.min(credit, price), periodPriceKobo: price, effectiveAt: now.toISOString(), periodEnd: addInterval(now, sel.interval).toISOString(), periodStartsAt: now };
     }
     return { ...none, mode: "schedule", effectiveAt: b.period_end!.toISOString() };
   }
 
   // Free, granted, in grace, or the paid period has run out: a new period starts when paid.
   if (price === 0) return none;
-  return { mode: "pay", amountKobo: price, creditKobo: 0, periodPriceKobo: price, founding, effectiveAt: now.toISOString(), periodEnd: addInterval(now, sel.interval).toISOString(), periodStartsAt: now };
+  return { mode: "pay", amountKobo: price, creditKobo: 0, periodPriceKobo: price, effectiveAt: now.toISOString(), periodEnd: addInterval(now, sel.interval).toISOString(), periodStartsAt: now };
 }
 
 // ---------- Applying a payment ----------
@@ -202,13 +201,13 @@ export async function settlePayment(reference: string, txn: PaystackTxn): Promis
           ...FREE,
           status: "active",
           plan: p.plan,
-          extra_blocks: p.extra_blocks,
+          seats: p.seats,
+          member_packs: p.member_packs,
           interval: p.interval,
           period_start: start,
           period_end: end,
           period_price_kobo: p.period_price_kobo,
           reminded_at: null,
-          founding_until: p.plan === "standard" && p.founding && !b.founding_until ? addInterval(paidAt, "month", FOUNDING_LOCK_MONTHS) : b.founding_until,
           paystack_customer: txn.customerCode ?? b.paystack_customer,
           ...auth,
           updated_at: new Date(),
@@ -227,12 +226,12 @@ export async function settlePayment(reference: string, txn: PaystackTxn): Promis
         action: "billing.paid",
         targetType: "payment",
         targetId: p.id,
-        data: { plan: p.plan, interval: p.interval, extraBlocks: p.extra_blocks, amountKobo: p.amount_kobo, kind: p.kind, channel: txn.channel },
+        data: { plan: p.plan, interval: p.interval, seats: p.seats, memberPacks: p.member_packs, amountKobo: p.amount_kobo, kind: p.kind, channel: txn.channel },
       });
       const church = await tx.selectFrom("church").select("name").where("id", "=", p.church_id).executeTakeFirstOrThrow();
       await notify(tx, p.church_id, await adminIds(tx, p.church_id), "billing.paid", {
         churchName: church.name,
-        planName: planLabel(p.plan, p.extra_blocks),
+        planName: subscriptionLabel(p.plan, p.seats, p.member_packs),
         amount: naira(p.amount_kobo),
         interval: p.interval,
         periodEnd: end.toISOString(),
@@ -253,10 +252,6 @@ export async function settlePayment(reference: string, txn: PaystackTxn): Promis
     }
     return "pending";
   });
-}
-
-function planLabel(plan: ChurchPlan, blocks: number): string {
-  return blocks > 0 ? `${PLAN_NAME[plan]} with ${blocks} extra capacity block${blocks === 1 ? "" : "s"}` : PLAN_NAME[plan];
 }
 
 // ---------- The background job: renewals, grace and expiry ----------
@@ -319,16 +314,19 @@ async function claimCharge(now: Date): Promise<{ b: Billing; reference: string; 
     if (!b) return null;
     await tx.updateTable("church_billing").set({ last_attempt_at: now }).where("church_id", "=", b.church_id).execute();
 
-    const target = { plan: (b.next_plan ?? b.plan) as ChurchPlan, extraBlocks: b.next_blocks ?? b.extra_blocks, interval: (b.next_interval ?? b.interval ?? "month") as BillingInterval };
+    const target = {
+      plan: (b.next_plan ?? b.plan) as ChurchPlan,
+      seats: b.next_plan ? (b.next_seats ?? b.seats) : b.seats,
+      memberPacks: b.next_plan ? (b.next_packs ?? 0) : b.member_packs,
+      interval: (b.next_interval ?? b.interval ?? "month") as BillingInterval,
+    };
     const renewingOnTime = b.status === "active";
-    const startsAt = renewingOnTime ? b.period_end! : now;
     if (!isSelfServe(target.plan)) {
-      // Pro and Network are agreed with staff and should be granted, not renewed online.
+      // Campus and Network are agreed with staff and should be granted, not renewed online.
       await toGrace(tx, b, now, "billing.renew_due");
       return "again";
     }
-    const founding = target.plan === "standard" && foundingAt(b, startsAt);
-    const price = periodPrice({ plan: target.plan, interval: target.interval, extraBlocks: target.extraBlocks, founding });
+    const price = periodPrice(target);
     if (price === 0) {
       // The church chose Basic (free) for the next period.
       await tx.updateTable("church_billing").set({ ...FREE, updated_at: now }).where("church_id", "=", b.church_id).execute();
@@ -350,10 +348,10 @@ async function claimCharge(now: Date): Promise<{ b: Billing; reference: string; 
         kind: "renewal",
         plan: target.plan,
         interval: target.interval,
-        extra_blocks: target.extraBlocks,
+        seats: target.seats,
+        member_packs: target.memberPacks,
         amount_kobo: price,
         period_price_kobo: price,
-        founding,
         period_start: renewingOnTime ? b.period_end : null,
       })
       .execute();
@@ -478,13 +476,14 @@ const paymentsOff = () => conflict("PAYMENTS_OFF", "Online payment is not set up
 async function billingDto(churchId: string): Promise<BillingDto> {
   const now = new Date();
   const b = await billingRow(ownerDb, churchId);
-  const church = await ownerDb.selectFrom("church").select(["plan", "extra_blocks"]).where("id", "=", churchId).executeTakeFirstOrThrow();
+  const church = await ownerDb.selectFrom("church").select(["plan", "seats", "member_packs"]).where("id", "=", churchId).executeTakeFirstOrThrow();
   const payments = await ownerDb.selectFrom("billing_payment").selectAll().where("church_id", "=", churchId).orderBy("created_at", "desc").limit(24).execute();
   const paying = b.status === "active" || b.status === "canceling" || b.status === "grace";
   return {
     onlinePayments: !!getPaystack(),
     plan: church.plan,
-    extraBlocks: church.extra_blocks,
+    seats: church.seats,
+    memberPacks: church.member_packs,
     interval: b.interval,
     status: b.status,
     periodStart: b.period_start?.toISOString() ?? null,
@@ -492,14 +491,12 @@ async function billingDto(churchId: string): Promise<BillingDto> {
     graceUntil: b.grace_until?.toISOString() ?? null,
     grantedUntil: b.granted_until?.toISOString() ?? null,
     grantedNote: b.granted_note,
-    foundingUntil: b.founding_until?.toISOString() ?? null,
-    foundingAvailable: foundingAt(b, now),
     periodPriceKobo: paying ? b.period_price_kobo : 0,
-    nextChange: b.next_plan && b.next_interval ? { plan: b.next_plan, extraBlocks: b.next_blocks ?? 0, interval: b.next_interval } : null,
+    nextChange: b.next_plan && b.next_interval ? { plan: b.next_plan, seats: b.next_seats ?? 1, memberPacks: b.next_packs ?? 0, interval: b.next_interval } : null,
     billingEmail: b.billing_email,
     card: b.auth_code ? b.auth_label || "Saved card" : null,
     usage: await churchUsage(ownerDb, churchId),
-    limits: limitsFor(church.plan, church.extra_blocks),
+    limits: limitsFor(church.plan, church.seats, church.member_packs),
     payments: payments.map(paymentDto),
   };
 }
@@ -532,10 +529,14 @@ export async function billingRoutes(app: FastifyInstance) {
       const q = quoteFor(b, sel, now);
       if (q.mode === "none") return { mode: "none" as const };
       if (q.mode === "schedule") {
-        const toFree = sel.plan === "basic" && sel.extraBlocks === 0;
+        const toFree = sel.plan === "basic";
         await tx
           .updateTable("church_billing")
-          .set(toFree ? { status: "canceling", next_plan: null, next_blocks: null, next_interval: null, updated_at: now } : { status: "active", next_plan: sel.plan, next_blocks: sel.extraBlocks, next_interval: sel.interval, updated_at: now })
+          .set(
+            toFree
+              ? { status: "canceling", next_plan: null, next_seats: null, next_packs: null, next_interval: null, updated_at: now }
+              : { status: "active", next_plan: sel.plan, next_seats: sel.seats, next_packs: sel.memberPacks, next_interval: sel.interval, updated_at: now },
+          )
           .where("church_id", "=", churchId)
           .execute();
         await audit(tx, { churchId, actorId: ctx.personId, action: toFree ? "billing.cancelled" : "billing.change_scheduled", targetType: "church", targetId: churchId, data: { ...sel, from: b.period_end?.toISOString() } });
@@ -553,10 +554,10 @@ export async function billingRoutes(app: FastifyInstance) {
           kind: "checkout",
           plan: sel.plan,
           interval: sel.interval,
-          extra_blocks: sel.extraBlocks,
+          seats: sel.seats,
+          member_packs: sel.memberPacks,
           amount_kobo: q.amountKobo,
           period_price_kobo: q.periodPriceKobo,
-          founding: q.founding,
           created_by: ctx.personId,
         })
         .returning("id")
@@ -624,7 +625,7 @@ export async function billingRoutes(app: FastifyInstance) {
     await ownerDb.transaction().execute(async (tx) => {
       const b = await billingRow(tx, churchId, true);
       if (b.status !== "active") throw conflict("NOT_RENEWING", "There is no renewing plan to cancel");
-      await tx.updateTable("church_billing").set({ status: "canceling", next_plan: null, next_blocks: null, next_interval: null, updated_at: new Date() }).where("church_id", "=", churchId).execute();
+      await tx.updateTable("church_billing").set({ status: "canceling", next_plan: null, next_seats: null, next_packs: null, next_interval: null, updated_at: new Date() }).where("church_id", "=", churchId).execute();
       await audit(tx, { churchId, actorId: ctx.personId, action: "billing.cancelled", targetType: "church", targetId: churchId, data: { until: b.period_end?.toISOString() } });
     });
     return billingDto(churchId);
@@ -638,7 +639,7 @@ export async function billingRoutes(app: FastifyInstance) {
       const b = await billingRow(tx, churchId, true);
       if (b.status !== "canceling" && !(b.status === "active" && b.next_plan)) throw conflict("NOTHING_TO_UNDO", "Nothing is scheduled to change");
       if (b.period_end && b.period_end <= new Date()) throw conflict("PERIOD_OVER", "This period has ended. Choose a plan instead.");
-      await tx.updateTable("church_billing").set({ status: "active", next_plan: null, next_blocks: null, next_interval: null, updated_at: new Date() }).where("church_id", "=", churchId).execute();
+      await tx.updateTable("church_billing").set({ status: "active", next_plan: null, next_seats: null, next_packs: null, next_interval: null, updated_at: new Date() }).where("church_id", "=", churchId).execute();
       await audit(tx, { churchId, actorId: ctx.personId, action: "billing.resumed", targetType: "church", targetId: churchId });
     });
     return billingDto(churchId);
@@ -664,7 +665,7 @@ export async function billingRoutes(app: FastifyInstance) {
     return billingDto(churchId);
   });
 
-  /** "Talk to us" about Pro or Network (screen 72). Emails DaveUp staff. */
+  /** "Talk to us" about Campus or Network (or a large Pro plan). Emails DaveUp staff. */
   app.post("/billing/enquiry", async (req): Promise<{ ok: true }> => {
     const ctx = await requireAdmin(req);
     const body = parse(PlanEnquirySchema, req.body);
@@ -707,7 +708,7 @@ export async function billingRoutes(app: FastifyInstance) {
           email: me.email,
           phone: body.phone || me.phone,
           message: body.message,
-          usage: `${usage.disciplers} disciplers, ${usage.disciples} disciples, ${usage.cells} cells`,
+          usage: `${usage.disciplers} leaders, ${usage.disciples} members in discipleship, ${usage.cells} cells`,
           churchId,
         },
       );
@@ -757,10 +758,14 @@ export async function billingRoutes(app: FastifyInstance) {
       const c = await tx.selectFrom("church").select("plan").where("id", "=", id).executeTakeFirst();
       if (!c) throw notFound("Organization not found");
       const b = await billingRow(tx, id, true);
-      const free = body.plan === "basic" && body.extraBlocks === 0;
+      const free = body.plan === "basic";
       await tx
         .updateTable("church_billing")
-        .set(free ? { ...FREE, updated_at: new Date() } : { ...FREE, status: "granted", plan: body.plan, extra_blocks: body.extraBlocks, granted_until: until, granted_note: body.note || null, updated_at: new Date() })
+        .set(
+          free
+            ? { ...FREE, updated_at: new Date() }
+            : { ...FREE, status: "granted", plan: body.plan, seats: body.seats, member_packs: body.memberPacks, granted_until: until, granted_note: body.note || null, updated_at: new Date() },
+        )
         .where("church_id", "=", id)
         .execute();
       await syncChurch(tx, id);
@@ -770,7 +775,7 @@ export async function billingRoutes(app: FastifyInstance) {
         action: "staff.church_plan",
         targetType: "church",
         targetId: id,
-        data: { from: c.plan, to: body.plan, extraBlocks: body.extraBlocks, until: until?.toISOString() ?? null, note: body.note || null, replacedOnline: b.status === "active" || b.status === "canceling" || b.status === "grace" },
+        data: { from: c.plan, to: body.plan, seats: body.seats, memberPacks: body.memberPacks, until: until?.toISOString() ?? null, note: body.note || null, replacedOnline: b.status === "active" || b.status === "canceling" || b.status === "grace" },
       });
     });
     return billingDto(id);

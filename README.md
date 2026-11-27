@@ -339,18 +339,27 @@ For AWS S3 use `S3_ENDPOINT=https://s3.<region>.amazonaws.com` and the bucket's 
 
 ## Plans and billing (Paystack)
 
-Plans follow PRD section 17. Basic is free: 3 disciplers, 36 disciples and 3 cells. Standard is ₦70,000 a month at the founding price, locked for 12 months from a church's first payment (list price ₦100,000), with 12 disciplers, 144 disciples and unlimited cells. An extra capacity block costs ₦30,000 a month and adds 3 disciplers, 36 disciples and 3 cells. Yearly billing charges 10 months. DaveUp staff set Pro and Network plans by hand in the staff console, along with pilots. Prices and limits are in `packages/shared/src/billing.ts`.
+Pricing is **per leader** (a person who disciples others; migration 0012). Each leader seat includes 12 members; extra members come in packs of 12 for ₦1,800 a month. Yearly billing charges 10 months.
 
-- **Limits** only stop new additions: approving a discipler, accepting a disciple, creating a cell. Nobody already in loses access.
+| Plan | Price per leader | Minimum leaders | Bought |
+|---|---|---|---|
+| Basic | Free: 1 leader, up to 3 members | 1 | Online |
+| Standard | ₦5,000 a month, ₦50,000 a year | 5 | Online |
+| Pro | ₦6,500 a month, ₦65,000 a year | 25 | Online |
+| Campus | ₦2,500 a month, ₦25,000 a year | 10 | Talk to us (staff set it) |
+| Network | From ₦4,000 a month (₦3,500 from 500, ₦3,000 from 2,000), annual | 100 | Talk to us (staff set it; 0 seats = no limit) |
+
+"Members" are people in a current discipleship relationship as the disciple; "leaders" are approved disciplers. Departments and cells are unlimited on every plan. Owners and admins who only manage settings do not use a seat. Storage limits, AI drafts and the other add-ons on the pricing page are not enforced or sold yet. Prices and limits are in `packages/shared/src/billing.ts`.
+
+- **Limits** only stop new additions: approving a discipler (a leader) and accepting a disciple (a member). Nobody already in loses access.
 - **Checkout:** the administrator chooses a plan under **Billing** in the church console and pays on Paystack's own page by card, bank transfer or USSD. A payment is applied once, after Paystack confirms the exact amount. Confirmation comes when the administrator returns to `/admin/billing/return`, or through the webhook, whichever is first.
-- **Changes:** anything that adds capacity, or moves to yearly, is paid now, with credit for the unused part of the current period. Smaller plans and cancellations take effect when the paid period ends.
+- **Changes:** anything that adds leaders, member packs or a bigger plan, or moves to yearly, is paid now, with credit for the unused part of the current period. Smaller plans and cancellations take effect when the paid period ends.
 - **Renewals:** a background job in the API (every 5 minutes) charges the saved card when a period ends. Churches without a card get an email 3 days before. A failed or unpaid renewal starts 14 days of grace, with a daily retry; after that the church returns to Basic. Staff grants with an end date also return to Basic when they end.
 - **Emails:** receipts, payment problems and the end of a plan go to church administrators even if they turned notifications off. "Talk to us" enquiries go to DaveUp staff.
 
 **Set up:**
 1. In the Paystack dashboard, copy the **secret key** from Settings → API Keys & Webhooks. Use `sk_test_…` while testing and `sk_live_…` for real money. Set it as `PAYSTACK_SECRET_KEY` on the API.
 2. On the same page, set the **Webhook URL** to `https://daveup.app/api/billing/paystack/webhook`.
-3. Optional: when the founding offer closes, set `FOUNDING_PRICE_OPEN=false`. Churches already on the founding price keep it until their 12 months end.
 
 Without a secret key, online payment is off: the billing screens show plans and usage, and ask churches to contact DaveUp.
 

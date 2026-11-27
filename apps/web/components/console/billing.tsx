@@ -2,15 +2,15 @@
 // Shared pieces of the Plan and billing screens (designs 63, 64, 70, 71, 164).
 import Link from "next/link";
 import { useApi } from "@/lib/api";
-import { PLAN_NAME, naira, type BillingDto, type BillingInterval, type ChurchPlan } from "@daveup/shared";
+import { PLAN_NAME, naira, subscriptionLabel, type BillingDto, type BillingInterval, type ChurchPlan } from "@daveup/shared";
 
 export const fmtDate = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "";
 
 export const per = (interval: BillingInterval | null) => (interval === "year" ? "year" : "month");
 
-export function planTitle(plan: ChurchPlan, extraBlocks: number): string {
-  return extraBlocks > 0 ? `${PLAN_NAME[plan]} + ${extraBlocks} extra capacity` : PLAN_NAME[plan];
+export function planTitle(plan: ChurchPlan, seats: number, memberPacks: number): string {
+  return subscriptionLabel(plan, seats, memberPacks);
 }
 
 /** One line about where the plan stands, and the pill beside it. */
@@ -26,7 +26,7 @@ export function standing(b: BillingDto): { line: string; pill: string; tone: "gr
     case "granted":
       return { line: `Arranged with DaveUp${b.grantedUntil ? ` until ${fmtDate(b.grantedUntil)}` : ""}${b.grantedNote ? `: ${b.grantedNote}` : ""}.`, pill: "Arranged", tone: "green" };
     default:
-      return { line: "Free forever. No card, no time limit.", pill: "Free", tone: "grey" };
+      return { line: "Free forever: 1 leader and up to 3 members. No card, no time limit.", pill: "Free", tone: "grey" };
   }
 }
 
@@ -55,16 +55,17 @@ export function BillingNotice() {
   const billing = useApi<BillingDto>("/billing");
   const b = billing.data;
   if (!b) return null;
-  const full = (["disciples", "disciplers", "cells"] as const).filter((k) => b.limits[k] !== null && b.usage[k] >= b.limits[k]!);
+  const full = (["disciples", "disciplers"] as const).filter((k) => b.limits[k] !== null && b.usage[k] >= b.limits[k]!);
+  const noun = { disciples: "members", disciplers: "leaders" } as const;
   if (b.status !== "grace" && full.length === 0) return null;
   const grace = b.status === "grace";
   return (
     <Link href={grace ? "/admin/billing/change" : "/admin/billing"} className={`mb-4 block rounded-card border p-4 ${grace ? "border-danger-line bg-danger-soft" : "border-amber-200 bg-amber-50"}`}>
       <p className={`text-[16px] font-bold ${grace ? "text-danger" : "text-ink"}`}>
-        {grace ? `Payment needed by ${fmtDate(b.graceUntil)}` : `Your organization is at its ${PLAN_NAME[b.plan]} limit for ${full.join(" and ")}`}
+        {grace ? `Payment needed by ${fmtDate(b.graceUntil)}` : `Your organization is at its ${PLAN_NAME[b.plan]} limit for ${full.map((k) => noun[k]).join(" and ")}`}
       </p>
       <p className="mt-0.5 text-[14px] text-ink">
-        {grace ? "Everything keeps working until then. Pay now to keep your plan." : "No more can be added until you add capacity or change plan. Nobody already in is affected."}
+        {grace ? "Everything keeps working until then. Pay now to keep your plan." : "No more can be added until you add leaders or member packs. Nobody already in is affected."}
       </p>
     </Link>
   );

@@ -19,7 +19,7 @@ export async function churchUsage(db: Kysely<DB>, churchId: string): Promise<Rec
   return { disciplers: Number(x.disciplers), disciples: Number(x.disciples), cells: Number(x.cells) };
 }
 
-const NOUN: Record<Kind, string> = { disciplers: "approved disciplers", disciples: "disciples", cells: "cells" };
+const NOUN: Record<Kind, string> = { disciplers: "leaders (approved disciplers)", disciples: "members in discipleship", cells: "cells" };
 
 /**
  * Throw PLAN_LIMIT when adding `adding` more would pass the church's limit.
@@ -28,14 +28,14 @@ const NOUN: Record<Kind, string> = { disciplers: "approved disciplers", disciple
  */
 export async function assertRoom(tx: Kysely<DB>, churchId: string, kind: Kind, adding = 1): Promise<void> {
   await sql`select pg_advisory_xact_lock(hashtext(${"plan-limit:" + churchId}))`.execute(tx);
-  const c = await tx.selectFrom("church").select(["plan", "extra_blocks"]).where("id", "=", churchId).executeTakeFirstOrThrow();
-  const limit = limitsFor(c.plan, c.extra_blocks)[kind];
+  const c = await tx.selectFrom("church").select(["plan", "seats", "member_packs"]).where("id", "=", churchId).executeTakeFirstOrThrow();
+  const limit = limitsFor(c.plan, c.seats, c.member_packs)[kind];
   if (limit === null) return;
   const used = (await churchUsage(tx, churchId))[kind];
   if (used + adding > limit) {
     throw conflict(
       "PLAN_LIMIT",
-      `Your organization's ${PLAN_NAME[c.plan]} plan allows ${limit} ${NOUN[kind]}, and all of them are in use. An organization administrator can add capacity under Plan and billing.`,
+      `Your organization's ${PLAN_NAME[c.plan]} plan allows ${limit} ${NOUN[kind]}, and all of them are in use. An administrator can add leaders or members under Plan and billing.`,
     );
   }
 }

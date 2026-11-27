@@ -6,9 +6,9 @@ import { nextStep, useSession } from "@/lib/session";
 
 const LINKS = [
   { href: "#how-it-works", label: "How it works", hint: "Join, check in, walk together, see it grow", icon: "M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" },
-  { href: "#features", label: "Features", hint: "Scores, plans, chat, calls and spaces", icon: "M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z" },
-  { href: "#who-its-for", label: "Who it's for", hint: "Churches, fellowships, mentoring and training", icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" },
-  { href: "#pricing", label: "Pricing", hint: "Basic is free forever", icon: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
+  { href: "#features", label: "Features", hint: "Scores, journal, spaces, training and resources", icon: "M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z" },
+  { href: "#who-its-for", label: "Who it's for", hint: "Churches, campuses, businesses and mentoring", icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" },
+  { href: "#pricing", label: "Pricing", hint: "Basic is free forever; pay per leader", icon: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
   { href: "#faq", label: "FAQ", hint: "Cost, privacy and installing", icon: "M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" },
 ];
 
@@ -53,7 +53,8 @@ export function SiteHeader() {
 
   const close = () => setOpen(false);
   const solid = scrolled || open;
-  const linkCls = solid ? "text-ink hover:text-brand" : "text-white/90 hover:text-white";
+  // The bar is dark (navy glass once scrolled) except while the white menu panel is open.
+  const linkCls = open ? "text-ink hover:text-brand" : "text-white/80 hover:text-white";
   const bar = "absolute left-1/2 h-[2px] w-5 -translate-x-1/2 rounded-full bg-current transition-all duration-300 ease-out";
 
   return (
@@ -65,12 +66,12 @@ export function SiteHeader() {
         className={`fixed inset-0 z-20 bg-brand-deep/50 backdrop-blur-[2px] transition-opacity duration-300 lg:hidden ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
       />
 
-      <header className={`fixed inset-x-0 top-0 z-30 transition-colors duration-300 ${open ? "border-b border-surface-line bg-white" : solid ? "border-b border-surface-line bg-white/95 backdrop-blur" : "border-b border-transparent bg-transparent"}`}>
+      <header className={`fixed inset-x-0 top-0 z-30 transition-colors duration-300 ${open ? "border-b border-surface-line bg-white" : solid ? "border-b border-white/10 bg-night/85 backdrop-blur-xl" : "border-b border-transparent bg-transparent"}`}>
         {/* Same width rule as the page sections (padding outside, width inside), so edges line up. */}
         <div className="px-4 md:px-8">
           <div className="mx-auto flex h-16 max-w-6xl min-[1440px]:max-w-[80vw] items-center gap-6 md:h-20">
             <Link href="/" aria-label="DaveUp home" className="shrink-0" onClick={close}>
-              <Logo light={!solid} />
+              <Logo light={!open} />
             </Link>
             <nav className="hidden flex-1 items-center gap-7 lg:flex" aria-label="Main">
               {LINKS.map((l) => (
@@ -81,7 +82,7 @@ export function SiteHeader() {
             </nav>
             <div className="ml-auto hidden items-center gap-3 md:flex">
               {!loading && me ? (
-                <Link href={nextStep(me)} className="rounded-[8px] bg-brand px-5 py-2.5 text-[15px] font-bold text-white hover:bg-brand-dark">
+                <Link href={nextStep(me)} className="rounded-full bg-white px-5 py-2.5 text-[15px] font-bold text-brand transition-transform hover:-translate-y-0.5">
                   Open DaveUp
                 </Link>
               ) : (
@@ -89,7 +90,7 @@ export function SiteHeader() {
                   <Link href="/signin" className={`px-3 py-2.5 text-[15px] font-semibold ${linkCls}`}>
                     Sign in
                   </Link>
-                  <Link href="/signup" className={`rounded-[8px] px-5 py-2.5 text-[15px] font-bold ${solid ? "bg-brand text-white hover:bg-brand-dark" : "bg-white text-brand hover:bg-white/90"}`}>
+                  <Link href="/signup" className="rounded-full bg-white px-5 py-2.5 text-[15px] font-bold text-brand transition-transform hover:-translate-y-0.5">
                     Get started
                   </Link>
                 </>
@@ -102,7 +103,7 @@ export function SiteHeader() {
               aria-expanded={open}
               aria-controls="site-menu"
               aria-label={open ? "Close menu" : "Open menu"}
-              className={`relative ml-auto h-11 w-11 rounded-[8px] transition-colors md:ml-0 lg:hidden ${solid ? "text-ink hover:bg-surface" : "text-white hover:bg-white/10"}`}
+              className={`relative ml-auto h-11 w-11 rounded-[8px] transition-colors md:ml-0 lg:hidden ${open ? "text-ink hover:bg-surface" : "text-white hover:bg-white/10"}`}
             >
               <span aria-hidden className={`${bar} ${open ? "top-1/2 -translate-y-1/2 rotate-45" : "top-[15px]"}`} />
               <span aria-hidden className={`${bar} top-1/2 -translate-y-1/2 ${open ? "scale-x-0 opacity-0" : ""}`} />

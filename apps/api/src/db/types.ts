@@ -45,12 +45,14 @@ export interface ChurchTable {
   name: string;
   city: string;
   join_code: string;
-  plan: Generated<"basic" | "standard" | "pro" | "network">;
+  plan: Generated<"basic" | "standard" | "pro" | "campus" | "network">;
   status: Generated<"unverified" | "verified" | "suspended">;
   verified_at: NullableTimestamp;
   created_by: string;
   settings: Generated<Record<string, unknown>>;
   extra_blocks: Generated<number>;
+  seats: Generated<number>;
+  member_packs: Generated<number>;
   listed: Generated<boolean>;
   created_at: Timestamp;
 }
@@ -312,13 +314,15 @@ export interface MessageTable {
   deleted_at: NullableTimestamp;
 }
 
-type Plan = "basic" | "standard" | "pro" | "network";
+type Plan = "basic" | "standard" | "pro" | "campus" | "network";
 type Interval = "month" | "year";
 
 export interface ChurchBillingTable {
   church_id: string;
   plan: Generated<Plan>;
   extra_blocks: Generated<number>;
+  seats: Generated<number>;
+  member_packs: Generated<number>;
   interval: Interval | null;
   status: Generated<"free" | "active" | "canceling" | "grace" | "granted">;
   period_start: NullableTimestamp;
@@ -328,8 +332,10 @@ export interface ChurchBillingTable {
   granted_until: NullableTimestamp;
   granted_note: string | null;
   founding_until: NullableTimestamp;
-  next_plan: "basic" | "standard" | null;
+  next_plan: "basic" | "standard" | "pro" | null;
   next_blocks: number | null;
+  next_seats: number | null;
+  next_packs: number | null;
   next_interval: Interval | null;
   billing_email: string | null;
   auth_code: string | null;
@@ -349,6 +355,8 @@ export interface BillingPaymentTable {
   plan: Plan;
   interval: Interval;
   extra_blocks: Generated<number>;
+  seats: Generated<number>;
+  member_packs: Generated<number>;
   amount_kobo: number;
   period_price_kobo: number;
   founding: Generated<boolean>;

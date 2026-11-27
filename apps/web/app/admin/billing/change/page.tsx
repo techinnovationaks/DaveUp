@@ -1,13 +1,18 @@
 "use client";
-// Choose a plan (design 63) and pay with Paystack (design 64).
-import { useEffect, useState } from "react";
+// Choose a plan and pay with Paystack. Priced per leader: each leader seat
+// includes 12 members; more members come in packs of 12.
+import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CAPACITY_BLOCK,
-  MAX_EXTRA_BLOCKS,
-  PRICE_KOBO,
-  PLAN_LIMITS,
+  MAX_MEMBER_PACKS,
+  MAX_SEATS,
+  MEMBER_PACK_MONTH_KOBO,
+  MEMBER_PACK_SIZE,
+  MEMBERS_PER_LEADER,
+  MONTHS_CHARGED_PER_YEAR,
+  PLAN_INFO,
   naira,
+  subscriptionLabel,
   type BillingCheckoutDto,
   type BillingDto,
   type BillingInterval,
@@ -16,9 +21,48 @@ import {
 } from "@daveup/shared";
 import { ConsoleScreen } from "@/components/ConsoleShell";
 import { Button, Card, ErrorText, Field, H1, Loading, Segmented, TopBar, inputClass } from "@/components/ui";
-import { fmtDate, planTitle } from "@/components/console/billing";
+import { fmtDate } from "@/components/console/billing";
 import { api, useAction, useApi } from "@/lib/api";
 import { useGuard } from "@/lib/session";
+
+function Stepper({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (n: number) => void }) {
+  const set = (n: number) => onChange(Math.max(min, Math.min(max, Number.isFinite(n) ? Math.round(n) : min)));
+  return (
+    <div className="flex items-center gap-2">
+      <button type="button" aria-label={`Fewer ${label}`} disabled={value <= min} onClick={() => set(value - 1)} className="h-11 w-11 rounded-full border border-surface-line text-[22px] font-bold text-ink disabled:opacity-40">
+        −
+      </button>
+      <input
+        aria-label={label}
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => set(Number(e.target.value.replace(/\D/g, "")) || min)}
+        className="h-11 w-16 rounded-xl border border-surface-line text-center text-[18px] font-extrabold text-ink"
+      />
+      <button type="button" aria-label={`More ${label}`} disabled={value >= max} onClick={() => set(value + 1)} className="h-11 w-11 rounded-full border border-surface-line text-[22px] font-bold text-ink disabled:opacity-40">
+        +
+      </button>
+    </div>
+  );
+}
+
+function PlanCard({ title, price, note, children, selected, onChoose }: { title: string; price: string; note: string; children: ReactNode; selected?: boolean; onChoose?: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onChoose}
+      aria-pressed={selected}
+      className={`w-full rounded-card border bg-white p-5 text-left transition-colors ${selected ? "border-2 border-brand shadow-md" : "border-surface-line hover:border-brand-line"}`}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className="text-[20px] font-extrabold text-ink">{title}</span>
+        <span className="text-[18px] font-extrabold text-ink">{price}</span>
+      </div>
+      <p className="mt-1 text-[14px] font-semibold text-ok">{note}</p>
+      <div className="mt-2 text-[15px] text-ink-muted">{children}</div>
+    </button>
+  );
+}
 
 export default function ChangePlan() {
   const { me, ready } = useGuard("admin");
@@ -27,34 +71,46 @@ export default function ChangePlan() {
   const { busy, error, run } = useAction();
   const [plan, setPlan] = useState<SelfServePlan>("standard");
   const [interval, setPeriod] = useState<BillingInterval>("month");
-  const [blocks, setBlocks] = useState(0);
+  const [seats, setSeats] = useState(PLAN_INFO.standard.minLeaders);
+  const [packs, setPacks] = useState(0);
   const [quote, setQuote] = useState<BillingQuoteDto | null>(null);
   const [email, setEmail] = useState("");
   const [started, setStarted] = useState(false);
 
-  // Start from the church's current choice.
+  // Start from the organization's current choice, or enough leaders for the leaders it already has.
   const b = billing.data;
   useEffect(() => {
     if (!b || started) return;
     setStarted(true);
-    if (b.status !== "free" && (b.plan === "basic" || b.plan === "standard")) {
+    if (b.status !== "free" && (b.plan === "standard" || b.plan === "pro")) {
       setPlan(b.plan);
-      setBlocks(b.extraBlocks);
+      setSeats(b.seats);
+      setPacks(b.memberPacks);
       if (b.interval) setPeriod(b.interval);
+    } else {
+      setSeats(Math.max(PLAN_INFO.standard.minLeaders, b.usage.disciplers));
     }
   }, [b, started]);
+
+  const choose = (p: SelfServePlan) => {
+    setPlan(p);
+    if (p === "basic") {
+      setSeats(1);
+      setPacks(0);
+    } else setSeats((n) => Math.max(n, PLAN_INFO[p].minLeaders));
+  };
 
   // Price for the current choice, from the server (it knows the credit for unused time).
   useEffect(() => {
     if (!b) return;
     let live = true;
-    api<BillingQuoteDto>("/billing/quote", { method: "POST", body: { plan, interval, extraBlocks: blocks } })
+    api<BillingQuoteDto>("/billing/quote", { method: "POST", body: { plan, interval, seats, memberPacks: packs } })
       .then((q) => live && setQuote(q))
       .catch(() => live && setQuote(null));
     return () => {
       live = false;
     };
-  }, [b, plan, interval, blocks]);
+  }, [b, plan, interval, seats, packs]);
 
   if (!ready || billing.loading) return <Loading />;
   if (!b) {
@@ -66,49 +122,27 @@ export default function ChangePlan() {
     );
   }
 
-  const founding = b.foundingAvailable;
-  const months = interval === "year" ? 10 : 1;
-  const standardMonthly = founding ? PRICE_KOBO.standardFounding : PRICE_KOBO.standardList;
+  const yearly = interval === "year";
+  const per = (p: "standard" | "pro") => naira(yearly ? PLAN_INFO[p].leaderYearKobo : PLAN_INFO[p].leaderMonthKobo);
+  const packPrice = naira(MEMBER_PACK_MONTH_KOBO * (yearly ? MONTHS_CHARGED_PER_YEAR : 1));
   const needEmail = !b.billingEmail && !me!.person.email;
+  const members = seats * MEMBERS_PER_LEADER + packs * MEMBER_PACK_SIZE;
 
   const go = () =>
     run(async () => {
       if (needEmail) await api("/billing/contact", { method: "PUT", body: { email } });
-      const r = await api<BillingCheckoutDto>("/billing/checkout", { method: "POST", body: { plan, interval, extraBlocks: blocks } });
+      const r = await api<BillingCheckoutDto>("/billing/checkout", { method: "POST", body: { plan, interval, seats, memberPacks: packs } });
       if (r.mode === "pay" && r.authorizationUrl) window.location.assign(r.authorizationUrl);
       else router.push("/admin/billing");
     });
 
-  const PlanCard = ({ id, title, price, note, body, onChoose, selected }: { id: string; title: string; price: string; note: string; body: string; onChoose?: () => void; selected?: boolean }) => (
-    <button
-      type="button"
-      onClick={onChoose}
-      aria-pressed={selected}
-      className={`w-full rounded-card border bg-white p-5 text-left transition-colors ${selected ? "border-2 border-brand shadow-md" : "border-surface-line hover:border-brand-line"}`}
-      id={`plan-${id}`}
-    >
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <span className="text-[20px] font-extrabold text-ink">{title}</span>
-        <span className="text-[18px] font-extrabold text-ink">{price}</span>
-      </div>
-      <p className="mt-1 text-[14px] font-semibold text-ok">{note}</p>
-      <p className="mt-2 text-[15px] text-ink-muted">{body}</p>
-    </button>
-  );
-
-  const basic = PLAN_LIMITS.basic;
-  const std = PLAN_LIMITS.standard;
   const cta =
-    quote?.mode === "pay"
-      ? `Pay ${naira(quote.amountKobo)} with Paystack`
-      : quote?.mode === "schedule"
-        ? `Change on ${fmtDate(quote.effectiveAt)}`
-        : "This is your current plan";
+    quote?.mode === "pay" ? `Pay ${naira(quote.amountKobo)} with Paystack` : quote?.mode === "schedule" ? `Change on ${fmtDate(quote.effectiveAt)}` : "This is your current plan";
 
   return (
     <ConsoleScreen narrow>
       <TopBar back="/admin/billing" title="Choose a plan" />
-      <H1 sub="Start free, or choose Standard. You can change plan any time.">Pick a plan</H1>
+      <H1 sub="Pay only for the leaders who disciple. Each leader includes 12 members. Owners and admins who only manage settings are free.">Pick a plan</H1>
 
       <Segmented
         value={interval}
@@ -120,67 +154,67 @@ export default function ChangePlan() {
       />
 
       <div className="space-y-3">
-        <PlanCard
-          id="basic"
-          title="Basic"
-          price={blocks > 0 ? `${naira(blocks * PRICE_KOBO.block * months)} / ${interval}` : "Free forever"}
-          note={blocks > 0 ? "Free plan, with the extra capacity below" : "No card, no time limit"}
-          body={`${basic.disciplers} disciplers, ${basic.disciples} disciples, ${basic.cells} cells. Assessments, monthly checks, template growth plans, chat and calls. No AI.`}
-          selected={plan === "basic"}
-          onChoose={() => setPlan("basic")}
-        />
-        <PlanCard
-          id="standard"
-          title="Standard"
-          price={`${naira(standardMonthly * months)} / ${interval}`}
-          note={founding ? `Founding price, locked for 12 months. List price ${naira(PRICE_KOBO.standardList * months)} / ${interval}` : `List price`}
-          body={`${std.disciplers} disciplers, ${std.disciples} disciples, unlimited cells, leadership dashboard. AI help as it arrives.`}
-          selected={plan === "standard"}
-          onChoose={() => setPlan("standard")}
-        />
-        <a href="/admin/billing/talk?plan=pro" className="block rounded-card border border-surface-line bg-white p-5 hover:border-brand-line">
+        <PlanCard title="Basic" price="Free forever" note="No card needed" selected={plan === "basic"} onChoose={() => choose("basic")}>
+          1 leader and up to 3 members. Unlimited departments and cells, journal and assessments. 1 GB storage.
+        </PlanCard>
+        <PlanCard title="Standard" price={`${per("standard")} / leader / ${interval}`} note={`From ${PLAN_INFO.standard.minLeaders} leaders`} selected={plan === "standard"} onChoose={() => choose("standard")}>
+          For a growing church, fellowship or coaching organization. 12 members per leader, 2 GB storage per leader. Group training and the weekly leader brief are coming soon.
+        </PlanCard>
+        <PlanCard title="Pro" price={`${per("pro")} / leader / ${interval}`} note={`From ${PLAN_INFO.pro.minLeaders} leaders`} selected={plan === "pro"} onChoose={() => choose("pro")}>
+          For large churches and multi-site organizations. Everything in Standard, 5 GB storage per leader. Organization reports and paid access to join are coming soon.
+        </PlanCard>
+        <a href="/admin/billing/talk?plan=campus" className="block rounded-card border border-surface-line bg-white p-5 hover:border-brand-line">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-[20px] font-extrabold text-ink">Pro</span>
+            <span className="text-[20px] font-extrabold text-ink">Campus</span>
             <span className="text-[18px] font-extrabold text-brand">Talk to us</span>
           </div>
-          <p className="mt-1 text-[14px] font-semibold text-ok">Up to 1,440 disciples and 120 disciplers</p>
-          <p className="mt-2 text-[15px] text-ink-muted">Larger AI allowance, your own terminology, and onboarding help, agreed with you.</p>
+          <p className="mt-1 text-[14px] font-semibold text-ok">
+            {naira(PLAN_INFO.campus.leaderMonthKobo)} per leader a month, from {PLAN_INFO.campus.minLeaders} leaders
+          </p>
+          <p className="mt-2 text-[15px] text-ink-muted">Standard features at a student rate, for campus fellowships and student groups.</p>
         </a>
         <a href="/admin/billing/talk?plan=network" className="block rounded-card border border-surface-line bg-white p-5 hover:border-brand-line">
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-[20px] font-extrabold text-ink">Network</span>
-            <span className="text-[18px] font-extrabold text-brand">Custom</span>
+            <span className="text-[18px] font-extrabold text-brand">Talk to us</span>
           </div>
-          <p className="mt-1 text-[14px] font-semibold text-ok">Many organizations, one agreement</p>
-          <p className="mt-2 text-[15px] text-ink-muted">Network view that respects each organization&apos;s privacy, shared content and dedicated onboarding. At least 10 organizations.</p>
+          <p className="mt-1 text-[14px] font-semibold text-ok">
+            From {naira(PLAN_INFO.network.leaderMonthKobo)} per leader a month, from {PLAN_INFO.network.minLeaders} leaders
+          </p>
+          <p className="mt-2 text-[15px] text-ink-muted">Denominations, ministries and training programs, on an annual contract.</p>
         </a>
       </div>
 
-      <Card className="mt-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-[17px] font-bold text-ink">Extra capacity</p>
-            <p className="mt-0.5 text-[14px] text-ink-muted">
-              Each block adds {CAPACITY_BLOCK.disciplers} disciplers, {CAPACITY_BLOCK.disciples} disciples and {CAPACITY_BLOCK.cells} cells for {naira(PRICE_KOBO.block * months)} / {interval}.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button type="button" aria-label="Fewer blocks" disabled={blocks === 0} onClick={() => setBlocks((n) => Math.max(0, n - 1))} className="h-11 w-11 rounded-full border border-surface-line text-[22px] font-bold text-ink disabled:opacity-40">
-              −
-            </button>
-            <span className="w-8 text-center text-[20px] font-extrabold text-ink" aria-live="polite">
-              {blocks}
-            </span>
-            <button type="button" aria-label="More blocks" disabled={blocks >= MAX_EXTRA_BLOCKS} onClick={() => setBlocks((n) => Math.min(MAX_EXTRA_BLOCKS, n + 1))} className="h-11 w-11 rounded-full border border-surface-line text-[22px] font-bold text-ink disabled:opacity-40">
-              +
-            </button>
-          </div>
-        </div>
-      </Card>
+      {plan !== "basic" && (
+        <>
+          <Card className="mt-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[17px] font-bold text-ink">Leaders</p>
+                <p className="mt-0.5 text-[14px] text-ink-muted">
+                  People who disciple others. You have {b.usage.disciplers} now. At least {PLAN_INFO[plan].minLeaders} on {plan === "pro" ? "Pro" : "Standard"}.
+                </p>
+              </div>
+              <Stepper label="leaders" value={seats} min={PLAN_INFO[plan].minLeaders} max={MAX_SEATS} onChange={setSeats} />
+            </div>
+          </Card>
+          <Card className="mt-3">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[17px] font-bold text-ink">Extra members</p>
+                <p className="mt-0.5 text-[14px] text-ink-muted">
+                  Packs of {MEMBER_PACK_SIZE} for {packPrice} / {interval}. Room for {members.toLocaleString("en-NG")} members in discipleship ({b.usage.disciples} now).
+                </p>
+              </div>
+              <Stepper label="member packs" value={packs} min={0} max={MAX_MEMBER_PACKS} onChange={setPacks} />
+            </div>
+          </Card>
+        </>
+      )}
 
       <Card tone="soft" className="mt-4">
         <p className="text-[17px] font-bold text-ink">
-          {planTitle(plan, blocks)}, {interval === "year" ? "yearly" : "monthly"}
+          {subscriptionLabel(plan, seats, packs)}, {yearly ? "yearly" : "monthly"}
         </p>
         {!quote ? (
           <p className="mt-1 text-[15px] text-ink-muted">Working out the price…</p>
@@ -190,9 +224,7 @@ export default function ChangePlan() {
             {quote.creditKobo > 0 ? `, after ${naira(quote.creditKobo)} credit for the unused part of your current plan` : ""}. Paid to {fmtDate(quote.periodEnd)}, then {naira(quote.periodPriceKobo)} each {interval}. Cancel any time.
           </p>
         ) : quote.mode === "schedule" ? (
-          <p className="mt-1 text-[15px] text-ink">
-            Starts on {fmtDate(quote.effectiveAt)}, when your paid period ends. Nothing to pay now, and you keep what you have until then.
-          </p>
+          <p className="mt-1 text-[15px] text-ink">Starts on {fmtDate(quote.effectiveAt)}, when your paid period ends. Nothing to pay now, and you keep what you have until then.</p>
         ) : (
           <p className="mt-1 text-[15px] text-ink-muted">{b.status === "free" ? "Basic is free. Nothing to do." : "This is your current plan."}</p>
         )}
@@ -201,7 +233,7 @@ export default function ChangePlan() {
       {quote?.mode === "pay" && needEmail && (
         <div className="mt-4">
           <Field label="Billing email" hint="Paystack sends the receipt here.">
-            <input className={inputClass} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="accounts@yourchurch.org" />
+            <input className={inputClass} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="accounts@yourorganization.org" />
           </Field>
         </div>
       )}
@@ -210,7 +242,7 @@ export default function ChangePlan() {
       {quote?.mode === "pay" && !b.onlinePayments ? (
         <p className="mt-4 text-[15px] text-ink">
           Online payment is being set up.{" "}
-          <a className="font-semibold text-brand underline" href="/admin/billing/talk?plan=pro">
+          <a className="font-semibold text-brand underline" href="/admin/billing/talk">
             Contact DaveUp
           </a>{" "}
           to change plan now.
@@ -223,7 +255,7 @@ export default function ChangePlan() {
         </div>
       )}
       <p className="mt-4 text-[14px] text-ink-muted">
-        Billed in Naira through Paystack: card, bank transfer or USSD. You are not charged until Paystack confirms the payment, and a receipt is emailed. Prices are reviewed every 6 months.
+        Billed in Naira through Paystack: card, bank transfer or USSD. You are not charged until Paystack confirms the payment, and a receipt is emailed. Departments and cells are unlimited on every plan.
       </p>
     </ConsoleScreen>
   );

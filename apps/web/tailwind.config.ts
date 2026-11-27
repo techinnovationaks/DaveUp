@@ -14,8 +14,14 @@ export default {
         surface: { DEFAULT: "#F7F8FA", card: "#FFFFFF", line: "#E5E7EB" },
         ok: { DEFAULT: "#15803D", soft: "#ECFDF3" },
         warn: { DEFAULT: "#92400E", soft: "#FEF3C7" },
+        // Public website (DaveUp.html): deep navy bands with one cyan glow.
+        night: { DEFAULT: "#041A4D", 2: "#06236B", 3: "#082F87", muted: "#B4C2E8" },
+        glow: { DEFAULT: "#01FDFF", ink: "#0891B2" },
       },
-      fontFamily: { sans: ["var(--font-inter)", "system-ui", "sans-serif"] },
+      fontFamily: {
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-inter)", "system-ui", "sans-serif"],
+      },
       borderRadius: { card: "20px" },
     },
   },

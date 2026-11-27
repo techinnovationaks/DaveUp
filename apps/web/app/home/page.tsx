@@ -6,12 +6,47 @@ import { Card, ErrorText, Eyebrow, Initials, LinkButton, Loading, Pill, Row, Scr
 import { useApi } from "@/lib/api";
 import { useGuard } from "@/lib/session";
 import { HomeGrowthCard } from "@/components/rel/Growth";
+import { HomeHero } from "@/components/home/HomeHero";
+import { navIcons, Icon } from "@/components/nav";
+
+/** Shortcuts to the other sections, as tiles. */
+const TILES = [
+  { href: "/journal", label: "Journal", sub: "Write today", icon: navIcons.journal },
+  { href: "/messages", label: "Spaces", sub: "Chats and cells", icon: navIcons.chat },
+  { href: "/training", label: "Training", sub: "Your courses", icon: navIcons.training },
+  { href: "/resources", label: "Resources", sub: "Guides and videos", icon: navIcons.resources },
+  { href: "/assessments", label: "Assessments", sub: "Checks and results", icon: navIcons.assess },
+];
+
+function Tiles() {
+  return (
+    <div className="mb-6 grid grid-cols-3 gap-2.5 sm:grid-cols-5 md:gap-3">
+      {TILES.map((t, i) => (
+        <Link
+          key={t.href}
+          href={t.href}
+          className={`group flex flex-col items-start gap-2 rounded-2xl border border-surface-line bg-white p-3.5 transition-[transform,box-shadow,border-color] hover:-translate-y-0.5 hover:border-brand-line hover:shadow-md md:p-4 ${i >= 3 ? "max-sm:hidden" : ""}`}
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-night text-glow transition-colors group-hover:bg-brand">
+            <Icon size={20}>{t.icon}</Icon>
+          </span>
+          <span>
+            <span className="block text-[15px] font-bold text-ink">{t.label}</span>
+            <span className="block text-[12px] text-ink-muted">{t.sub}</span>
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+}
 import { OPEN_STATUSES, baselineLabel, dueText, firstName, fmtDateTime, greeting, statusLabel } from "@/lib/labels";
 
 type Mode = "me" | "lead";
 
 function loadMode(): Mode {
   try {
+    const q = new URLSearchParams(window.location.search).get("mode");
+    if (q === "lead" || q === "me") return q;
     return sessionStorage.getItem("daveup.mode") === "lead" ? "lead" : "me";
   } catch {
     return "me";
@@ -40,26 +75,16 @@ export default function Home() {
   const isDiscipler = me.disciplerStatus === "approved";
   const leadBadge = asDiscipler.filter((r) => r.awaiting === "me" || r.awaiting === "both").length;
   const showLead = isDiscipler && mode === "lead";
-  const today = new Date().toLocaleDateString(undefined, { weekday: "long" });
 
   return (
     <Screen nav aside={showLead ? undefined : <UpNext rels={all.filter((r) => OPEN_STATUSES.includes(r.status))} hub={hub.data} />}>
-      <div className="mb-5 flex items-start justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-tight text-ink md:text-[34px]">
-            {greeting()}, {firstName(me.person.fullName)}
-          </h1>
-          <p className="mt-1 hidden text-[16px] text-ink-muted md:block">{today}. Your discipleship this week.</p>
+      <HomeHero me={me} rels={all} greeting={greeting()} />
+      <Tiles />
+      {!showLead && (
+        <div className="mb-6 xl:hidden">
+          <UpNext rels={all.filter((r) => OPEN_STATUSES.includes(r.status))} hub={hub.data} />
         </div>
-      </div>
-      <div className="-mt-2 mb-5 flex flex-wrap gap-2">
-        <Link href="/assessments" className="rounded-full border border-surface-line bg-white px-4 py-2 text-[14px] font-semibold text-ink hover:border-brand-line hover:text-brand">
-          Assessments
-        </Link>
-        <Link href="/journal" className="rounded-full border border-surface-line bg-white px-4 py-2 text-[14px] font-semibold text-ink hover:border-brand-line hover:text-brand">
-          Write in my journal
-        </Link>
-      </div>
+      )}
 
       {isDiscipler && (
         <Segmented<Mode>
