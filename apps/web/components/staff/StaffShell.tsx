@@ -22,6 +22,8 @@ const NAV = [
   { href: "/staff/churches", label: "Organizations", icon: icons.churches },
   { href: "/staff/people", label: "People & staff", icon: icons.people },
   { href: "/staff/activity", label: "Activity", icon: icons.activity },
+  { href: "/training", label: "Training", icon: <path d="M22 9 12 4 2 9l10 5 10-5zM6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5" /> },
+  { href: "/resources", label: "Resource Centre", icon: <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" /> },
 ];
 
 const isOn = (path: string, href: string) => path === href || (href !== "/staff" && path.startsWith(href + "/"));

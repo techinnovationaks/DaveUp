@@ -52,12 +52,13 @@ export function useStaffGuard() {
  *  - "member": signed in and an approved church member (default). Admins may
  *    open the member app too, from the console.
  *  - "admin": approved member who is a church administrator
+ *  - "library": an approved member, or DaveUp staff (Training and Resources)
  */
-export function useGuard(need: "member" | "admin" = "member") {
+export function useGuard(need: "member" | "admin" | "library" = "member") {
   const { me, loading } = useSession();
   const router = useRouter();
   const path = usePathname();
-  const ok = isApprovedMember(me) && (need === "member" || !!me!.membership!.isAdmin);
+  const ok = need === "library" ? isApprovedMember(me) || !!me?.person.isSuperAdmin : isApprovedMember(me) && (need === "member" || !!me!.membership!.isAdmin);
   useEffect(() => {
     if (loading) return;
     if (!ok) router.replace(isApprovedMember(me) ? "/home" : nextStep(me));

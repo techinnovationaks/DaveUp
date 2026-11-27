@@ -372,6 +372,61 @@ export interface JournalEntryTable {
   updated_at: Timestamp;
 }
 
+export interface LibraryFileTable {
+  id: string;
+  church_id: string | null;
+  uploader_id: string;
+  name: string;
+  mime: string;
+  size_bytes: ColumnType<string, number | string, number | string>;
+  storage_key: string;
+  status: Generated<"pending" | "ready">;
+  created_at: Timestamp;
+}
+
+export interface ResourceTable {
+  id: Generated<string>;
+  church_id: string | null;
+  title: string;
+  description: string | null;
+  category: Generated<string>;
+  kind: "file" | "link" | "video";
+  url: string | null;
+  file_id: string | null;
+  created_by: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface CourseTable {
+  id: Generated<string>;
+  church_id: string | null;
+  title: string;
+  summary: string | null;
+  published: Generated<boolean>;
+  created_by: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface LessonTable {
+  id: Generated<string>;
+  course_id: string;
+  position: number;
+  title: string;
+  body: Generated<string>;
+  video_url: string | null;
+  file_id: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface LessonProgressTable {
+  person_id: string;
+  lesson_id: string;
+  completed_at: Timestamp;
+}
+
 export interface DB {
   person: PersonTable;
   otp_challenge: OtpChallengeTable;
@@ -399,4 +454,9 @@ export interface DB {
   church_billing: ChurchBillingTable;
   billing_payment: BillingPaymentTable;
   journal_entry: JournalEntryTable;
+  library_file: LibraryFileTable;
+  resource: ResourceTable;
+  course: CourseTable;
+  lesson: LessonTable;
+  lesson_progress: LessonProgressTable;
 }
