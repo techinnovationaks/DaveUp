@@ -207,6 +207,14 @@ describe("cells", () => {
     expect(queued.map((q) => q.person_id).sort()).toEqual([ada.personId, ben.personId].sort());
   });
 
+  it("makes the organization's owner the leader when none is chosen", async () => {
+    const r = await call(grace.admin.token, "POST", "/cells", { name: "Owner Led", memberIds: [ben.personId] });
+    expect(r.status).toBe(201);
+    expect(r.body.members.find((m: any) => m.role === "leader")).toMatchObject({ personId: grace.admin.personId });
+    expect((await call(grace.admin.token, "GET", "/church")).body.owner).toMatchObject({ personId: grace.admin.personId, fullName: "Grace Chapel Admin" });
+    await call(grace.admin.token, "POST", `/cells/${r.body.id}/archive`);
+  });
+
   it("shows the cell to its members, with a system note", async () => {
     const list = (await call(ben.token, "GET", "/conversations")).body;
     expect(list.find((c: any) => c.id === cell)).toMatchObject({ kind: "cell", title: "Youth Cell", myRole: "member" });

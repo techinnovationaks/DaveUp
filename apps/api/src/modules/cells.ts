@@ -49,6 +49,14 @@ async function leaderCount(tx: Tx, id: string): Promise<number> {
   return Number(r?.n ?? 0);
 }
 
+/** The person who registered the organization, while they are still an approved member. */
+export async function ownerIfMember(tx: Tx, churchId: string): Promise<string | null> {
+  const c = await tx.selectFrom("church").select("created_by").where("id", "=", churchId).executeTakeFirst();
+  if (!c) return null;
+  const m = await tx.selectFrom("membership").select("id").where("person_id", "=", c.created_by).where("church_id", "=", churchId).where("status", "=", "approved").executeTakeFirst();
+  return m ? c.created_by : null;
+}
+
 export async function cellRoutes(app: FastifyInstance) {
   /** Church admins: every cell in the church. */
   app.get("/cells", async (req): Promise<CellAdminDto[]> => {
@@ -83,9 +91,11 @@ export async function cellRoutes(app: FastifyInstance) {
     const ctx = await requireAdmin(req);
     const body = parse(CreateCellSchema, req.body);
     const churchId = ctx.membership.churchId;
-    const memberIds = body.memberIds.filter((id) => !body.leaderIds.includes(id));
     const out = await withTenant(churchId, async (tx) => {
       await assertRoom(tx, churchId, "cells");
+      // No leader chosen: the organization's owner leads it (or the admin creating it, if the owner has left).
+      if (body.leaderIds.length === 0) body.leaderIds = [(await ownerIfMember(tx, churchId)) ?? ctx.personId];
+      const memberIds = body.memberIds.filter((id) => !body.leaderIds.includes(id));
       const names = await approvedMembers(tx, [...body.leaderIds, ...memberIds]);
       const cell = await tx
         .insertInto("conversation")

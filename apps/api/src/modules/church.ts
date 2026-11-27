@@ -261,8 +261,26 @@ export async function churchRoutes(app: FastifyInstance) {
   /** Admins can see the join code to share with members. */
   app.get("/church", async (req) => {
     const ctx = await requireMember(req);
-    const c = await ownerDb.selectFrom("church").select(["id", "name", "city", "join_code", "status", "plan", "listed"]).where("id", "=", ctx.membership.churchId).executeTakeFirstOrThrow();
-    return { id: c.id, name: c.name, city: c.city, status: c.status, plan: c.plan, listed: c.listed, joinCode: ctx.membership.isAdmin ? c.join_code : null };
+    const c = await ownerDb.selectFrom("church").select(["id", "name", "city", "join_code", "status", "plan", "listed", "created_by"]).where("id", "=", ctx.membership.churchId).executeTakeFirstOrThrow();
+    // The owner (who registered it), while still an approved member: the default leader of new cells.
+    const owner = await ownerDb
+      .selectFrom("membership as m")
+      .innerJoin("person as p", "p.id", "m.person_id")
+      .select(["p.id", "p.full_name"])
+      .where("m.church_id", "=", c.id)
+      .where("m.person_id", "=", c.created_by)
+      .where("m.status", "=", "approved")
+      .executeTakeFirst();
+    return {
+      id: c.id,
+      name: c.name,
+      city: c.city,
+      status: c.status,
+      plan: c.plan,
+      listed: c.listed,
+      joinCode: ctx.membership.isAdmin ? c.join_code : null,
+      owner: owner ? { personId: owner.id, fullName: owner.full_name ?? "Owner" } : null,
+    };
   });
 
   app.get("/churches/lookup", async (req): Promise<ChurchLookupDto> => {
