@@ -352,7 +352,7 @@ export function Thread({ id }: { id: string }) {
                           Not sent. Tap to retry
                         </button>
                       ) : (
-                        <p className="mt-0.5 text-right text-[11px] text-white/70">Sending…</p>
+                        <p className="mt-0.5 text-right text-[11px] text-on-brand/70">Sending…</p>
                       )}
                     </div>
                   </li>
@@ -522,7 +522,7 @@ function MessageItem({
               )}
             </>
           )}
-          <p className={`mt-0.5 text-right text-[11px] ${m.file && isImage(m.file.mime) ? "px-2 pb-1" : ""} ${mine && !m.deleted ? "text-white/70" : "text-ink-faint"}`}>
+          <p className={`mt-0.5 text-right text-[11px] ${m.file && isImage(m.file.mime) ? "px-2 pb-1" : ""} ${mine && !m.deleted ? "text-on-brand/70" : "text-ink-faint"}`}>
             {m.editedAt && !m.deleted ? "edited · " : ""}
             {time(m.createdAt)}
           </p>
@@ -561,7 +561,7 @@ function FileBody({ file, mine }: { file: NonNullable<MessageDto["file"]>; mine:
       <FileGlyph mime={file.mime} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[14px] font-semibold">{file.name}</span>
-        <span className={`block text-[12px] ${mine ? "text-white/70" : "text-ink-muted"}`}>{fileSize(file.size)}</span>
+        <span className={`block text-[12px] ${mine ? "text-on-brand/70" : "text-ink-muted"}`}>{fileSize(file.size)}</span>
       </span>
       <span className="flex shrink-0 flex-col gap-1 text-[13px] font-bold">
         {viewable && (

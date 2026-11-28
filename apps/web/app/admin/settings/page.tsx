@@ -7,6 +7,7 @@ import { api, useAction, useApi } from "@/lib/api";
 import { contactsOf } from "@/lib/labels";
 import { useGuard } from "@/lib/session";
 import { NotifyToggle } from "@/components/EmailSettings";
+import { ThemeSetting } from "@/components/ThemeToggle";
 
 /** Show or hide the organization in the public organization search. */
 function ListingToggle() {
@@ -78,6 +79,10 @@ export default function Settings() {
         <div className="mt-3 border-t border-surface-line pt-4">
           <NotifyToggle me={me!} />
         </div>
+      </Card>
+
+      <Card className="mb-4">
+        <ThemeSetting />
       </Card>
 
       <Card className="mb-6">

@@ -41,6 +41,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "try{var d=document.documentElement;if(!matchMedia('(prefers-reduced-motion: reduce)').matches){d.classList.add('motion-ok');setTimeout(function(){if(!d.dataset.revealReady)d.classList.remove('motion-ok')},3000)}}catch(e){}",
           }}
         />
+        {/* Light or dark before the first paint (see lib/theme.ts), so the screen never flashes the wrong colours. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('daveup.theme')||'dark';var l=t==='light'||(t==='system'&&matchMedia('(prefers-color-scheme: light)').matches);document.documentElement.classList.toggle('theme-light',l)}catch(e){}",
+          }}
+        />
       </head>
       <body className="font-sans antialiased">
         <SessionProvider>

@@ -114,7 +114,7 @@ export default function Members() {
                 aria-selected={on}
                 onClick={() => setFilter(f.key)}
                 className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-[14px] font-semibold transition-colors ${
-                  on ? "border-ink bg-ink text-white" : "border-surface-line bg-card text-ink hover:border-ink-faint"
+                  on ? "border-ink bg-ink text-page" : "border-surface-line bg-card text-ink hover:border-ink-faint"
                 }`}
               >
                 {f.label}

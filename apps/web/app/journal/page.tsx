@@ -171,7 +171,7 @@ export default function Journal() {
           {data.stats.lastSeven.map((on, i) => (
             <div key={i}>
               <p className="text-[13px] font-bold opacity-80">{dayLetters[i]}</p>
-              <span className={`mx-auto mt-1 block h-10 w-10 rounded-full ${on ? "bg-[#0B2566]" : "bg-white/45"}`} aria-label={on ? "Wrote that day" : "No entry"} />
+              <span className={`mx-auto mt-1 block h-10 w-10 rounded-full ${on ? "bg-[#0B2566]" : "bg-on-brand/20"}`} aria-label={on ? "Wrote that day" : "No entry"} />
             </div>
           ))}
         </div>

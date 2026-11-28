@@ -143,7 +143,7 @@ export function OrgSheetButton({ me }: { me: MeDto }) {
   return (
     <>
       <button onClick={() => setOpen(true)} aria-haspopup="dialog" className="flex max-w-full items-center gap-2 text-left">
-        <span className="flex h-7 shrink-0 items-center rounded-lg bg-white/15 px-1.5 text-[12px] font-extrabold text-white">{orgInitials(name)}</span>
+        <span className="flex h-7 shrink-0 items-center rounded-lg bg-brand-soft px-1.5 text-[12px] font-extrabold text-ink">{orgInitials(name)}</span>
         <span className="truncate text-[15px] font-semibold text-ink-muted">{name}</span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className="shrink-0 text-ink-muted" aria-hidden>
           <path d="M6 9l6 6 6-6" />

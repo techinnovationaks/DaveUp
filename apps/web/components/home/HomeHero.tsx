@@ -10,6 +10,7 @@ import { api, useApi } from "@/lib/api";
 import { firstName } from "@/lib/labels";
 import { deltas, signed } from "@/components/rel/Growth";
 import { OrgSheetButton } from "@/components/OrgSwitcher";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const OPEN = ["requested", "accepted_baseline_pending", "active", "paused"];
 
@@ -34,10 +35,10 @@ function Bubble({ name, href, sub }: { name: string; href: string; sub: string }
   return (
     <Link href={href} className="group flex w-[68px] shrink-0 flex-col items-center gap-1.5 text-center">
       <span className="rounded-full bg-gradient-to-br from-glow to-[#38BDF8] p-[3px] transition-transform group-hover:scale-105">
-        <span className="flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-night-2 bg-[#2B4AA8] text-[15px] font-bold text-white">{initialsOf(name)}</span>
+        <span className="flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-page bg-[#2B4AA8] text-[15px] font-bold text-white">{initialsOf(name)}</span>
       </span>
-      <span className="w-full truncate text-[12px] font-semibold text-white">{firstName(name)}</span>
-      <span className="-mt-1 w-full truncate text-[10px] text-night-muted">{sub}</span>
+      <span className="w-full truncate text-[12px] font-semibold text-ink">{firstName(name)}</span>
+      <span className="-mt-1 w-full truncate text-[10px] text-ink-muted">{sub}</span>
     </Link>
   );
 }
@@ -45,8 +46,8 @@ function Bubble({ name, href, sub }: { name: string; href: string; sub: string }
 function AddBubble({ href, label }: { href: string; label: string }) {
   return (
     <Link href={href} className="group flex w-[68px] shrink-0 flex-col items-center gap-1.5 text-center">
-      <span className="flex h-[62px] w-[62px] items-center justify-center rounded-full border-2 border-dashed border-[#93A8DB] text-[26px] font-light text-white transition-colors group-hover:border-glow group-hover:text-glow">+</span>
-      <span className="w-full truncate text-[12px] font-semibold text-white">{label}</span>
+      <span className="flex h-[62px] w-[62px] items-center justify-center rounded-full border-2 border-dashed border-ink-faint text-[26px] font-light text-ink transition-colors group-hover:border-glow group-hover:text-glow">+</span>
+      <span className="w-full truncate text-[12px] font-semibold text-ink">{label}</span>
     </Link>
   );
 }
@@ -60,17 +61,17 @@ function Line({ me, people }: { me: MeDto; people: RelationshipDto[] }) {
   return (
     <svg viewBox="0 0 390 300" className="h-auto w-full" role="img" aria-label={`Your line: you at the centre with ${people.length} ${people.length === 1 ? "person" : "people"} around you`}>
       <g className="origin-[195px_150px] motion-safe:animate-[daveup-orbit_120s_linear_infinite]">
-        <circle cx={cx} cy={cy} r={132} fill="none" stroke="#7C93D6" strokeWidth="1.5" strokeDasharray="3 7" opacity=".6" />
+        <circle cx={cx} cy={cy} r={132} fill="none" stroke="currentColor" className="text-ink-faint" strokeWidth="1.5" strokeDasharray="3 7" opacity=".6" />
         {Array.from({ length: 10 }, (_, i) => {
           const a = (i / 10) * Math.PI * 2 + 0.3;
-          return <circle key={i} cx={cx + 132 * Math.cos(a)} cy={cy + 132 * Math.sin(a)} r="3.5" fill="#5B73B8" opacity=".6" />;
+          return <circle key={i} cx={cx + 132 * Math.cos(a)} cy={cy + 132 * Math.sin(a)} r="3.5" fill="currentColor" className="text-ink-faint" opacity=".6" />;
         })}
       </g>
-      <circle cx={cx} cy={cy} r={R} fill="none" stroke="#7C93D6" strokeWidth="1.5" opacity=".45" />
+      <circle cx={cx} cy={cy} r={R} fill="none" stroke="currentColor" className="text-ink-faint" strokeWidth="1.5" opacity=".45" />
       {/* The 12 places around a discipler, faint where empty. */}
       {Array.from({ length: 12 }, (_, i) => {
         const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
-        return i >= shown.length ? <circle key={i} cx={cx + R * Math.cos(a)} cy={cy + R * Math.sin(a)} r="5" fill="none" stroke="#7C93D6" strokeWidth="1.5" strokeDasharray="2 3" opacity=".7" /> : null;
+        return i >= shown.length ? <circle key={i} cx={cx + R * Math.cos(a)} cy={cy + R * Math.sin(a)} r="5" fill="none" stroke="currentColor" className="text-ink-faint" strokeWidth="1.5" strokeDasharray="2 3" opacity=".7" /> : null;
       })}
       {shown.map((r, i) => {
         const a = (i / Math.max(12, shown.length)) * Math.PI * 2 - Math.PI / 2;
@@ -85,19 +86,19 @@ function Line({ me, people }: { me: MeDto; people: RelationshipDto[] }) {
             <text x={x} y={y + 5} textAnchor="middle" fontSize="13" fontWeight="700" fill="#fff">
               {initialsOf(r.other.fullName)}
             </text>
-            <text x={x} y={y + 38} textAnchor="middle" fontSize="11" fontWeight="600" fill="#DCE5FA">
+            <text x={x} y={y + 38} textAnchor="middle" fontSize="11" fontWeight="600" fill="currentColor" className="text-ink">
               {firstName(r.other.fullName)}
               {r.myRole === "disciple" ? " (discipler)" : ""}
             </text>
           </a>
         );
       })}
-      <circle cx={cx} cy={cy} r="40" fill="#fff" opacity=".12" />
-      <circle cx={cx} cy={cy} r="30" fill="#01FDFF" />
-      <text x={cx} y={cy + 6} textAnchor="middle" fontSize="16" fontWeight="800" fill="#041A4D">
+      <circle cx={cx} cy={cy} r="40" fill="currentColor" className="text-ink" opacity=".1" />
+      <circle cx={cx} cy={cy} r="30" fill="currentColor" className="text-brand" />
+      <text x={cx} y={cy + 6} textAnchor="middle" fontSize="16" fontWeight="800" fill="currentColor" className="text-on-brand">
         {initialsOf(me.person.fullName ?? "You")}
       </text>
-      <text x={cx} y={cy + 50} textAnchor="middle" fontSize="12" fontWeight="700" fill="#fff">
+      <text x={cx} y={cy + 50} textAnchor="middle" fontSize="12" fontWeight="700" fill="currentColor" className="text-ink">
         You
       </text>
     </svg>
@@ -192,7 +193,7 @@ export function HomeHero({ me, rels, greeting, start }: { me: MeDto; rels: Relat
   const newcomer = disciples.length === 0 && (!myDiscipler || myDiscipler.status !== "active");
 
   return (
-    <section className="relative mb-6 text-ink md:overflow-hidden md:rounded-[8px] md:border md:border-surface-line md:bg-gradient-to-b md:from-night-2 md:to-night md:px-8 md:pb-8 md:pt-7">
+    <section className="relative mb-6 text-ink md:overflow-hidden md:rounded-[8px] md:border md:border-surface-line md:bg-card md:px-8 md:pb-8 md:pt-7">
       <div className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(500px_300px_at_85%_10%,rgba(1,253,255,.14),transparent_60%)] md:block" aria-hidden />
       <div className="relative">
         {/* Header: organization, greeting, you. */}
@@ -203,9 +204,12 @@ export function HomeHero({ me, rels, greeting, start }: { me: MeDto; rels: Relat
               {greeting === "Hey" ? "Hey" : greeting}, {firstName(me.person.fullName)}
             </h1>
           </div>
-          <Link href="/account" aria-label="Account" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-[3px] border-white bg-brand-soft text-[18px] font-extrabold text-ink">
+          <div className="flex shrink-0 gap-2">
+          <ThemeToggle />
+          <Link href="/account" aria-label="Account" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-[3px] border-ink bg-brand-soft text-[18px] font-extrabold text-ink">
             {initialsOf(me.person.fullName ?? "")}
           </Link>
+          </div>
         </div>
 
         <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-center">
@@ -213,7 +217,7 @@ export function HomeHero({ me, rels, greeting, start }: { me: MeDto; rels: Relat
             {newcomer ? (
               <p className="flex items-start justify-between gap-3">
                 <span className="font-display text-[24px] font-extrabold leading-tight">Day 1. Your line starts here.</span>
-                <Link href="/disciplers" className="shrink-0 pt-1 text-[16px] font-bold text-[#9DB8FF] hover:text-ink">
+                <Link href="/disciplers" className="shrink-0 pt-1 text-[16px] font-bold text-ink-muted hover:text-ink">
                   {myDiscipler ? "Why?" : "Find a discipler"}
                 </Link>
               </p>
@@ -231,7 +235,7 @@ export function HomeHero({ me, rels, greeting, start }: { me: MeDto; rels: Relat
                     {people.length} in your line{isDiscipler ? `, ${walking} walking with you` : ""}
                   </b>
                   {isDiscipler && (
-                    <a href="/home?mode=lead" className="shrink-0 text-[16px] font-bold text-[#9DB8FF] hover:text-ink">
+                    <a href="/home?mode=lead" className="shrink-0 text-[16px] font-bold text-ink-muted hover:text-ink">
                       See all
                     </a>
                   )}

@@ -4,6 +4,7 @@ import { Button, Card, Loading, Row, Screen, TopBar } from "@/components/ui";
 import { api, useAction, useApi } from "@/lib/api";
 import type { BlockedPersonDto, MeDto } from "@daveup/shared";
 import { switchOrganization } from "@/components/OrgSwitcher";
+import { ThemeSetting } from "@/components/ThemeToggle";
 
 /** Every organization the person belongs to, with a way to switch or join another. */
 function Organizations({ me }: { me: MeDto }) {
@@ -124,6 +125,9 @@ export default function Account() {
         </div>
       </Card>
       <Organizations me={me} />
+      <Card className="mb-4">
+        <ThemeSetting />
+      </Card>
       <Card className="mb-4">
         <NotifyToggle me={me} />
       </Card>

@@ -202,12 +202,12 @@ function MeView({ me, rels, hub }: { me: MeDto; rels: RelationshipDto[]; hub: As
       {current?.status === "active" && <ThisWeek relId={current.id} />}
 
       <Card tone={testB?.status === "submitted" ? "plain" : "brand"}>
-        <p className={`text-[13px] font-bold uppercase tracking-wider ${testB?.status === "submitted" ? "text-brand" : "text-white/90"}`}>Your 12-area assessment</p>
+        <p className={`text-[13px] font-bold uppercase tracking-wider ${testB?.status === "submitted" ? "text-brand" : "text-on-brand/90"}`}>Your 12-area assessment</p>
         {!testB && (
           <>
             <p className="mt-1 text-[20px] font-extrabold">Start your baseline</p>
-            <p className="mt-1 text-[15px] text-white/90">60 short questions about the last month. Save and come back any time.</p>
-            <Link href="/assessments" className="mt-4 flex min-h-[52px] items-center justify-center rounded-2xl bg-card text-[16px] font-bold text-brand hover:bg-white/90 md:inline-flex md:min-h-[48px] md:px-8">
+            <p className="mt-1 text-[15px] text-on-brand/90">60 short questions about the last month. Save and come back any time.</p>
+            <Link href="/assessments" className="mt-4 flex min-h-[52px] items-center justify-center rounded-2xl bg-card text-[16px] font-bold text-brand hover:bg-card/90 md:inline-flex md:min-h-[48px] md:px-8">
               Start
             </Link>
           </>
@@ -217,10 +217,10 @@ function MeView({ me, rels, hub }: { me: MeDto; rels: RelationshipDto[]; hub: As
             <p className="mt-1 text-[20px] font-extrabold">
               {testB.progress.answered} of {testB.progress.total} answered
             </p>
-            <div className="mt-3 h-2 rounded-full bg-white/30">
+            <div className="mt-3 h-2 rounded-full bg-on-brand/25">
               <div className="h-2 rounded-full bg-card" style={{ width: `${(testB.progress.answered / testB.progress.total) * 100}%` }} />
             </div>
-            <Link href={`/assessments/${testB.id}`} className="mt-4 flex min-h-[52px] items-center justify-center rounded-2xl bg-card text-[16px] font-bold text-brand hover:bg-white/90 md:inline-flex md:min-h-[48px] md:px-8">
+            <Link href={`/assessments/${testB.id}`} className="mt-4 flex min-h-[52px] items-center justify-center rounded-2xl bg-card text-[16px] font-bold text-brand hover:bg-card/90 md:inline-flex md:min-h-[48px] md:px-8">
               Continue
             </Link>
           </>

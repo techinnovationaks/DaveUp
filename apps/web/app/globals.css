@@ -4,8 +4,9 @@
 
 /* ---- Colours ----
    The app is dark navy with cyan actions (the N designs). The public website
-   (.theme-site) keeps light sections. Values are "R G B" so Tailwind can add
-   opacity (bg-brand/15). */
+   (.theme-site) keeps light sections, and people can choose light mode for the
+   app (html.theme-light, set from Account or Tools; see lib/theme.ts). Values
+   are "R G B" so Tailwind can add opacity (bg-brand/15). */
 :root {
   --c-page: 5 22 65;
   --c-ink: 244 247 255;
@@ -30,7 +31,8 @@
   --c-warn-soft: 66 48 12;
   color-scheme: dark;
 }
-.theme-site {
+.theme-site,
+html.theme-light {
   --c-page: 247 248 250;
   --c-ink: 30 41 59;
   --c-ink-muted: 100 116 139;

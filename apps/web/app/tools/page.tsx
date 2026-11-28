@@ -8,6 +8,7 @@ import { Loading, Screen } from "@/components/ui";
 import { useApi } from "@/lib/api";
 import { useGuard } from "@/lib/session";
 import { deltas } from "@/components/rel/Growth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const I = ({ d }: { d: string }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -97,17 +98,20 @@ export default function Tools() {
           <p className="text-[16px] text-ink-muted">Do and manage</p>
           <h1 className="font-display text-[40px] font-extrabold leading-tight tracking-tight text-ink">Tools</h1>
         </div>
-        <Link href="/account" aria-label="Account" className="flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-white bg-brand-soft text-[18px] font-extrabold text-ink">
-          {initials}
-        </Link>
+        <div className="flex gap-2">
+          <ThemeToggle />
+          <Link href="/account" aria-label="Account" className="flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-ink bg-brand-soft text-[18px] font-extrabold text-ink">
+            {initials}
+          </Link>
+        </div>
       </div>
 
       {/* My growth */}
       <div className="rounded-[8px] bg-brand-soft p-6">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-[13px] font-extrabold tracking-[0.14em] text-[#9DB8FF]">MY GROWTH</p>
+          <p className="text-[13px] font-extrabold tracking-[0.14em] text-ink-muted">MY GROWTH</p>
           {mine && (
-            <Link href={`/relationships/${mine.id}`} className="text-[16px] font-bold text-[#9DB8FF] hover:text-ink">
+            <Link href={`/relationships/${mine.id}`} className="text-[16px] font-bold text-ink-muted hover:text-ink">
               Results
             </Link>
           )}

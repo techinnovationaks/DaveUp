@@ -100,7 +100,7 @@ export default function Resources() {
       {tab === "for-you" && (
         <div className="space-y-4">
           <div className="rounded-[8px] bg-brand-soft p-6">
-            <p className="text-[13px] font-extrabold tracking-[0.14em] text-[#9DB8FF]">YOUR VERSE TODAY</p>
+            <p className="text-[13px] font-extrabold tracking-[0.14em] text-ink-muted">YOUR VERSE TODAY</p>
             <p className="mt-2 font-display text-[26px] font-extrabold leading-snug text-ink">Trust in the Lord with all your heart; and lean not unto thine own understanding.</p>
             <p className="mt-2 text-[15px] text-ink-muted">Proverbs 3:5, KJV</p>
             <p className="mt-4 text-[13px] text-ink-muted">The Bible reader and verses chosen for you are coming soon.</p>
