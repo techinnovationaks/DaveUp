@@ -77,7 +77,7 @@ export function InviteCard({ code, name }: { code: string; name: string }) {
     <Card>
       <Eyebrow className="mb-3">Invite people</Eyebrow>
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-        <div className="shrink-0 self-center rounded-2xl border border-surface-line bg-white p-2 sm:self-start">{grid ? <QrSvg grid={grid} size={148} /> : <div className="h-[148px] w-[148px]" />}</div>
+        <div className="shrink-0 self-center rounded-2xl border border-surface-line bg-card p-2 sm:self-start">{grid ? <QrSvg grid={grid} size={148} /> : <div className="h-[148px] w-[148px]" />}</div>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-semibold text-ink-muted">Organization code</p>
           <button onClick={() => void copy("code")} title="Copy code" className="font-mono text-[28px] font-extrabold tracking-[0.2em] text-ink hover:text-brand">
@@ -86,7 +86,7 @@ export function InviteCard({ code, name }: { code: string; name: string }) {
           {copied === "code" && <span className="ml-2 text-[13px] font-semibold text-ok">Copied</span>}
           <p className="mt-2 break-all rounded-xl bg-surface px-3 py-2 font-mono text-[13px] text-ink">{link || " "}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={() => void copy("link")} className="rounded-xl bg-brand px-4 py-2 text-[14px] font-bold text-white hover:bg-brand-dark">
+            <button onClick={() => void copy("link")} className="rounded-xl bg-brand px-4 py-2 text-[14px] font-bold text-on-brand hover:bg-brand-dark">
               {copied === "link" ? "Link copied" : "Copy link"}
             </button>
             {canShare && (

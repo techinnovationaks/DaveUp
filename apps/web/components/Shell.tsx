@@ -16,7 +16,7 @@ export function NavBadge({ count, dot = false }: { count: number; dot?: boolean 
   if (count <= 0) return null;
   if (dot) return <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-danger ring-2 ring-white lg:hidden" aria-hidden />;
   return (
-    <span className="ml-auto min-w-[24px] rounded-full bg-danger px-1.5 py-0.5 text-center text-[12px] font-bold text-white" aria-label={`${count} unread`}>
+    <span className="ml-auto min-w-[24px] rounded-full bg-danger px-1.5 py-0.5 text-center text-[12px] font-bold text-on-brand" aria-label={`${count} unread`}>
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -43,30 +43,6 @@ function initialsOf(name: string | null | undefined) {
     .slice(0, 2)
     .map((w) => w[0]!.toUpperCase())
     .join("") || "?";
-}
-
-/**
- * Phones: a slim bar above the page with the organization, the console (for
- * administrators and DaveUp staff) and your account. Tablet and desktop have
- * these in the side rail.
- */
-function MobileTopBar() {
-  const { me } = useSession();
-  const extra = [...adminNav(me), ...staffNav(me)];
-  return (
-    <div className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-surface-line bg-white/95 px-4 backdrop-blur md:hidden">
-      <Logo size={30} markOnly />
-      <div className="min-w-0 flex-1">{me ? <OrgSwitcher me={me} compact /> : <span className="text-[15px] font-bold text-ink">DaveUp</span>}</div>
-      {extra.map((it) => (
-        <Link key={it.href} href={it.href} aria-label={it.label} title={it.label} className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted hover:bg-surface hover:text-brand">
-          <Icon size={22}>{it.icon}</Icon>
-        </Link>
-      ))}
-      <Link href="/account" aria-label="Account settings" className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-[14px] font-bold text-brand">
-        {initialsOf(me?.person.fullName)}
-      </Link>
-    </div>
-  );
 }
 
 /**
@@ -104,7 +80,7 @@ function SideRail() {
   const accountActive = isActive(path, accountItem);
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-[80px] shrink-0 flex-col border-r border-surface-line bg-white px-3 py-6 md:flex lg:w-[272px] lg:px-5">
+    <aside className="sticky top-0 hidden h-dvh w-[80px] shrink-0 flex-col border-r border-surface-line bg-card px-3 py-6 md:flex lg:w-[272px] lg:px-5">
       <Link href="/home" className="mb-1 flex justify-center lg:justify-start lg:px-2" aria-label="DaveUp home">
         <span className="lg:hidden">
           <Logo size={40} markOnly />
@@ -155,7 +131,7 @@ export function AppShell({ children, nav = false, aside, narrow = false, fill = 
       <div className="flex h-dvh md:flex">
         <SideRail />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="hidden h-16 shrink-0 items-center border-b border-surface-line bg-white px-8 md:flex">
+          <header className="hidden h-16 shrink-0 items-center border-b border-surface-line bg-card px-8 md:flex">
             <p className="text-[17px] font-bold text-ink">{titleFor(path)}</p>
           </header>
           <main className={`min-h-0 flex-1 ${nav ? "pb-[76px] md:pb-0" : ""}`}>{children}</main>
@@ -168,8 +144,7 @@ export function AppShell({ children, nav = false, aside, narrow = false, fill = 
     <div className="min-h-dvh md:flex">
       <SideRail />
       <div className="min-w-0 flex-1">
-        {nav && <MobileTopBar />}
-        <header className="sticky top-0 z-10 hidden h-16 items-center border-b border-surface-line bg-white/90 px-8 backdrop-blur md:flex">
+        <header className="sticky top-0 z-10 hidden h-16 items-center border-b border-surface-line bg-page/90 px-8 backdrop-blur md:flex">
           <p className="text-[17px] font-bold text-ink">{titleFor(path)}</p>
         </header>
         <div className={`mx-auto w-full px-4 pt-6 md:px-8 md:pb-12 md:pt-8 ${nav ? "pb-28" : "pb-10"} ${narrow ? "max-w-md md:max-w-2xl" : "max-w-md md:max-w-none lg:max-w-[80vw]"}`}>

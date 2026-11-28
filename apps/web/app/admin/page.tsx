@@ -92,7 +92,7 @@ function Stat({ n, label, sub, href, alert }: { n: number; label: string; sub?: 
       {sub && <p className="mt-0.5 text-[13px] text-ink-muted">{sub}</p>}
     </>
   );
-  const cls = `block rounded-card border p-5 ${on ? "border-brand-line bg-brand-soft" : "border-surface-line bg-white"} ${href ? "transition-colors hover:border-ink-faint" : ""}`;
+  const cls = `block rounded-card border p-5 ${on ? "border-brand-line bg-brand-soft" : "border-surface-line bg-card"} ${href ? "transition-colors hover:border-ink-faint" : ""}`;
   return href ? (
     <Link href={href} className={cls}>
       {body}

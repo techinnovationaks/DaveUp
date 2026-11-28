@@ -54,7 +54,7 @@ function GoogleButton({ label }: { label: string }) {
         else setLeaving(true);
       }}
       aria-busy={leaving}
-      className={`group relative flex min-h-[52px] w-full items-center justify-center rounded-2xl border border-[#DADCE0] bg-white px-14 text-[16px] font-semibold text-[#1F1F1F] shadow-[0_1px_2px_rgba(15,31,77,0.06)] transition-all duration-150 hover:border-[#C6D2EE] hover:bg-[#F8FAFF] hover:shadow-[0_2px_8px_rgba(15,31,77,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 active:scale-[0.99] active:shadow-none md:min-h-[48px] ${leaving ? "pointer-events-none opacity-80" : ""}`}
+      className={`group relative flex min-h-[52px] w-full items-center justify-center rounded-2xl border border-[#DADCE0] bg-card px-14 text-[16px] font-semibold text-[#1F1F1F] shadow-[0_1px_2px_rgba(15,31,77,0.06)] transition-all duration-150 hover:border-[#C6D2EE] hover:bg-[#F8FAFF] hover:shadow-[0_2px_8px_rgba(15,31,77,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 active:scale-[0.99] active:shadow-none md:min-h-[48px] ${leaving ? "pointer-events-none opacity-80" : ""}`}
     >
       <span className="absolute left-4 flex h-8 w-8 items-center justify-center md:left-5">
         {leaving ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#DADCE0] border-t-[#4285F4]" aria-hidden="true" /> : <GoogleMark />}

@@ -159,7 +159,7 @@ const glass = "rounded-[22px] border border-white/15 bg-white/[0.08] backdrop-bl
 
 export default function HomePage() {
   return (
-    <div className="bg-white text-ink">
+    <div className="theme-site bg-white text-ink">
       <SiteHeader />
       <RevealOnScroll />
 

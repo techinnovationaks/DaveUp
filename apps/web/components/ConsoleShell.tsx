@@ -63,7 +63,7 @@ function ConsoleRail() {
   const item = "flex h-[52px] items-center justify-center gap-4 rounded-xl text-[16px] font-semibold transition-colors lg:justify-start lg:px-4";
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-[80px] shrink-0 flex-col border-r border-surface-line bg-white px-3 py-6 md:flex lg:w-[272px] lg:px-5">
+    <aside className="sticky top-0 hidden h-dvh w-[80px] shrink-0 flex-col border-r border-surface-line bg-card px-3 py-6 md:flex lg:w-[272px] lg:px-5">
       <Link href="/admin" className="flex justify-center lg:justify-start lg:px-2" aria-label="Organization console">
         <span className="lg:hidden">
           <Logo size={40} markOnly />
@@ -106,7 +106,7 @@ function ConsoleRail() {
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[14px] font-bold text-brand">{initialsOf(me?.person.fullName)}</span>
           <span className="hidden min-w-0 lg:block">
             <span className="block truncate text-[15px] font-semibold text-ink">{me?.person.fullName}</span>
-            <span className="mt-0.5 inline-flex rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">Administrator</span>
+            <span className="mt-0.5 inline-flex rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-on-brand">Administrator</span>
           </span>
         </div>
       </div>
@@ -117,7 +117,7 @@ function ConsoleRail() {
 function ConsoleBottomNav() {
   const path = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-surface-line bg-white/95 backdrop-blur md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-surface-line bg-page/95 backdrop-blur md:hidden">
       <div className="mx-auto flex max-w-md">
         {NAV.map((it) => {
           const active = path === it.href || (it.href !== "/admin" && path.startsWith(it.href + "/"));
@@ -142,14 +142,14 @@ export function ConsoleScreen({ children, narrow = false }: { children: ReactNod
       <ConsoleRail />
       <div className="min-w-0 flex-1">
         {/* Mobile header: says clearly this is the console, not the member app. */}
-        <header className="flex items-center justify-between border-b border-surface-line bg-white px-4 py-3 md:hidden">
+        <header className="flex items-center justify-between border-b border-surface-line bg-card px-4 py-3 md:hidden">
           <span className="flex items-center gap-2">
             <Logo size={28} markOnly />
             <span className="text-[15px] font-bold text-ink">Organization console</span>
           </span>
-          <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">Administrator</span>
+          <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-on-brand">Administrator</span>
         </header>
-        <header className="sticky top-0 z-10 hidden h-16 items-center justify-between border-b border-surface-line bg-white/90 px-8 backdrop-blur md:flex">
+        <header className="sticky top-0 z-10 hidden h-16 items-center justify-between border-b border-surface-line bg-page/90 px-8 backdrop-blur md:flex">
           <p className="text-[17px] font-bold text-ink">{TITLES[path] ?? (path.startsWith("/admin/members/") ? "Member" : path.startsWith("/admin/cells/") ? "Cell" : "Organization console")}</p>
           {me?.membership && <p className="text-[14px] text-ink-muted">{me.membership.churchName}, {me.membership.churchCity}</p>}
         </header>

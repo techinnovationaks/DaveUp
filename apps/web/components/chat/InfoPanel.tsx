@@ -62,7 +62,7 @@ export function CellMembers({ conv, onChanged, onLeft }: { conv: ConversationDet
                 <summary className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full text-ink-muted hover:bg-surface" aria-label={`Options for ${m.fullName}`}>
                   ⋯
                 </summary>
-                <div className="absolute right-0 z-10 mt-1 w-48 overflow-hidden rounded-xl border border-surface-line bg-white py-1 shadow-lg">
+                <div className="absolute right-0 z-10 mt-1 w-48 overflow-hidden rounded-xl border border-surface-line bg-card py-1 shadow-lg">
                   <button disabled={busy} onClick={() => void setRole(m.personId, m.role === "leader" ? "member" : "leader")} className="block w-full px-3 py-2 text-left text-[14px] hover:bg-surface">
                     {m.role === "leader" ? "Make a member" : "Make a leader"}
                   </button>
@@ -202,7 +202,7 @@ export function InfoPanel({ conv, onClose, onChanged, onLeft }: { conv: Conversa
   const other = conv.kind === "direct" ? conv.members.find((m) => m.personId !== me?.person.id) : null;
 
   return (
-    <aside className="fixed inset-0 z-40 flex flex-col bg-white lg:static lg:z-auto lg:w-[340px] lg:shrink-0 lg:border-l lg:border-surface-line">
+    <aside className="fixed inset-0 z-40 flex flex-col bg-card lg:static lg:z-auto lg:w-[340px] lg:shrink-0 lg:border-l lg:border-surface-line">
       <div className="flex items-center justify-between border-b border-surface-line px-4 py-3">
         <p className="text-[16px] font-bold text-ink">{conv.kind === "cell" ? "Cell details" : "Details"}</p>
         <button onClick={onClose} aria-label="Close details" className="flex h-9 w-9 items-center justify-center rounded-full text-ink-muted hover:bg-surface">
@@ -225,7 +225,7 @@ export function InfoPanel({ conv, onClose, onChanged, onLeft }: { conv: Conversa
         {tabs.length > 1 && (
           <div className="mb-4 flex gap-1 rounded-xl bg-surface p-1" role="tablist">
             {tabs.map((t) => (
-              <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={`flex-1 rounded-lg py-2 text-[14px] font-semibold capitalize ${tab === t ? "bg-white text-ink shadow-sm" : "text-ink-muted"}`}>
+              <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={`flex-1 rounded-lg py-2 text-[14px] font-semibold capitalize ${tab === t ? "bg-card text-ink shadow-sm" : "text-ink-muted"}`}>
                 {t}
               </button>
             ))}

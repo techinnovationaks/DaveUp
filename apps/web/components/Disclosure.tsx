@@ -3,7 +3,7 @@
 /** PRD 6.7 rule 2 / 13.4 item 6: tell the disciple exactly what their discipler will see. */
 export function Disclosure({ checked, onChange, disciplerName }: { checked: boolean; onChange: (v: boolean) => void; disciplerName: string }) {
   return (
-    <div className="mb-4 rounded-2xl border border-surface-line bg-white p-4">
+    <div className="mb-4 rounded-2xl border border-surface-line bg-card p-4">
       <p className="text-[15px] font-bold text-ink">What {disciplerName} will see</p>
       <ul className="mt-2 list-disc space-y-1 pl-5 text-[14px] text-ink-muted">
         <li>Your area scores from the 12-area assessment, side by side with theirs, once you have both finished.</li>

@@ -174,7 +174,7 @@ function ActivePlan({ s, plan, rel, onChange, onEdit, canEdit }: { s: PlanStateD
                       title={allowed ? `${on ? "Untick" : "Tick"} ${label}` : label}
                       onClick={() => toggle(p.id, day, !on)}
                       className={`flex h-10 w-10 flex-col items-center justify-center rounded-xl text-[11px] font-bold transition-colors md:h-9 md:w-9 ${
-                        on ? "bg-brand text-white" : allowed ? "border border-surface-line bg-white text-ink hover:border-brand" : "bg-surface text-ink-faint"
+                        on ? "bg-brand text-on-brand" : allowed ? "border border-surface-line bg-card text-ink hover:border-brand" : "bg-surface text-ink-faint"
                       } ${day === today ? "ring-2 ring-brand/30" : ""}`}
                     >
                       {label.slice(0, 2)}
@@ -290,7 +290,7 @@ function PlanEditor({ rel, initial, suggested, onDone }: { rel: string; initial:
               type="button"
               aria-pressed={on}
               onClick={() => toggleArea(a.number)}
-              className={`rounded-xl border px-3 py-2 text-left text-[14px] ${on ? "border-brand bg-brand-soft font-semibold text-brand" : "border-surface-line bg-white text-ink hover:border-ink-faint"}`}
+              className={`rounded-xl border px-3 py-2 text-left text-[14px] ${on ? "border-brand bg-brand-soft font-semibold text-brand" : "border-surface-line bg-card text-ink hover:border-ink-faint"}`}
             >
               {a.name}
               {suggested.includes(a.number) && <span className="mt-0.5 block text-[11px] font-bold uppercase tracking-wider text-ink-muted">Suggested</span>}
@@ -307,7 +307,7 @@ function PlanEditor({ rel, initial, suggested, onDone }: { rel: string; initial:
             type="button"
             aria-pressed={draft.lengthDays === n}
             onClick={() => set({ lengthDays: n })}
-            className={`rounded-xl border px-4 py-2 text-[14px] font-semibold ${draft.lengthDays === n ? "border-brand bg-brand-soft text-brand" : "border-surface-line bg-white text-ink"}`}
+            className={`rounded-xl border px-4 py-2 text-[14px] font-semibold ${draft.lengthDays === n ? "border-brand bg-brand-soft text-brand" : "border-surface-line bg-card text-ink"}`}
           >
             {n} days{n === 30 ? " (monthly)" : ""}
           </button>
@@ -354,7 +354,7 @@ function PlanEditor({ rel, initial, suggested, onDone }: { rel: string; initial:
                     type="button"
                     disabled={added.has(t.title) || draft.practices.length >= MAX_PRACTICES}
                     onClick={() => addPractice({ title: t.title, detail: t.detail, timesPerWeek: t.timesPerWeek, area: a })}
-                    className="rounded-lg px-3 py-1.5 text-[13px] font-bold text-brand hover:bg-white disabled:text-ink-faint"
+                    className="rounded-lg px-3 py-1.5 text-[13px] font-bold text-brand hover:bg-card disabled:text-ink-faint"
                   >
                     {added.has(t.title) ? "Added" : "Add"}
                   </button>

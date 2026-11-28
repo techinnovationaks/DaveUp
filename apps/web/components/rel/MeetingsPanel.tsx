@@ -128,14 +128,14 @@ function MeetingRow({ m, onOpen, onChange, openLabel }: { m: MeetingDto; onOpen?
         </div>
         <div className="flex gap-2">
           {onOpen && (
-            <button onClick={onOpen} className="rounded-xl bg-brand px-4 py-2 text-[14px] font-bold text-white hover:bg-brand-dark">
+            <button onClick={onOpen} className="rounded-xl bg-brand px-4 py-2 text-[14px] font-bold text-on-brand hover:bg-brand-dark">
               {openLabel}
             </button>
           )}
           <button
             disabled={busy}
             onClick={() => run(async () => onChange(await api<MeetingsDto>(`/meetings/${m.id}/cancel`, { method: "POST" })))}
-            className="rounded-xl border border-surface-line bg-white px-4 py-2 text-[14px] font-semibold text-ink hover:bg-surface"
+            className="rounded-xl border border-surface-line bg-card px-4 py-2 text-[14px] font-semibold text-ink hover:bg-surface"
           >
             Cancel
           </button>
@@ -232,7 +232,7 @@ function MeetingMode({ meeting, lastCommitment, onClose, onSaved }: { meeting: M
                   }
                   className={`flex w-full items-start gap-3 rounded-xl px-2 py-2 text-left ${on ? "bg-ok-soft" : "hover:bg-surface"}`}
                 >
-                  <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${on ? "bg-ok text-white" : "bg-surface text-ink-muted"}`}>{on ? "✓" : i + 1}</span>
+                  <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${on ? "bg-ok text-on-brand" : "bg-surface text-ink-muted"}`}>{on ? "✓" : i + 1}</span>
                   <span>
                     <span className="block text-[15px] font-semibold text-ink">{s.title}</span>
                     <span className="block text-[13px] text-ink-muted">{i === 1 && lastCommitment ? `Last time: "${lastCommitment}"` : s.hint}</span>
@@ -256,7 +256,7 @@ function MeetingMode({ meeting, lastCommitment, onClose, onSaved }: { meeting: M
               type="button"
               aria-pressed={tookPlace === v}
               onClick={() => setTookPlace(v)}
-              className={`rounded-xl border px-5 py-2 text-[14px] font-semibold ${tookPlace === v ? "border-brand bg-brand-soft text-brand" : "border-surface-line bg-white text-ink"}`}
+              className={`rounded-xl border px-5 py-2 text-[14px] font-semibold ${tookPlace === v ? "border-brand bg-brand-soft text-brand" : "border-surface-line bg-card text-ink"}`}
             >
               {v ? "Yes" : "No"}
             </button>

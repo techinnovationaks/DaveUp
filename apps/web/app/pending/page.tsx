@@ -16,7 +16,7 @@ function Elsewhere({ me }: { me: MeDto }) {
       <p className="mb-2 text-[14px] font-semibold text-ink-muted">Meanwhile, go to</p>
       <div className="space-y-2">
         {others.map((m) => (
-          <button key={m.churchId} onClick={() => void switchOrganization(m.churchId)} className="flex w-full items-center justify-between rounded-2xl border border-surface-line bg-white px-4 py-3 text-left hover:border-brand-line">
+          <button key={m.churchId} onClick={() => void switchOrganization(m.churchId)} className="flex w-full items-center justify-between rounded-2xl border border-surface-line bg-card px-4 py-3 text-left hover:border-brand-line">
             <span>
               <span className="block text-[16px] font-bold text-ink">{m.churchName}</span>
               <span className="text-[14px] text-ink-muted">{m.churchCity}</span>

@@ -52,7 +52,7 @@ function PlanCard({ title, price, note, children, selected, onChoose }: { title:
       type="button"
       onClick={onChoose}
       aria-pressed={selected}
-      className={`w-full rounded-card border bg-white p-5 text-left transition-colors ${selected ? "border-2 border-brand shadow-md" : "border-surface-line hover:border-brand-line"}`}
+      className={`w-full rounded-card border bg-card p-5 text-left transition-colors ${selected ? "border-2 border-brand shadow-md" : "border-surface-line hover:border-brand-line"}`}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <span className="text-[20px] font-extrabold text-ink">{title}</span>
@@ -163,7 +163,7 @@ export default function ChangePlan() {
         <PlanCard title="Pro" price={`${per("pro")} / leader / ${interval}`} note={`From ${PLAN_INFO.pro.minLeaders} leaders`} selected={plan === "pro"} onChoose={() => choose("pro")}>
           For large churches and multi-site organizations. Everything in Standard, 5 GB storage per leader. Organization reports and paid access to join are coming soon.
         </PlanCard>
-        <a href="/admin/billing/talk?plan=campus" className="block rounded-card border border-surface-line bg-white p-5 hover:border-brand-line">
+        <a href="/admin/billing/talk?plan=campus" className="block rounded-card border border-surface-line bg-card p-5 hover:border-brand-line">
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-[20px] font-extrabold text-ink">Campus</span>
             <span className="text-[18px] font-extrabold text-brand">Talk to us</span>
@@ -173,7 +173,7 @@ export default function ChangePlan() {
           </p>
           <p className="mt-2 text-[15px] text-ink-muted">Standard features at a student rate, for campus fellowships and student groups.</p>
         </a>
-        <a href="/admin/billing/talk?plan=network" className="block rounded-card border border-surface-line bg-white p-5 hover:border-brand-line">
+        <a href="/admin/billing/talk?plan=network" className="block rounded-card border border-surface-line bg-card p-5 hover:border-brand-line">
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-[20px] font-extrabold text-ink">Network</span>
             <span className="text-[18px] font-extrabold text-brand">Talk to us</span>

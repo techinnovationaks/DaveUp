@@ -15,7 +15,32 @@ export const JOURNAL_PROMPTS = [
   "A step I will take this week",
 ] as const;
 
+export const JOURNAL_KINDS = ["reflection", "prayer", "gratitude", "god_said", "correction", "work_win"] as const;
+export type JournalKind = (typeof JOURNAL_KINDS)[number];
+export const JOURNAL_KIND_LABEL: Record<JournalKind, string> = {
+  reflection: "Reflection",
+  prayer: "Prayer",
+  gratitude: "Gratitude",
+  god_said: "What God said",
+  correction: "Correction",
+  work_win: "Work win",
+};
+/** The question each kind of entry starts from. */
+export const JOURNAL_KIND_PROMPT: Record<JournalKind, string> = {
+  reflection: "What did God show you today?",
+  prayer: "What are you praying about?",
+  gratitude: "What are you thankful for today?",
+  god_said: "What did God say to you, and where?",
+  correction: "What did you learn from correction?",
+  work_win: "What went well at work, and how did faith shape it?",
+};
+
 export const JournalEntrySchema = z.object({
+  kind: z.enum(JOURNAL_KINDS).default("reflection"),
+  aboutFaith: z.boolean().default(false),
+  aboutImpact: z.boolean().default(false),
+  /** Share it with the discipler in this relationship as it is saved (null keeps it private). */
+  shareWith: z.string().uuid().nullable().optional(),
   title: z.string().trim().max(JOURNAL_TITLE_MAX).optional().nullable(),
   body: z.string().trim().min(1, "Write something first").max(JOURNAL_BODY_MAX, `Entries can be up to ${JOURNAL_BODY_MAX.toLocaleString("en")} characters`),
 });
@@ -25,6 +50,9 @@ export const JournalShareSchema = z.object({ relationshipId: z.string().uuid().n
 
 export interface JournalEntryDto {
   id: string;
+  kind: JournalKind;
+  aboutFaith: boolean;
+  aboutImpact: boolean;
   title: string | null;
   body: string;
   createdAt: string;
@@ -37,6 +65,8 @@ export interface JournalListDto {
   entries: JournalEntryDto[];
   /** Pass as ?before= to load older entries; null when there are no more. */
   nextBefore: string | null;
+  /** Days in a row with an entry (counting today or yesterday), entries this month, and which of the last 7 days have one (oldest first). */
+  stats: { streak: number; thisMonth: number; lastSeven: boolean[] };
   /** Disciplers the writer may share an entry with (active relationships where they are the disciple). */
   shareTargets: { relationshipId: string; disciplerName: string; churchName: string }[];
 }

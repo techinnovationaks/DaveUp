@@ -241,7 +241,7 @@ function Compare({ c, r }: { c: ComparisonDto; r: RelationshipDto }) {
         </Card>
       )}
       {/* Tablet and desktop: one table, every area at a glance. */}
-      <div className="hidden overflow-hidden rounded-card border border-surface-line bg-white md:block">
+      <div className="hidden overflow-hidden rounded-card border border-surface-line bg-card md:block">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-surface-line text-[12px] font-bold uppercase tracking-wider text-ink-muted">

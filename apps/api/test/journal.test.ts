@@ -100,4 +100,28 @@ describe("journal", () => {
     expect((await req(ada, "DELETE", `/journal/${entry}`)).status).toBe(200);
     expect((await req(ada, "GET", "/journal")).body.entries).toHaveLength(1);
   });
+
+  it("keeps the kind and what an entry is about, and can share as it saves", async () => {
+    // A fresh relationship, since the earlier one has ended.
+    const church = await ownerDb.selectFrom("church").select("id").executeTakeFirstOrThrow();
+    const rel2 = (await ownerDb.insertInto("relationship").values({ church_id: church.id, discipler_id: ben.id, disciple_id: cy.id, status: "active", initiated_by: "disciple" }).returning("id").executeTakeFirstOrThrow()).id;
+    const e = await req(cy, "POST", "/journal", { kind: "prayer", aboutFaith: true, aboutImpact: true, body: "Prayed before the pitch.", shareWith: rel2 });
+    expect(e.status).toBe(201);
+    expect(e.body).toMatchObject({ kind: "prayer", aboutFaith: true, aboutImpact: true, sharedWith: { relationshipId: rel2, disciplerName: "Ben Eze" } });
+    expect((await req(ben, "GET", `/relationships/${rel2}/journal`)).body.map((x: any) => x.body)).toEqual(["Prayed before the pitch."]);
+    expect((await req(ada, "POST", "/journal", { body: "x", shareWith: rel2 })).status).toBe(400);
+    expect((await req(cy, "POST", "/journal", { body: "x", kind: "nonsense" })).status).toBe(400);
+  });
+
+  it("counts the streak and this month's entries", async () => {
+    const day = (n: number) => new Date(Date.now() - n * 86_400_000);
+    const p = await person("Dee Streak");
+    for (const n of [0, 1, 2, 4]) await ownerDb.insertInto("journal_entry").values({ person_id: p.id, body: `day ${n}`, created_at: day(n) }).execute();
+    const r = (await req(p, "GET", "/journal")).body;
+    expect(r.stats.streak).toBe(3);
+    expect(r.stats.lastSeven).toHaveLength(7);
+    expect(r.stats.lastSeven[6]).toBe(true);
+    expect(r.stats.lastSeven[3]).toBe(false);
+    expect(r.stats.thisMonth).toBeGreaterThanOrEqual(1);
+  });
 });

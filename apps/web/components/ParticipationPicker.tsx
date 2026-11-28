@@ -19,7 +19,7 @@ export function ParticipationPicker({ value, onChange }: { value: Participation 
             key={o.value}
             onClick={() => onChange(o.value)}
             aria-pressed={value === o.value}
-            className={`w-full rounded-2xl border p-4 text-left ${value === o.value ? "border-brand bg-brand-soft ring-1 ring-brand" : "border-surface-line bg-white"}`}
+            className={`w-full rounded-2xl border p-4 text-left ${value === o.value ? "border-brand bg-brand-soft ring-1 ring-brand" : "border-surface-line bg-card"}`}
           >
             <p className="text-[16px] font-bold text-ink">{o.title}</p>
             <p className="mt-0.5 text-[14px] text-ink-muted">{o.sub}</p>

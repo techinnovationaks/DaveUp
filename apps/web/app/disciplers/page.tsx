@@ -68,7 +68,7 @@ export default function ChooseDiscipler() {
               key={d.personId}
               disabled={full}
               onClick={() => (setPicked(d), setAgreed(false))}
-              className="flex w-full items-center gap-3 rounded-card border border-surface-line bg-white p-4 text-left hover:border-brand-line disabled:opacity-60"
+              className="flex w-full items-center gap-3 rounded-card border border-surface-line bg-card p-4 text-left hover:border-brand-line disabled:opacity-60"
             >
               <Initials name={d.fullName} />
               <div className="min-w-0 flex-1">

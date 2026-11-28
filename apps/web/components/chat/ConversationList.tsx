@@ -8,7 +8,16 @@ import { useRealtime, useRealtimeEvent } from "@/lib/realtime";
 import { Initials, Loading, inputClass } from "../ui";
 import { CellGlyph, PeoplePicker, shortWhen } from "./kit";
 
-type Tab = "all" | "direct" | "cell";
+type Tab = "all" | "direct" | "cell" | "unread";
+
+const TILE = ["bg-brand text-on-brand", "bg-[#6D28D9] text-white", "bg-[#0F766E] text-white", "bg-[#B45309] text-white"];
+const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join("") || "?";
 
 /** Debounced reload: a burst of events causes one request. */
 function useSoonReload(reload: () => Promise<void> | void, ms = 250) {
@@ -39,10 +48,11 @@ export function ConversationList({ selectedId }: { selectedId: string | null }) 
   }, [epoch]);
 
   const all = list.data ?? [];
-  const counts = { all: all.length, direct: all.filter((c) => c.kind === "direct").length, cell: all.filter((c) => c.kind === "cell").length };
+  const unread = all.filter((c) => c.unread > 0).length;
+  const cells = all.filter((c) => c.kind === "cell" && !c.archived);
   const shown = useMemo(() => {
     const n = q.trim().toLowerCase();
-    return all.filter((c) => (tab === "all" || c.kind === tab) && (!n || c.title.toLowerCase().includes(n)));
+    return all.filter((c) => (tab === "all" || (tab === "unread" ? c.unread > 0 : c.kind === tab)) && (!n || c.title.toLowerCase().includes(n)));
   }, [all, tab, q]);
 
   const startChat = (ids: string[]) =>
@@ -54,23 +64,46 @@ export function ConversationList({ selectedId }: { selectedId: string | null }) 
     });
 
   return (
-    <div className="flex h-full flex-col bg-white">
-      <div className="space-y-3 border-b border-surface-line px-4 pb-3 pt-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-[24px] font-extrabold tracking-tight text-ink md:text-[20px]">Spaces</h1>
-          <button onClick={() => setPicking(true)} className="flex h-10 items-center gap-2 rounded-xl bg-brand px-3.5 text-[14px] font-bold text-white hover:bg-brand-dark">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+    <div className="flex h-full flex-col bg-page">
+      <div className="space-y-4 px-4 pb-3 pt-5">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="font-display text-[40px] font-extrabold leading-none tracking-tight text-ink md:text-[30px]">Spaces</h1>
+          <button onClick={() => setPicking(true)} aria-label="New chat" title="New chat" className="flex h-14 w-14 items-center justify-center rounded-full bg-brand text-on-brand shadow-[0_8px_24px_-8px_rgba(1,253,255,.6)] hover:bg-brand-dark md:h-11 md:w-11">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden>
               <path d="M12 5v14M5 12h14" />
             </svg>
-            New chat
           </button>
         </div>
-        <div className="flex gap-1 rounded-xl bg-surface p-1" role="tablist">
+        <label className="flex items-center gap-3 rounded-full border border-surface-line bg-card px-5 py-3.5 text-ink-muted focus-within:border-brand">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.3-4.3" />
+          </svg>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search people and spaces" className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-ink-muted" aria-label="Search people and spaces" />
+        </label>
+
+        {cells.length > 0 && !q && (
+          <div>
+            <p className="mb-2 text-[14px] font-extrabold tracking-[0.12em] text-ink-muted">YOUR SPACES</p>
+            <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+              {cells.map((c, i) => (
+                <Link key={c.id} href={`/messages/${c.id}`} className="w-[200px] shrink-0 rounded-[24px] border border-surface-line bg-card p-4 hover:border-brand-line md:w-[170px]">
+                  <span className={`flex h-12 w-12 items-center justify-center rounded-2xl text-[16px] font-extrabold ${TILE[i % TILE.length]}`}>{initialsOf(c.title)}</span>
+                  <span className="mt-3 block truncate text-[17px] font-bold text-ink">{c.title}</span>
+                  <span className="block truncate text-[14px] text-ink-muted">{c.activeCall ? "Call in progress" : `${c.memberCount} members`}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4" role="tablist">
           {(
             [
               ["all", "All"],
-              ["direct", "Direct"],
-              ["cell", "Cells"],
+              ["direct", "People"],
+              ["cell", "Spaces"],
+              ["unread", unread ? `Unread ${unread}` : "Unread"],
             ] as const
           ).map(([k, label]) => (
             <button
@@ -78,14 +111,12 @@ export function ConversationList({ selectedId }: { selectedId: string | null }) 
               role="tab"
               aria-selected={tab === k}
               onClick={() => setTab(k)}
-              className={`flex-1 rounded-lg py-2 text-[14px] font-semibold ${tab === k ? "bg-white text-ink shadow-sm" : "text-ink-muted"}`}
+              className={`shrink-0 rounded-full px-5 py-2.5 text-[16px] font-bold ${tab === k ? "bg-brand text-on-brand" : "border border-surface-line bg-card text-ink"}`}
             >
               {label}
-              {counts[k] > 0 && <span className="ml-1 text-ink-faint">{counts[k]}</span>}
             </button>
           ))}
         </div>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search chats and cells" className={`${inputClass} py-2.5 text-[15px]`} aria-label="Search chats and cells" />
         {error && <p className="text-[13px] text-danger-dark">{error}</p>}
       </div>
 
@@ -94,7 +125,7 @@ export function ConversationList({ selectedId }: { selectedId: string | null }) 
         {list.error && <p className="p-4 text-[14px] text-danger-dark">{list.error.message}</p>}
         {!list.loading && shown.length === 0 && (
           <div className="px-6 py-12 text-center">
-            <p className="text-[16px] font-semibold text-ink">{q ? "Nothing matches that search" : tab === "cell" ? "You are not in a cell yet" : "No conversations yet"}</p>
+            <p className="text-[16px] font-semibold text-ink">{q ? "Nothing matches that search" : tab === "cell" ? "You are not in a space yet" : tab === "unread" ? "All caught up" : "No conversations yet"}</p>
             <p className="mt-1 text-[14px] text-ink-muted">{tab === "cell" ? "Your organization administrator adds people to cells." : "Start a chat with anyone in your organization."}</p>
           </div>
         )}
@@ -104,19 +135,24 @@ export function ConversationList({ selectedId }: { selectedId: string | null }) 
               <Link
                 href={`/messages/${c.id}`}
                 aria-current={c.id === selectedId ? "page" : undefined}
-                className={`flex items-center gap-3 px-4 py-3 transition-colors ${c.id === selectedId ? "bg-brand-soft" : "hover:bg-surface"}`}
+                className={`mx-4 flex items-center gap-3 border-b border-surface-line py-3.5 transition-colors ${c.id === selectedId ? "bg-brand-soft" : "hover:bg-surface/50"}`}
               >
                 <span className="relative">
-                  {c.kind === "cell" ? <CellGlyph size={48} /> : <Initials name={c.title} size={48} />}
+                  {c.kind === "cell" ? (
+                    <span className={`flex h-14 w-14 items-center justify-center rounded-full text-[17px] font-extrabold ${TILE[Math.max(0, cells.indexOf(c)) % TILE.length]}`}>{initialsOf(c.title)}</span>
+                  ) : (
+                    <Initials name={c.title} size={56} />
+                  )}
                   {c.activeCall && <span className="absolute -bottom-0.5 -right-0.5 h-4 w-4 animate-pulse rounded-full border-2 border-white bg-ok" title="Call in progress" />}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline gap-2">
-                    <span className={`truncate text-[16px] text-ink ${c.unread ? "font-extrabold" : "font-semibold"}`}>{c.title}</span>
-                    <span className="ml-auto shrink-0 text-[12px] text-ink-faint">{shortWhen(c.lastMessage?.at ?? c.lastMessageAt)}</span>
+                    <span className={`truncate text-[18px] text-ink ${c.unread ? "font-extrabold" : "font-bold"}`}>{c.title}</span>
+                    {c.kind === "cell" && <span className="shrink-0 rounded-md bg-brand-soft px-2 py-0.5 text-[13px] font-bold text-brand">Cell</span>}
+                    <span className="ml-auto shrink-0 text-[14px] text-ink-muted">{shortWhen(c.lastMessage?.at ?? c.lastMessageAt)}</span>
                   </span>
                   <span className="flex items-center gap-2">
-                    <span className={`truncate text-[14px] ${c.unread ? "font-semibold text-ink" : "text-ink-muted"}`}>
+                    <span className={`truncate text-[15px] ${c.unread ? "font-semibold text-ink" : "text-ink-muted"}`}>
                       {c.activeCall
                         ? `${c.activeCall.media === "video" ? "Video" : "Voice"} call in progress`
                         : c.lastMessage
@@ -126,7 +162,7 @@ export function ConversationList({ selectedId }: { selectedId: string | null }) 
                             : "Say hello"}
                     </span>
                     {c.archived && <span className="shrink-0 rounded-full bg-surface-line px-2 text-[11px] font-semibold text-ink-muted">Archived</span>}
-                    {c.unread > 0 && <span className="ml-auto min-w-[22px] shrink-0 rounded-full bg-brand px-1.5 text-center text-[12px] font-bold leading-[22px] text-white">{c.unread > 99 ? "99+" : c.unread}</span>}
+                    {c.unread > 0 && <span className="ml-auto min-w-[26px] shrink-0 rounded-full bg-brand px-1.5 text-center text-[14px] font-extrabold leading-[26px] text-on-brand">{c.unread > 99 ? "99+" : c.unread}</span>}
                   </span>
                 </span>
               </Link>

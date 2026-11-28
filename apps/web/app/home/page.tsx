@@ -7,39 +7,16 @@ import { useApi } from "@/lib/api";
 import { useGuard } from "@/lib/session";
 import { HomeGrowthCard } from "@/components/rel/Growth";
 import { HomeHero } from "@/components/home/HomeHero";
-import { navIcons, Icon } from "@/components/nav";
-
-/** Shortcuts to the other sections, as tiles. */
-const TILES = [
-  { href: "/journal", label: "Journal", sub: "Write today", icon: navIcons.journal },
-  { href: "/messages", label: "Spaces", sub: "Chats and cells", icon: navIcons.chat },
-  { href: "/training", label: "Training", sub: "Your courses", icon: navIcons.training },
-  { href: "/resources", label: "Resources", sub: "Guides and videos", icon: navIcons.resources },
-  { href: "/assessments", label: "Assessments", sub: "Checks and results", icon: navIcons.assess },
-];
-
-function Tiles() {
-  return (
-    <div className="mb-6 grid grid-cols-3 gap-2.5 sm:grid-cols-5 md:gap-3">
-      {TILES.map((t, i) => (
-        <Link
-          key={t.href}
-          href={t.href}
-          className={`group flex flex-col items-start gap-2 rounded-2xl border border-surface-line bg-white p-3.5 transition-[transform,box-shadow,border-color] hover:-translate-y-0.5 hover:border-brand-line hover:shadow-md md:p-4 ${i >= 3 ? "max-sm:hidden" : ""}`}
-        >
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-night text-glow transition-colors group-hover:bg-brand">
-            <Icon size={20}>{t.icon}</Icon>
-          </span>
-          <span>
-            <span className="block text-[15px] font-bold text-ink">{t.label}</span>
-            <span className="block text-[12px] text-ink-muted">{t.sub}</span>
-          </span>
-        </Link>
-      ))}
-    </div>
-  );
-}
+import { QuickActions } from "@/components/home/QuickActions";
 import { OPEN_STATUSES, baselineLabel, dueText, firstName, fmtDateTime, greeting, statusLabel } from "@/lib/labels";
+
+/** New members: the first thing to do is their own 12-area assessment. */
+function startHere(hub: AssessmentHubDto | null | undefined): { href: string; title: string; sub: string } | null {
+  const b = hub?.myTestB;
+  if (!hub || b?.status === "submitted") return null;
+  if (b) return { href: `/assessments/${b.id}`, title: "Your 12-area assessment", sub: `${b.progress.answered} of ${b.progress.total} answered. Carry on at your own pace.` };
+  return { href: "/assessments", title: "Your 12-area assessment", sub: "Faith and impact. At your own pace." };
+}
 
 type Mode = "me" | "lead";
 
@@ -78,8 +55,11 @@ export default function Home() {
 
   return (
     <Screen nav aside={showLead ? undefined : <UpNext rels={all.filter((r) => OPEN_STATUSES.includes(r.status))} hub={hub.data} />}>
-      <HomeHero me={me} rels={all} greeting={greeting()} />
-      <Tiles />
+      <HomeHero me={me} rels={all} greeting="Hey" start={startHere(hub.data)} />
+      <QuickActions me={me} meetingHref={(() => {
+        const r = all.find((x) => x.status === "active");
+        return r ? `/relationships/${r.id}#meetings` : null;
+      })()} />
       {!showLead && (
         <div className="mb-6 xl:hidden">
           <UpNext rels={all.filter((r) => OPEN_STATUSES.includes(r.status))} hub={hub.data} />
@@ -97,7 +77,7 @@ export default function Home() {
               label: (
                 <>
                   My disciples
-                  {leadBadge > 0 && <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-brand px-1.5 text-[13px] font-bold text-white">{leadBadge}</span>}
+                  {leadBadge > 0 && <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-brand px-1.5 text-[13px] font-bold text-on-brand">{leadBadge}</span>}
                 </>
               ),
             },
@@ -227,7 +207,7 @@ function MeView({ me, rels, hub }: { me: MeDto; rels: RelationshipDto[]; hub: As
           <>
             <p className="mt-1 text-[20px] font-extrabold">Start your baseline</p>
             <p className="mt-1 text-[15px] text-white/90">60 short questions about the last month. Save and come back any time.</p>
-            <Link href="/assessments" className="mt-4 flex min-h-[52px] items-center justify-center rounded-2xl bg-white text-[16px] font-bold text-brand hover:bg-white/90 md:inline-flex md:min-h-[48px] md:px-8">
+            <Link href="/assessments" className="mt-4 flex min-h-[52px] items-center justify-center rounded-2xl bg-card text-[16px] font-bold text-brand hover:bg-white/90 md:inline-flex md:min-h-[48px] md:px-8">
               Start
             </Link>
           </>
@@ -238,9 +218,9 @@ function MeView({ me, rels, hub }: { me: MeDto; rels: RelationshipDto[]; hub: As
               {testB.progress.answered} of {testB.progress.total} answered
             </p>
             <div className="mt-3 h-2 rounded-full bg-white/30">
-              <div className="h-2 rounded-full bg-white" style={{ width: `${(testB.progress.answered / testB.progress.total) * 100}%` }} />
+              <div className="h-2 rounded-full bg-card" style={{ width: `${(testB.progress.answered / testB.progress.total) * 100}%` }} />
             </div>
-            <Link href={`/assessments/${testB.id}`} className="mt-4 flex min-h-[52px] items-center justify-center rounded-2xl bg-white text-[16px] font-bold text-brand hover:bg-white/90 md:inline-flex md:min-h-[48px] md:px-8">
+            <Link href={`/assessments/${testB.id}`} className="mt-4 flex min-h-[52px] items-center justify-center rounded-2xl bg-card text-[16px] font-bold text-brand hover:bg-white/90 md:inline-flex md:min-h-[48px] md:px-8">
               Continue
             </Link>
           </>
@@ -442,7 +422,7 @@ function DiscipleDetail({ r }: { r: RelationshipDto }) {
 function Stat({ n, label, alert }: { n: number; label: string; alert?: boolean }) {
   const on = alert && n > 0;
   return (
-    <div className={`rounded-2xl border p-4 md:p-5 ${on ? "border-brand-line bg-brand-soft" : "border-surface-line bg-white"}`}>
+    <div className={`rounded-2xl border p-4 md:p-5 ${on ? "border-brand-line bg-brand-soft" : "border-surface-line bg-card"}`}>
       <p className={`text-[28px] font-extrabold leading-none md:text-[32px] ${on ? "text-brand" : "text-ink"}`}>{n}</p>
       <p className="mt-2 text-[13px] leading-tight text-ink-muted md:text-[14px]">{label}</p>
     </div>

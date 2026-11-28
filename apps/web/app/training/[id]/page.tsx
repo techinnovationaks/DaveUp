@@ -200,7 +200,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                   className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left ${l.id === openId ? "bg-brand-soft" : "hover:bg-surface"}`}
                 >
                   <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold ${l.completed ? "bg-ok text-white" : l.id === openId ? "bg-brand text-white" : "bg-surface-line text-ink-muted"}`}
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold ${l.completed ? "bg-ok text-on-brand" : l.id === openId ? "bg-brand text-on-brand" : "bg-surface-line text-ink-muted"}`}
                   >
                     {l.completed ? "✓" : i + 1}
                   </span>
