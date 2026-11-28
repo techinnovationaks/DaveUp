@@ -285,3 +285,6 @@
 .dvh{min-height:100vh;background:var(--bg);color:var(--fg)}
 .dvh .wm-light{display:none}
 @media (prefers-color-scheme:light){.dvh:not([data-theme="dark"]) .wm-dark{display:none}.dvh:not([data-theme="dark"]) .wm-light{display:inline}}
+
+/* Content width: 80% of the screen on computers (phones and tablets use the full width). */
+@media (min-width:1024px){.dvh .wrap{max-width:80%}}
