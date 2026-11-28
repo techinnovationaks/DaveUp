@@ -18,6 +18,84 @@ export function HomeScripts() {
     } catch {}
   }, []);
 
+  // Motion: hero entrance (CSS), scroll reveal and counting numbers. Off for reduced motion.
+  useEffect(() => {
+    const root = document.querySelector<HTMLElement>(".dvh");
+    if (!root || matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) return;
+    root.classList.add("anim");
+    const groups = [
+      ".sec .eyebrow",
+      ".sec h2",
+      ".sec .lead",
+      ".sub-h",
+      ".bento > *",
+      ".scene",
+      ".steps > li",
+      ".who",
+      ".why",
+      ".plan",
+      ".addon",
+      ".gen > div",
+      ".faq > details",
+      ".qwrap",
+      ".cta h2",
+      ".cta .cta-row",
+      ".cta p",
+      "footer .wrap > *",
+    ];
+    const els: HTMLElement[] = [];
+    for (const sel of groups) {
+      root.querySelectorAll<HTMLElement>(sel).forEach((el) => {
+        if (el.closest(".hero") || el.hasAttribute("data-rv")) return;
+        // Stagger siblings that come in together.
+        const sibs = el.parentElement ? Array.from(el.parentElement.children).filter((c) => c.matches(sel)) : [];
+        const n = Math.max(0, sibs.indexOf(el));
+        el.dataset.rv = "";
+        el.style.setProperty("--rv", `${Math.min(n, 8) * 90}ms`);
+        els.push(el);
+      });
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          e.target.classList.add("in");
+          io.unobserve(e.target);
+        }
+      },
+      { rootMargin: "0px 0px -8% 0px", threshold: 0.12 },
+    );
+    els.forEach((el) => io.observe(el));
+
+    // The multiplication numbers count up the first time they are seen.
+    const nums = Array.from(root.querySelectorAll<HTMLElement>(".gen b"));
+    const counter = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          counter.unobserve(e.target);
+          const el = e.target as HTMLElement;
+          const target = Number((el.textContent ?? "").replace(/[^0-9]/g, ""));
+          if (!target) continue;
+          const start = performance.now();
+          const dur = 1400;
+          const tick = (now: number) => {
+            const p = Math.min(1, (now - start) / dur);
+            el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString("en-NG");
+            if (p < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }
+      },
+      { threshold: 0.6 },
+    );
+    nums.forEach((n) => counter.observe(n));
+    return () => {
+      io.disconnect();
+      counter.disconnect();
+    };
+  }, []);
+
   // Monthly or yearly prices.
   useEffect(() => {
     const btns = Array.from(document.querySelectorAll<HTMLElement>(".dvh .tg"));

@@ -288,3 +288,31 @@
 
 /* Content width: 80% of the screen on computers (phones and tablets use the full width). */
 @media (min-width:1024px){.dvh .wrap{max-width:80%}}
+
+/* ---- Motion (added for the live site) ----
+   Only when JavaScript has added .anim to the page (and the visitor has not
+   asked for reduced motion), so without it everything simply shows. */
+@keyframes dvh-rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+@keyframes dvh-phone-in{from{opacity:0;transform:translateY(40px) rotate(-3deg) scale(.96)}to{opacity:1;transform:none}}
+@keyframes dvh-glow{0%,100%{opacity:.85;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+.dvh.anim .hero .tag,.dvh.anim .hero h1,.dvh.anim .hero .cta-row,.dvh.anim .hero .small,.dvh.anim .hero .chips{animation:dvh-rise .9s cubic-bezier(.2,.7,.2,1) both}
+.dvh.anim .hero .tag{animation-delay:.05s}
+.dvh.anim .hero h1{animation-delay:.18s}
+.dvh.anim .hero .cta-row{animation-delay:.34s}
+.dvh.anim .hero .small{animation-delay:.46s}
+.dvh.anim .hero .chips{animation-delay:.58s}
+.dvh.anim .hero .stage{animation:dvh-phone-in 1.2s cubic-bezier(.2,.7,.2,1) .3s both}
+.dvh.anim .hero .phone{animation:dvh-bob 7s ease-in-out 1.6s infinite}
+.dvh.anim .hero{position:relative}
+.dvh.anim .hero::before{content:"";position:absolute;inset:-10%;background:radial-gradient(600px 360px at 78% 30%,rgba(1,253,255,.14),transparent 60%);animation:dvh-glow 9s ease-in-out infinite;pointer-events:none}
+.dvh.anim .hero>.wrap{position:relative}
+/* Scroll reveal: elements marked data-rv fade up when they come into view, staggered by --rv. */
+.dvh.anim [data-rv]{opacity:0;transform:translateY(28px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:var(--rv,0ms)}
+.dvh.anim [data-rv].in{opacity:1;transform:none}
+/* Cards lift on hover (mouse only). */
+@media (hover:hover){
+  .dvh .tile,.dvh .who,.dvh .why,.dvh .plan,.dvh .scene,.dvh .steps li{transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s,border-color .35s}
+  .dvh .tile:hover,.dvh .who:hover,.dvh .why:hover,.dvh .plan:hover,.dvh .scene:hover,.dvh .steps li:hover{transform:translateY(-6px);box-shadow:0 22px 44px -22px rgba(1,253,255,.35)}
+  .dvh.anim [data-rv].in.tile:hover,.dvh.anim [data-rv].in.who:hover,.dvh.anim [data-rv].in.why:hover,.dvh.anim [data-rv].in.plan:hover,.dvh.anim [data-rv].in.scene:hover{transform:translateY(-6px)}
+}
+@media (prefers-reduced-motion:reduce){.dvh.anim [data-rv]{opacity:1;transform:none;transition:none}.dvh.anim .hero *,.dvh.anim .hero::before{animation:none!important}}
