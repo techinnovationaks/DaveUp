@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@daveup/shared": "*",
+    "gsap": "^3.15.1",
     "livekit-client": "2.25.0",
     "next": "15.1.12",
     "qrcode-generator": "^1.4.4",

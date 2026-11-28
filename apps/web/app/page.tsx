@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import "@/components/site/daveup-home.css";
 import { HOME_HTML } from "@/components/site/homeMarkup";
 import { HomeScripts } from "@/components/site/HomeScripts";
+import { HomeMenu } from "@/components/site/HomeMenu";
 
 export const metadata: Metadata = {
   title: "DaveUp: Growth you can see",
@@ -29,6 +30,7 @@ export default function HomePage() {
   return (
     <div className="dvh" id="top">
       <div dangerouslySetInnerHTML={{ __html: HOME_HTML }} />
+      <HomeMenu />
       <HomeScripts />
     </div>
   );

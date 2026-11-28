@@ -350,3 +350,21 @@
   .dvh .menu-btn{display:block}
 }
 @media (max-width:560px){.dvh .hero .cta-row .btn{width:100%}}
+
+/* ---- Phone menu: React Bits StaggeredMenu (components/site/HomeMenu.tsx) ---- */
+.dvh .dvh-sm{display:none}
+@media (max-width:860px){
+  .dvh .dvh-sm{display:block}
+  .dvh .menu-btn,.dvh .mmenu{display:none!important}
+  /* The toggle sits in the site header's row; the logo shows only on the open panel. */
+  .dvh .dvh-sm .staggered-menu-header{height:68px;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));top:env(safe-area-inset-top,0px)}
+  .dvh .dvh-sm .sm-logo{opacity:0;transition:opacity .25s}
+  .dvh .dvh-sm .staggered-menu-wrapper[data-open] .sm-logo{opacity:1}
+  .dvh .dvh-sm .staggered-menu-wrapper[data-open] .sm-logo-img{filter:none}
+  .dvh .dvh-sm .sm-toggle{font:700 16px/1 var(--fb);padding:12px 4px}
+  .dvh .dvh-sm .staggered-menu-wrapper[data-open] .sm-toggle{color:#06236B!important}
+  .dvh .dvh-sm .sm-panel-item{font-family:var(--fd);color:#06236B}
+  .dvh .dvh-sm .staggered-menu-panel{padding-top:96px}
+  /* Room for the toggle: the site header's own button is hidden on phones. */
+  .dvh .nav .wrap{padding-right:120px}
+}
