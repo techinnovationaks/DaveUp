@@ -96,6 +96,33 @@ export function HomeScripts() {
     };
   }, []);
 
+  // Phone menu: open and close, close on a link, Escape, or growing to desktop width.
+  useEffect(() => {
+    const btn = document.querySelector<HTMLButtonElement>(".dvh .menu-btn");
+    const panel = document.getElementById("mmenu");
+    if (!btn || !panel) return;
+    const setOpen = (open: boolean) => {
+      panel.hidden = !open;
+      btn.setAttribute("aria-expanded", String(open));
+      btn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    };
+    const onBtn = () => setOpen(panel.hidden);
+    const onLink = (e: Event) => (e.target as HTMLElement).closest("a") && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !panel.hidden && (setOpen(false), btn.focus());
+    const wide = matchMedia("(min-width: 861px)");
+    const onWide = () => wide.matches && setOpen(false);
+    btn.addEventListener("click", onBtn);
+    panel.addEventListener("click", onLink);
+    document.addEventListener("keydown", onKey);
+    wide.addEventListener("change", onWide);
+    return () => {
+      btn.removeEventListener("click", onBtn);
+      panel.removeEventListener("click", onLink);
+      document.removeEventListener("keydown", onKey);
+      wide.removeEventListener("change", onWide);
+    };
+  }, []);
+
   // Monthly or yearly prices.
   useEffect(() => {
     const btns = Array.from(document.querySelectorAll<HTMLElement>(".dvh .tg"));
@@ -185,7 +212,7 @@ export function HomeScripts() {
     const start = Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href="/signup"]'));
     signIn.forEach((a) => (a.style.display = "none"));
     start.forEach((a) => {
-      a.style.marginLeft = "auto";
+      if (!a.closest(".mmenu")) a.style.marginLeft = "auto";
       a.href = nextStep(me);
       a.textContent = "Open DaveUp";
     });

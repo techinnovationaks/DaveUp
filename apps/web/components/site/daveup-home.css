@@ -328,3 +328,25 @@
   .dvh .nav .signin{margin-left:auto}
 }
 .dvh.anim .hero .sub{animation:dvh-rise .9s cubic-bezier(.2,.7,.2,1) .26s both}
+
+/* Phones: a menu button instead of the header's Get started button; the menu
+   holds the section links, Sign in and Get started free. The hero's Get
+   started free button runs full width. */
+.dvh .menu-btn{display:none;position:relative;width:44px;height:44px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;padding:0;margin-left:auto}
+.dvh .menu-btn span{position:absolute;left:12px;right:12px;height:2px;border-radius:2px;background:currentColor;transition:transform .25s,opacity .2s,top .25s}
+.dvh .menu-btn span:nth-child(1){top:15px}.dvh .menu-btn span:nth-child(2){top:21px}.dvh .menu-btn span:nth-child(3){top:27px}
+.dvh .menu-btn[aria-expanded="true"] span:nth-child(1){top:21px;transform:rotate(45deg)}
+.dvh .menu-btn[aria-expanded="true"] span:nth-child(2){opacity:0}
+.dvh .menu-btn[aria-expanded="true"] span:nth-child(3){top:21px;transform:rotate(-45deg)}
+.dvh .mmenu{border-top:1px solid var(--line);background:var(--nav-bg);backdrop-filter:blur(14px)}
+.dvh .mmenu .wrap{padding-block:12px 20px}
+.dvh .mmenu nav{display:flex;flex-direction:column}
+.dvh .mmenu nav a{padding:14px 4px;border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none;font-size:17px;font-weight:600}
+.dvh .mmenu .mm-cta{display:grid;gap:10px;margin-top:16px}
+.dvh .mmenu .mm-cta .btn{width:100%}
+@media (min-width:861px){.dvh .mmenu{display:none!important}}
+@media (max-width:860px){
+  .dvh .nav .wrap>.btn{display:none}
+  .dvh .menu-btn{display:block}
+}
+@media (max-width:560px){.dvh .hero .cta-row .btn{width:100%}}
