@@ -327,3 +327,4 @@
   .dvh .nav nav{position:absolute;left:50%;transform:translateX(-50%);flex:none}
   .dvh .nav .signin{margin-left:auto}
 }
+.dvh.anim .hero .sub{animation:dvh-rise .9s cubic-bezier(.2,.7,.2,1) .26s both}
