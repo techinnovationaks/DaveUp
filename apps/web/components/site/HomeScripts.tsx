@@ -185,6 +185,7 @@ export function HomeScripts() {
     const start = Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href="/signup"]'));
     signIn.forEach((a) => (a.style.display = "none"));
     start.forEach((a) => {
+      a.style.marginLeft = "auto";
       a.href = nextStep(me);
       a.textContent = "Open DaveUp";
     });

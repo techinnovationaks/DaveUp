@@ -316,3 +316,14 @@
   .dvh.anim [data-rv].in.tile:hover,.dvh.anim [data-rv].in.who:hover,.dvh.anim [data-rv].in.why:hover,.dvh.anim [data-rv].in.plan:hover,.dvh.anim [data-rv].in.scene:hover{transform:translateY(-6px)}
 }
 @media (prefers-reduced-motion:reduce){.dvh.anim [data-rv]{opacity:1;transform:none;transition:none}.dvh.anim .hero *,.dvh.anim .hero::before{animation:none!important}}
+
+/* Header: links in the middle, Sign in and Get started on the right. On wide
+   screens the links are centred on the page itself; in between they centre in
+   the space left. (Phones hide the links, as designed.) */
+.dvh .nav nav{flex:1}
+.dvh .nav ul{justify-content:center;margin:0}
+@media (min-width:1100px){
+  .dvh .nav .wrap{position:relative}
+  .dvh .nav nav{position:absolute;left:50%;transform:translateX(-50%);flex:none}
+  .dvh .nav .signin{margin-left:auto}
+}
