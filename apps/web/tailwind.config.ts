@@ -30,7 +30,8 @@ export default {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
         display: ["var(--font-display)", "var(--font-inter)", "system-ui", "sans-serif"],
       },
-      borderRadius: { card: "20px" },
+      // One corner size everywhere: 8px (circles and pills stay rounded-full).
+      borderRadius: { xl: "8px", "2xl": "8px", "3xl": "8px", card: "8px" },
     },
   },
   plugins: [],

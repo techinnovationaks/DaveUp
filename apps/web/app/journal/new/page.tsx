@@ -44,7 +44,7 @@ export default function NewEntry() {
       </label>
       <textarea
         id="entry"
-        className={`${inputClass} min-h-[220px] rounded-[24px] py-4 text-[17px] leading-relaxed`}
+        className={`${inputClass} min-h-[220px] rounded-[8px] py-4 text-[17px] leading-relaxed`}
         value={body}
         maxLength={JOURNAL_BODY_MAX}
         onChange={(e) => setBody(e.target.value)}
@@ -63,7 +63,7 @@ export default function NewEntry() {
       </div>
 
       <p className="mb-2 mt-6 text-[18px] font-bold text-ink">Who can see this?</p>
-      <div className="flex rounded-[20px] bg-brand-soft p-1.5" role="radiogroup">
+      <div className="flex rounded-[8px] bg-brand-soft p-1.5" role="radiogroup">
         <button role="radio" aria-checked={shareWith === null} onClick={() => setShareWith(null)} className={`flex-1 rounded-2xl py-3.5 text-[16px] font-bold ${shareWith === null ? "bg-card text-ink" : "text-ink-muted"}`}>
           Private
         </button>
@@ -84,7 +84,7 @@ export default function NewEntry() {
       </p>
 
       <ErrorText>{error}</ErrorText>
-      <Button full className="mt-8 !min-h-[60px] !rounded-[24px] text-[18px]" disabled={busy || !body.trim()} onClick={() => void save()}>
+      <Button full className="mt-8 !min-h-[60px] !rounded-[8px] text-[18px]" disabled={busy || !body.trim()} onClick={() => void save()}>
         {busy ? "Saving…" : "Save entry"}
       </Button>
     </Screen>

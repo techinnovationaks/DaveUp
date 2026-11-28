@@ -155,7 +155,7 @@ function Ring({ value, label, sub, color }: { value: number; label: string; sub:
 
 const primaryBtn = "rounded-full bg-white px-7 py-4 text-center text-[16px] font-bold text-night shadow-lg shadow-night/30 transition-transform hover:-translate-y-0.5";
 const ghostBtn = "rounded-full border border-white/35 px-7 py-4 text-center text-[16px] font-bold text-white transition-colors hover:bg-white/10";
-const glass = "rounded-[22px] border border-white/15 bg-white/[0.08] backdrop-blur-md";
+const glass = "rounded-[8px] border border-white/15 bg-white/[0.08] backdrop-blur-md";
 
 export default function HomePage() {
   return (
@@ -255,7 +255,7 @@ export default function HomePage() {
             <Heading>Discipleship that feels like this.</Heading>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-2">
-            <div data-reveal className="rounded-[24px] bg-night p-6 text-white md:p-8">
+            <div data-reveal className="rounded-[8px] bg-night p-6 text-white md:p-8">
               <div className="rounded-2xl bg-white/[0.08] p-4">
                 <p className="text-[11px] font-bold tracking-wider text-glow">THURSDAY, 6PM</p>
                 <p className="mt-1 flex items-center justify-between font-semibold">
@@ -270,7 +270,7 @@ export default function HomePage() {
               <h3 className="mt-6 font-display text-[24px] font-extrabold">Walk with someone who has your back</h3>
               <p className="mt-2 text-night-muted">Meet, pray, plan and cheer each other on, all in one place.</p>
             </div>
-            <div data-reveal style={delay(100)} className="rounded-[24px] border border-surface-line bg-white p-6 md:p-8">
+            <div data-reveal style={delay(100)} className="rounded-[8px] border border-surface-line bg-white p-6 md:p-8">
               <div className="flex gap-3">
                 {[
                   ["Faith", "58", "72"],
@@ -287,7 +287,7 @@ export default function HomePage() {
               <h3 className="mt-6 font-display text-[24px] font-extrabold text-night">Watch your growth add up</h3>
               <p className="mt-2 text-ink-muted">Two scores and a clear trend show how far you have come.</p>
             </div>
-            <div data-reveal style={delay(200)} className="rounded-[24px] border border-surface-line bg-white p-6 md:p-8">
+            <div data-reveal style={delay(200)} className="rounded-[8px] border border-surface-line bg-white p-6 md:p-8">
               <div className="rounded-2xl bg-surface p-4">
                 <p className="text-[11px] font-bold tracking-wider text-glow-ink">GROUP TRAINING</p>
                 <p className="mt-1 font-semibold text-night">Leadership Foundations</p>
@@ -307,7 +307,7 @@ export default function HomePage() {
               </h3>
               <p className="mt-2 text-ink-muted">Courses and lessons are here today. Cohorts with sessions and attendance are next.</p>
             </div>
-            <div data-reveal style={delay(300)} className="rounded-[24px] bg-gradient-to-br from-night-2 to-night-3 p-6 text-white md:p-8">
+            <div data-reveal style={delay(300)} className="rounded-[8px] bg-gradient-to-br from-night-2 to-night-3 p-6 text-white md:p-8">
               <div className="rounded-2xl bg-white/[0.08] p-4">
                 <p className="text-[11px] font-bold tracking-wider text-glow">TEAM CULTURE</p>
                 <p className="mt-1 flex items-baseline justify-between font-semibold">
@@ -335,7 +335,7 @@ export default function HomePage() {
                 When the two scores sit more than 20 points apart, DaveUp suggests a conversation, not a label. Your score is never a grade.
               </p>
             </div>
-            <div data-reveal style={delay(200)} className="rounded-[28px] border border-surface-line bg-surface p-8 md:p-10">
+            <div data-reveal style={delay(200)} className="rounded-[8px] border border-surface-line bg-surface p-8 md:p-10">
               <div className="grid grid-cols-2 gap-6">
                 <Ring value={72} label="Priest" sub="Your walk with God" color="#0891B2" />
                 <Ring value={49} label="King" sub="Your work and impact" color="#1E3A8A" />
@@ -348,7 +348,7 @@ export default function HomePage() {
         {/* ---- How it works ---- */}
         <Section id="how-it-works" className="bg-surface">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center">
-            <div data-reveal className="group relative order-2 aspect-[4/5] overflow-hidden rounded-[28px] shadow-xl lg:order-1">
+            <div data-reveal className="group relative order-2 aspect-[4/5] overflow-hidden rounded-[8px] shadow-xl lg:order-1">
               <SiteImage slot="smallGroup" sizes="(min-width: 1024px) 45vw, 100vw" className="transition-transform duration-700 group-hover:scale-105" />
             </div>
             <div className="order-1 lg:order-2">
@@ -377,7 +377,7 @@ export default function HomePage() {
           </div>
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
             {/* The trend chart (example data) */}
-            <div data-reveal className="rounded-[24px] bg-night p-6 text-white lg:col-span-2 md:p-8">
+            <div data-reveal className="rounded-[8px] bg-night p-6 text-white lg:col-span-2 md:p-8">
               <h3 className="font-display text-[22px] font-extrabold">Growth you can see</h3>
               <p className="mt-1 text-night-muted">Two scores, Faith and Impact, with a trend line that shows movement month by month.</p>
               <svg viewBox="0 0 600 200" className="mt-6 w-full" role="img" aria-label="Example: Faith rising from 58 to 72 and Impact from 38 to 49, June to November">
@@ -403,7 +403,7 @@ export default function HomePage() {
                 <span className="ml-auto text-[12px] font-normal text-night-muted">Example data.</span>
               </p>
             </div>
-            <div data-reveal style={delay(100)} className="rounded-[24px] border border-surface-line bg-surface p-6 md:p-8">
+            <div data-reveal style={delay(100)} className="rounded-[8px] border border-surface-line bg-surface p-6 md:p-8">
               <h3 className="font-display text-[22px] font-extrabold text-night">
                 Multiplication
                 <Soon />
@@ -427,7 +427,7 @@ export default function HomePage() {
                 key={f.title}
                 data-reveal
                 style={delay((i % 3) * 90)}
-                className="rounded-[24px] border border-surface-line bg-white p-6 transition-[box-shadow,transform,border-color] duration-300 hover:-translate-y-1 hover:border-brand-line hover:shadow-xl"
+                className="rounded-[8px] border border-surface-line bg-white p-6 transition-[box-shadow,transform,border-color] duration-300 hover:-translate-y-1 hover:border-brand-line hover:shadow-xl"
               >
                 <span className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-night text-glow">
                   <Icon d={f.icon} />
@@ -450,7 +450,7 @@ export default function HomePage() {
           </div>
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {AUDIENCES.map((a, i) => (
-              <div key={a.title} data-reveal style={delay((i % 3) * 100)} className="group overflow-hidden rounded-[24px] border border-surface-line bg-white transition-shadow hover:shadow-xl">
+              <div key={a.title} data-reveal style={delay((i % 3) * 100)} className="group overflow-hidden rounded-[8px] border border-surface-line bg-white transition-shadow hover:shadow-xl">
                 <div className="relative aspect-[16/10] overflow-hidden">
                   <SiteImage slot={a.slot} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="transition-transform duration-700 group-hover:scale-105" />
                 </div>
@@ -527,7 +527,7 @@ export default function HomePage() {
           </div>
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {REASONS.map((r, i) => (
-              <div key={r.title} data-reveal style={delay((i % 3) * 90)} className="rounded-[24px] border border-surface-line bg-white p-6">
+              <div key={r.title} data-reveal style={delay((i % 3) * 90)} className="rounded-[8px] border border-surface-line bg-white p-6">
                 <span className="mb-4 block h-1 w-10 rounded-full bg-glow-ink" aria-hidden />
                 <h3 className="font-display text-[19px] font-bold text-night">
                   {r.title}
@@ -546,7 +546,7 @@ export default function HomePage() {
               <Kicker>FAQ</Kicker>
               <Heading>Questions, answered.</Heading>
             </div>
-            <div data-reveal style={delay(120)} className="divide-y divide-surface-line rounded-[24px] border border-surface-line bg-white">
+            <div data-reveal style={delay(120)} className="divide-y divide-surface-line rounded-[8px] border border-surface-line bg-white">
               {FAQ.map((f) => (
                 <details key={f.q} className="group px-6 py-5 [&_summary::-webkit-details-marker]:hidden">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[17px] font-bold text-night">

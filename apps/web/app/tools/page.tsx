@@ -103,7 +103,7 @@ export default function Tools() {
       </div>
 
       {/* My growth */}
-      <div className="rounded-[32px] bg-brand-soft p-6">
+      <div className="rounded-[8px] bg-brand-soft p-6">
         <div className="flex items-start justify-between gap-3">
           <p className="text-[13px] font-extrabold tracking-[0.14em] text-[#9DB8FF]">MY GROWTH</p>
           {mine && (

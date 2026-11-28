@@ -32,7 +32,7 @@ function Tile({ href, icon, title, soon }: { href?: string; icon: string; title:
       {soon && <span className="mt-1 block text-[13px] font-semibold text-ink-muted">Coming soon</span>}
     </>
   );
-  const cls = "block rounded-[28px] border border-surface-line bg-card p-5 transition-colors";
+  const cls = "block rounded-[8px] border border-surface-line bg-card p-5 transition-colors";
   return href ? (
     <Link href={href} className={`${cls} hover:border-brand-line`}>
       {body}
@@ -44,7 +44,7 @@ function Tile({ href, icon, title, soon }: { href?: string; icon: string; title:
 
 function Row({ href, icon, title, sub, trailing }: { href: string; icon: string; title: string; sub: string; trailing?: ReactNode }) {
   return (
-    <Link href={href} className="flex items-center gap-4 rounded-[28px] border border-surface-line bg-card p-4 transition-colors hover:border-brand-line">
+    <Link href={href} className="flex items-center gap-4 rounded-[8px] border border-surface-line bg-card p-4 transition-colors hover:border-brand-line">
       <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-ok-soft text-brand">
         <I d={icon} />
       </span>
@@ -99,7 +99,7 @@ export default function Resources() {
 
       {tab === "for-you" && (
         <div className="space-y-4">
-          <div className="rounded-[32px] bg-brand-soft p-6">
+          <div className="rounded-[8px] bg-brand-soft p-6">
             <p className="text-[13px] font-extrabold tracking-[0.14em] text-[#9DB8FF]">YOUR VERSE TODAY</p>
             <p className="mt-2 font-display text-[26px] font-extrabold leading-snug text-ink">Trust in the Lord with all your heart; and lean not unto thine own understanding.</p>
             <p className="mt-2 text-[15px] text-ink-muted">Proverbs 3:5, KJV</p>
@@ -134,7 +134,7 @@ export default function Resources() {
         </div>
       )}
       {(tab === "bible" || tab === "packs") && (
-        <div className="rounded-[28px] border border-dashed border-surface-line p-8 text-center">
+        <div className="rounded-[8px] border border-dashed border-surface-line p-8 text-center">
           <p className="font-display text-[22px] font-extrabold text-ink">{tab === "bible" ? "The Bible is coming soon" : "Sermon packs are coming soon"}</p>
           <p className="mt-2 text-[15px] text-ink-muted">
             {tab === "bible" ? "Read, search and get passages assigned by your discipler, right here." : "Turn each Sunday's message into a week of reading, questions and practice."}

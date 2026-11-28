@@ -91,7 +91,7 @@ export default function Billing() {
           )}
         </div>
         {confirmCancel && (
-          <div className="mt-4 rounded-[12px] border border-surface-line bg-surface p-4">
+          <div className="mt-4 rounded-[8px] border border-surface-line bg-surface p-4">
             <p className="text-[15px] text-ink">
               {PLAN_NAME[b.plan]} stays until {fmtDate(b.periodEnd)}, then your organization moves to Basic. Nothing is deleted, and everyone already in keeps their access.
             </p>

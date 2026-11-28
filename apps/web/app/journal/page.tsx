@@ -44,7 +44,7 @@ function Entry({ e, targets, onChange, onDelete }: { e: JournalEntryDto; targets
     });
 
   return (
-    <article className="rounded-[28px] border border-surface-line bg-card p-5">
+    <article className="rounded-[8px] border border-surface-line bg-card p-5">
       <button onClick={() => setOpen((v) => !v)} className="block w-full text-left" aria-expanded={open}>
         <div className="flex items-start justify-between gap-3">
           <p className="text-[15px] text-ink-muted">{when(e.createdAt)}</p>
@@ -160,7 +160,7 @@ export default function Journal() {
       {q !== null && <input className={`${inputClass} mb-4`} type="search" placeholder="Search your entries" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />}
 
       {/* Streak */}
-      <div className="rounded-[32px] bg-brand p-6 text-on-brand">
+      <div className="rounded-[8px] bg-brand p-6 text-on-brand">
         <div className="flex items-start justify-between gap-3">
           <p className="text-[14px] font-extrabold tracking-[0.12em]">{data.stats.streak > 0 ? `${data.stats.streak} DAY STREAK` : "START A STREAK"}</p>
           <p className="text-[15px] font-semibold">
@@ -176,7 +176,7 @@ export default function Journal() {
           ))}
         </div>
         <p className="mt-4 text-[18px] font-bold">What did God show you today?</p>
-        <Link href="/journal/new" className="mt-3 block rounded-[20px] bg-[#0B2566] py-4 text-center text-[18px] font-bold text-brand transition-transform hover:-translate-y-0.5">
+        <Link href="/journal/new" className="mt-3 block rounded-[8px] bg-[#0B2566] py-4 text-center text-[18px] font-bold text-brand transition-transform hover:-translate-y-0.5">
           Write today&apos;s entry
         </Link>
       </div>
@@ -205,7 +205,7 @@ export default function Journal() {
           </Button>
         </div>
       )}
-      <div className="mt-5 rounded-[28px] border-2 border-brand-line bg-brand-soft p-5 opacity-80">
+      <div className="mt-5 rounded-[8px] border-2 border-brand-line bg-brand-soft p-5 opacity-80">
         <p className="text-[14px] font-extrabold tracking-[0.12em] text-brand">MONTHLY LOOK-BACK</p>
         <p className="mt-1 text-[17px] text-ink">See what changed this month. Coming soon.</p>
       </div>

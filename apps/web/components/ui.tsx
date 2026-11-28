@@ -211,7 +211,7 @@ export function Sheet({ title, action, onClose, children }: { title: string; act
         aria-modal
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[88dvh] w-full overflow-y-auto rounded-t-[32px] border-t border-surface-line bg-brand-soft px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl motion-safe:animate-[sheet-up_.28s_ease-out] md:max-w-lg md:rounded-[32px] md:border"
+        className="max-h-[88dvh] w-full overflow-y-auto rounded-t-[8px] border-t border-surface-line bg-brand-soft px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl motion-safe:animate-[sheet-up_.28s_ease-out] md:max-w-lg md:rounded-[8px] md:border"
       >
         <button onClick={onClose} aria-label="Close" className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-ink-faint/50" />
         <div className="mb-5 flex items-center justify-between gap-3">
@@ -226,7 +226,7 @@ export function Sheet({ title, action, onClose, children }: { title: string; act
 
 /** A tappable row inside a sheet or list: icon, title, line, chevron. */
 export function ActionRow({ href, onClick, icon, title, sub, tone = "card", dashed, trailing }: { href?: string; onClick?: () => void; icon: ReactNode; title: string; sub?: string; tone?: "card" | "active"; dashed?: boolean; trailing?: ReactNode }) {
-  const cls = `flex w-full items-center gap-4 rounded-[24px] border p-4 text-left transition-colors ${
+  const cls = `flex w-full items-center gap-4 rounded-[8px] border p-4 text-left transition-colors ${
     tone === "active" ? "border-2 border-brand bg-card" : dashed ? "border-dashed border-ink-faint/60 bg-transparent hover:bg-card" : "border-surface-line bg-card hover:border-brand-line"
   }`;
   const body = (

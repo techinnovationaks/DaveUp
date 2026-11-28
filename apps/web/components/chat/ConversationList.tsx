@@ -87,7 +87,7 @@ export function ConversationList({ selectedId }: { selectedId: string | null }) 
             <p className="mb-2 text-[14px] font-extrabold tracking-[0.12em] text-ink-muted">YOUR SPACES</p>
             <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
               {cells.map((c, i) => (
-                <Link key={c.id} href={`/messages/${c.id}`} className="w-[200px] shrink-0 rounded-[24px] border border-surface-line bg-card p-4 hover:border-brand-line md:w-[170px]">
+                <Link key={c.id} href={`/messages/${c.id}`} className="w-[200px] shrink-0 rounded-[8px] border border-surface-line bg-card p-4 hover:border-brand-line md:w-[170px]">
                   <span className={`flex h-12 w-12 items-center justify-center rounded-2xl text-[16px] font-extrabold ${TILE[i % TILE.length]}`}>{initialsOf(c.title)}</span>
                   <span className="mt-3 block truncate text-[17px] font-bold text-ink">{c.title}</span>
                   <span className="block truncate text-[14px] text-ink-muted">{c.activeCall ? "Call in progress" : `${c.memberCount} members`}</span>

@@ -119,7 +119,7 @@ export function Pricing() {
             <div
               key={c.plan}
               data-reveal
-              className={`relative flex flex-col rounded-[24px] border p-6 ${c.featured ? "border-glow/60 bg-white/[0.09] shadow-[0_0_0_1px_rgba(1,253,255,.25),0_30px_60px_-20px_rgba(1,253,255,.35)]" : "border-white/[0.12] bg-white/[0.05]"}`}
+              className={`relative flex flex-col rounded-[8px] border p-6 ${c.featured ? "border-glow/60 bg-white/[0.09] shadow-[0_0_0_1px_rgba(1,253,255,.25),0_30px_60px_-20px_rgba(1,253,255,.35)]" : "border-white/[0.12] bg-white/[0.05]"}`}
             >
               {c.featured && <span className="absolute -top-3 left-6 rounded-full bg-glow px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-night">Most popular</span>}
               <p className="font-display text-[22px] font-extrabold text-white">{c.name}</p>
@@ -176,7 +176,7 @@ export function Pricing() {
         })}
       </div>
 
-      <div data-reveal className="mt-6 grid gap-3 rounded-[20px] border border-white/[0.12] bg-white/[0.04] p-5 text-[14px] text-white/90 md:grid-cols-3">
+      <div data-reveal className="mt-6 grid gap-3 rounded-[8px] border border-white/[0.12] bg-white/[0.04] p-5 text-[14px] text-white/90 md:grid-cols-3">
         <p>
           <strong className="text-white">More members:</strong> packs of {MEMBER_PACK_SIZE} for {naira(MEMBER_PACK_MONTH_KOBO * (yearly ? 10 : 1))} per pack per {period}
         </p>
@@ -191,7 +191,7 @@ export function Pricing() {
       </div>
       <p className="mt-4 text-[14px] text-night-muted">Owners and admins who only manage settings are free. Departments and cells are unlimited on every plan. Pay with Paystack by card, bank transfer or USSD.</p>
 
-      <details className="group mt-8 rounded-[20px] border border-white/[0.12] bg-white/[0.04] [&_summary::-webkit-details-marker]:hidden">
+      <details className="group mt-8 rounded-[8px] border border-white/[0.12] bg-white/[0.04] [&_summary::-webkit-details-marker]:hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 font-display text-[18px] font-bold text-white">
           Compare plans
           <span aria-hidden className="text-glow transition-transform group-open:rotate-45">

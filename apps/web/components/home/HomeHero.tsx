@@ -106,7 +106,7 @@ function Line({ me, people }: { me: MeDto; people: RelationshipDto[] }) {
 
 function ScorePill({ label, value, delta }: { label: string; value: number | null; delta: number | null }) {
   return (
-    <div className="rounded-[20px] border border-surface-line bg-card/70 px-4 py-2.5 text-ink backdrop-blur">
+    <div className="rounded-[8px] border border-surface-line bg-card/70 px-4 py-2.5 text-ink backdrop-blur">
       <p className="text-[13px] font-semibold text-ink-muted">{label}</p>
       <p className="flex items-baseline gap-2">
         <span className="font-display text-[26px] font-extrabold leading-none">{value === null ? "–" : `${value}%`}</span>
@@ -119,7 +119,7 @@ function ScorePill({ label, value, delta }: { label: string; value: number | nul
 /** The white "what is next" card (N designs 6 and 193). */
 function NextCard({ href, eyebrow, title, sub, cta, icon }: { href: string; eyebrow: string; title: string; sub?: string; cta: string; icon: React.ReactNode }) {
   return (
-    <Link href={href} className="flex items-center gap-4 rounded-[28px] bg-white p-4 text-[#041A4D] shadow-[0_20px_40px_-20px_rgba(0,0,0,.6)] transition-transform hover:-translate-y-0.5 md:p-5">
+    <Link href={href} className="flex items-center gap-4 rounded-[8px] bg-white p-4 text-[#041A4D] shadow-[0_20px_40px_-20px_rgba(0,0,0,.6)] transition-transform hover:-translate-y-0.5 md:p-5">
       <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#EEF2FA] text-[#0891B2]">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block text-[12px] font-extrabold tracking-[0.14em] text-[#1E3A8A]">{eyebrow}</span>
@@ -192,7 +192,7 @@ export function HomeHero({ me, rels, greeting, start }: { me: MeDto; rels: Relat
   const newcomer = disciples.length === 0 && (!myDiscipler || myDiscipler.status !== "active");
 
   return (
-    <section className="relative mb-6 text-ink md:overflow-hidden md:rounded-[32px] md:border md:border-surface-line md:bg-gradient-to-b md:from-night-2 md:to-night md:px-8 md:pb-8 md:pt-7">
+    <section className="relative mb-6 text-ink md:overflow-hidden md:rounded-[8px] md:border md:border-surface-line md:bg-gradient-to-b md:from-night-2 md:to-night md:px-8 md:pb-8 md:pt-7">
       <div className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(500px_300px_at_85%_10%,rgba(1,253,255,.14),transparent_60%)] md:block" aria-hidden />
       <div className="relative">
         {/* Header: organization, greeting, you. */}
