@@ -112,7 +112,7 @@ export default function Training() {
 
 function CourseCard({ c, orgName }: { c: CourseSummaryDto; orgName: string | null }) {
   return (
-    <Link href={`/training/${c.id}`} className="flex flex-col rounded-card border border-surface-line bg-white p-5 transition-shadow hover:border-brand-line hover:shadow-md">
+    <Link href={`/training/${c.id}`} className="flex flex-col rounded-card border border-surface-line bg-card p-5 transition-shadow hover:border-brand-line hover:shadow-md">
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <ScopeBadge scope={c.scope} orgName={orgName} />
         {!c.published && <Pill tone="amber">Draft</Pill>}

@@ -256,7 +256,7 @@ export function Thread({ id }: { id: string }) {
     <div className="flex h-full min-w-0">
       <div className="flex min-w-0 flex-1 flex-col bg-surface">
         {/* Header */}
-        <header className="flex shrink-0 items-center gap-3 border-b border-surface-line bg-white px-3 py-2.5 md:px-5">
+        <header className="flex shrink-0 items-center gap-3 border-b border-surface-line bg-card px-3 py-2.5 md:px-5">
           <Link href="/messages" aria-label="Back to messages" className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-surface md:hidden">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M15 18l-6-6 6-6" /></svg>
           </Link>
@@ -285,13 +285,13 @@ export function Thread({ id }: { id: string }) {
         </header>
 
         {c.activeCall && !inThisCall && member && (
-          <div className="flex shrink-0 items-center gap-3 bg-ok px-4 py-2.5 text-white">
-            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white" />
+          <div className="flex shrink-0 items-center gap-3 bg-ok px-4 py-2.5 text-on-brand">
+            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-card" />
             <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">
               {c.activeCall.media === "video" ? "Video" : "Voice"} call · {c.activeCall.participantCount} in call
             </span>
             {features?.calls && (
-              <button onClick={() => void calls.join(c.activeCall!.id, c.title)} className="rounded-xl bg-white px-4 py-1.5 text-[14px] font-bold text-ok">
+              <button onClick={() => void calls.join(c.activeCall!.id, c.title)} className="rounded-xl bg-card px-4 py-1.5 text-[14px] font-bold text-ok">
                 Join
               </button>
             )}
@@ -301,7 +301,7 @@ export function Thread({ id }: { id: string }) {
         {/* Messages */}
         <div ref={scroller} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto px-3 py-4 md:px-6">
           {!member ? (
-            <div className="mx-auto mt-10 max-w-sm rounded-card bg-white p-6 text-center">
+            <div className="mx-auto mt-10 max-w-sm rounded-card bg-card p-6 text-center">
               <p className="text-[16px] font-semibold text-ink">You manage this cell but are not in it</p>
               <p className="mt-1 text-[14px] text-ink-muted">Messages are only for the cell's members. Add yourself from the details panel to take part.</p>
             </div>
@@ -312,7 +312,7 @@ export function Thread({ id }: { id: string }) {
               {loadError && <p className="mb-3 text-center text-[14px] text-danger-dark">{loadError}</p>}
               {hasMore && (
                 <div className="mb-4 text-center">
-                  <button onClick={() => void loadOlder()} className="rounded-full bg-white px-4 py-1.5 text-[13px] font-semibold text-brand shadow-sm hover:bg-brand-soft">
+                  <button onClick={() => void loadOlder()} className="rounded-full bg-card px-4 py-1.5 text-[13px] font-semibold text-brand shadow-sm hover:bg-brand-soft">
                     Load earlier messages
                   </button>
                 </div>
@@ -345,7 +345,7 @@ export function Thread({ id }: { id: string }) {
                 })}
                 {pending.map((p) => (
                   <li key={p.clientId} className="mt-1 flex justify-end">
-                    <div className={`max-w-[80%] rounded-2xl rounded-br-md px-3.5 py-2 text-[15px] text-white ${p.failed ? "bg-danger" : "bg-brand/60"}`}>
+                    <div className={`max-w-[80%] rounded-2xl rounded-br-md px-3.5 py-2 text-[15px] text-on-brand ${p.failed ? "bg-danger" : "bg-brand/60"}`}>
                       <p className="whitespace-pre-wrap break-words">{p.body}</p>
                       {p.failed ? (
                         <button onClick={() => void sendText(p.body, p.clientId)} className="mt-1 text-[12px] font-bold underline">
@@ -359,7 +359,7 @@ export function Thread({ id }: { id: string }) {
                 ))}
                 {uploads.map((u) => (
                   <li key={u.key} className="mt-1 flex justify-end">
-                    <div className="w-64 rounded-2xl rounded-br-md bg-white p-3 shadow-sm">
+                    <div className="w-64 rounded-2xl rounded-br-md bg-card p-3 shadow-sm">
                       <p className="truncate text-[14px] font-semibold text-ink">{u.name}</p>
                       {u.error ? (
                         <div className="mt-1 flex items-center justify-between gap-2">
@@ -403,7 +403,7 @@ export function Thread({ id }: { id: string }) {
               onTyping={() => send({ type: "typing", conversationId: id })}
             />
           ) : (
-            <p className="shrink-0 border-t border-surface-line bg-white px-4 py-4 text-center text-[14px] text-ink-muted">
+            <p className="shrink-0 border-t border-surface-line bg-card px-4 py-4 text-center text-[14px] text-ink-muted">
               {c.archived
                 ? "This cell is archived. You can read it, but not send messages."
                 : c.blockedByMe
@@ -440,7 +440,7 @@ function HeaderButton({ children, label, onClick, active }: { children: ReactNod
 function DaySeparator({ iso }: { iso: string }) {
   return (
     <div className="my-4 flex justify-center">
-      <span className="rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-ink-muted shadow-sm">{dayLabel(iso)}</span>
+      <span className="rounded-full bg-card px-3 py-1 text-[12px] font-semibold text-ink-muted shadow-sm">{dayLabel(iso)}</span>
     </div>
   );
 }
@@ -480,8 +480,8 @@ function MessageItem({
     const status = live ? "In progress" : !m.call.answered ? (mine ? "No answer" : "Missed") : m.call.durationSeconds !== null ? duration(m.call.durationSeconds) : "Ended";
     return (
       <div className={`my-2 flex ${mine ? "justify-end" : "justify-start"}`}>
-        <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
-          <span className={`flex h-10 w-10 items-center justify-center rounded-full ${live ? "bg-ok text-white" : !m.call.answered && !mine ? "bg-danger-soft text-danger" : "bg-brand-soft text-brand"}`}>
+        <div className="flex items-center gap-3 rounded-2xl bg-card px-4 py-3 shadow-sm">
+          <span className={`flex h-10 w-10 items-center justify-center rounded-full ${live ? "bg-ok text-on-brand" : !m.call.answered && !mine ? "bg-danger-soft text-danger" : "bg-brand-soft text-brand"}`}>
             <CallIcon name={m.call.media === "video" ? "video" : "phone"} size={18} />
           </span>
           <span>
@@ -494,7 +494,7 @@ function MessageItem({
             </span>
           </span>
           {live && (
-            <button onClick={() => onJoinCall(m.call!.id)} className="ml-2 rounded-xl bg-ok px-3 py-1.5 text-[13px] font-bold text-white">
+            <button onClick={() => onJoinCall(m.call!.id)} className="ml-2 rounded-xl bg-ok px-3 py-1.5 text-[13px] font-bold text-on-brand">
               Join
             </button>
           )}
@@ -503,7 +503,7 @@ function MessageItem({
     );
   }
 
-  const bubble = mine ? "bg-brand text-white rounded-br-md" : "bg-white text-ink rounded-bl-md shadow-sm";
+  const bubble = mine ? "bg-brand text-on-brand rounded-br-md" : "bg-card text-ink rounded-bl-md shadow-sm";
   const actions = (canEdit || canDelete) && !m.deleted;
   return (
     <div className={`group flex ${mine ? "justify-end" : "justify-start"} ${grouped ? "mt-0.5" : "mt-3"}`}>
@@ -530,12 +530,12 @@ function MessageItem({
         {actions && (
           <div className={`${menu ? "flex" : "hidden group-hover:flex"} absolute top-0 ${mine ? "right-full mr-1" : "left-full ml-1"} gap-1`}>
             {canEdit && (
-              <button onClick={() => (setMenu(false), onEdit())} className="rounded-lg bg-white px-2 py-1 text-[12px] font-semibold text-ink shadow hover:bg-surface">
+              <button onClick={() => (setMenu(false), onEdit())} className="rounded-lg bg-card px-2 py-1 text-[12px] font-semibold text-ink shadow hover:bg-surface">
                 Edit
               </button>
             )}
             {canDelete && (
-              <button onClick={() => (setMenu(false), onDelete())} className="rounded-lg bg-white px-2 py-1 text-[12px] font-semibold text-danger shadow hover:bg-danger-soft">
+              <button onClick={() => (setMenu(false), onDelete())} className="rounded-lg bg-card px-2 py-1 text-[12px] font-semibold text-danger shadow hover:bg-danger-soft">
                 Delete
               </button>
             )}
@@ -629,7 +629,7 @@ function Composer({
 
   return (
     <div
-      className={`shrink-0 border-t border-surface-line bg-white px-3 py-2.5 md:px-5 ${dragging ? "ring-2 ring-inset ring-brand" : ""}`}
+      className={`shrink-0 border-t border-surface-line bg-card px-3 py-2.5 md:px-5 ${dragging ? "ring-2 ring-inset ring-brand" : ""}`}
       onDragOver={(e) => {
         if (!filesEnabled) return;
         e.preventDefault();
@@ -707,9 +707,9 @@ function Composer({
           }}
           placeholder="Write a message"
           aria-label="Message"
-          className="max-h-[180px] min-h-[44px] flex-1 resize-none rounded-2xl border border-surface-line bg-surface px-4 py-2.5 text-[16px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:bg-white"
+          className="max-h-[180px] min-h-[44px] flex-1 resize-none rounded-2xl border border-surface-line bg-surface px-4 py-2.5 text-[16px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:bg-card"
         />
-        <button onClick={submit} disabled={!text.trim()} aria-label={editing ? "Save" : "Send"} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-white hover:bg-brand-dark disabled:bg-brand/40">
+        <button onClick={submit} disabled={!text.trim()} aria-label={editing ? "Save" : "Send"} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-on-brand hover:bg-brand-dark disabled:bg-brand/40">
           {editing ? (
             "✓"
           ) : (

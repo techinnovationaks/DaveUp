@@ -23,6 +23,10 @@ const icons = {
   journal: <path d="M5 4a2 2 0 0 1 2-2h11v18H7a2 2 0 0 0-2 2V4zM5 20a2 2 0 0 1 2-2h11M9 7h5M9 11h5" />,
   training: <path d="M22 9 12 4 2 9l10 5 10-5zM6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5M22 9v6" />,
   resources: <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7zM8 13h8M8 16h5" />,
+  book: <path d="M2 5c3-1.5 6-1.5 10 1 4-2.5 7-2.5 10-1v14c-3-1.5-6-1.5-10 1-4-2.5-7-2.5-10-1zM12 6v14" />,
+  tools: <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />,
+  pen: <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />,
+  heart: <path d="M12 21s-7-4.4-9.2-9A5.2 5.2 0 0 1 12 6.7 5.2 5.2 0 0 1 21.2 12C19 16.6 12 21 12 21zM12 9v6M9 12h6" />,
 };
 
 export const navIcons = icons;
@@ -38,11 +42,11 @@ export function Icon({ children, size = 24 }: { children: ReactNode; size?: numb
 /** Member features: everyone. */
 export function mainNav(): NavItem[] {
   return [
-    { href: "/home", label: "Home", short: "Home", icon: icons.home, also: ["/relationships", "/disciplers", "/invite", "/discipler-request", "/assessments"] },
+    { href: "/home", label: "Home", short: "Home", icon: icons.heart, also: ["/relationships", "/disciplers", "/invite", "/discipler-request"] },
     { href: "/messages", label: "Spaces", short: "Spaces", icon: icons.chat },
-    { href: "/journal", label: "Journal", short: "Journal", icon: icons.journal },
-    { href: "/training", label: "Training", short: "Training", icon: icons.training },
-    { href: "/resources", label: "Resource Centre", short: "Resources", icon: icons.resources },
+    { href: "/journal", label: "Journal", short: "Journal", icon: icons.pen },
+    { href: "/resources", label: "Resources", short: "Resources", icon: icons.book, also: ["/training", "/library"] },
+    { href: "/tools", label: "Tools", short: "Tools", icon: icons.tools, also: ["/assessments", "/account", "/profile"] },
   ];
 }
 
@@ -84,7 +88,9 @@ export function titleFor(path: string): string {
   if (path.startsWith("/account")) return "Account settings";
   if (path.startsWith("/messages")) return "Spaces";
   if (path.startsWith("/journal")) return "Journal";
-  if (path.startsWith("/training")) return "Training";
-  if (path.startsWith("/resources")) return "Resource Centre";
+  if (path.startsWith("/training")) return "Trainings";
+  if (path.startsWith("/library")) return "Library";
+  if (path.startsWith("/resources")) return "Resources";
+  if (path.startsWith("/tools")) return "Tools";
   return "Home";
 }

@@ -378,6 +378,9 @@ export interface JournalEntryTable {
   body: string;
   shared_relationship_id: string | null;
   shared_at: NullableTimestamp;
+  kind: Generated<"reflection" | "prayer" | "gratitude" | "god_said" | "correction" | "work_win">;
+  about_faith: Generated<boolean>;
+  about_impact: Generated<boolean>;
   created_at: Timestamp;
   updated_at: Timestamp;
 }

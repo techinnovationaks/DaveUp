@@ -134,7 +134,7 @@ export default function Join() {
                   key={o.id}
                   disabled={o.mine}
                   onClick={() => setChosen({ via: "search", org: o })}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-surface-line bg-white p-4 text-left hover:border-brand-line disabled:opacity-60"
+                  className="flex w-full items-center gap-3 rounded-2xl border border-surface-line bg-card p-4 text-left hover:border-brand-line disabled:opacity-60"
                 >
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-[17px] font-bold text-brand">{o.name.slice(0, 1).toUpperCase()}</span>
                   <span className="min-w-0 flex-1">

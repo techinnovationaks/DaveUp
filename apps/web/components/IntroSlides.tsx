@@ -58,8 +58,8 @@ export function IntroSlides({ onDark = false }: { onDark?: boolean }) {
   }, [running]);
 
   const c = onDark
-    ? { tag: "bg-white/15 text-white", title: "text-white", sub: "text-white/85", step: "text-white", num: "bg-white text-brand", dot: "bg-white", dotOff: "bg-white/40", ctl: "text-white/80 hover:text-white" }
-    : { tag: "bg-brand text-white", title: "text-ink", sub: "text-ink-muted", step: "text-ink", num: "bg-brand text-white", dot: "bg-brand", dotOff: "bg-brand/25", ctl: "text-ink-muted hover:text-ink" };
+    ? { tag: "bg-white/15 text-white", title: "text-white", sub: "text-white/85", step: "text-white", num: "bg-card text-brand", dot: "bg-card", dotOff: "bg-white/40", ctl: "text-white/80 hover:text-white" }
+    : { tag: "bg-brand text-on-brand", title: "text-ink", sub: "text-ink-muted", step: "text-ink", num: "bg-brand text-on-brand", dot: "bg-brand", dotOff: "bg-brand/25", ctl: "text-ink-muted hover:text-ink" };
 
   return (
     <div

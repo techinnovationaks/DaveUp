@@ -591,7 +591,7 @@ function RoundButton({ children, label, off, active, disabled, onClick }: { chil
       disabled={disabled}
       aria-label={label}
       title={label}
-      className={`flex h-14 w-14 items-center justify-center rounded-full transition-colors disabled:opacity-60 ${off ? "bg-white text-ink" : active ? "bg-ok text-white" : "bg-white/15 hover:bg-white/25"}`}
+      className={`flex h-14 w-14 items-center justify-center rounded-full transition-colors disabled:opacity-60 ${off ? "bg-card text-ink" : active ? "bg-ok text-on-brand" : "bg-white/15 hover:bg-white/25"}`}
     >
       {children}
     </button>

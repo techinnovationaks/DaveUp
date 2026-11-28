@@ -2,10 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---- Colours ----
+   The app is dark navy with cyan actions (the N designs). The public website
+   (.theme-site) keeps light sections. Values are "R G B" so Tailwind can add
+   opacity (bg-brand/15). */
+:root {
+  --c-page: 5 22 65;
+  --c-ink: 244 247 255;
+  --c-ink-muted: 180 194 232;
+  --c-ink-faint: 128 146 196;
+  --c-surface: 8 33 94;
+  --c-card: 10 36 102;
+  --c-line: 29 61 143;
+  --c-brand: 1 253 255;
+  --c-brand-dark: 0 214 222;
+  --c-brand-deep: 3 18 58;
+  --c-brand-soft: 16 52 128;
+  --c-brand-line: 46 86 176;
+  --c-on-brand: 4 26 77;
+  --c-ok: 52 211 153;
+  --c-ok-soft: 12 58 56;
+  --c-danger: 248 113 113;
+  --c-danger-dark: 254 202 202;
+  --c-danger-soft: 72 20 40;
+  --c-danger-line: 127 29 29;
+  --c-warn: 251 191 36;
+  --c-warn-soft: 66 48 12;
+  color-scheme: dark;
+}
+.theme-site {
+  --c-page: 247 248 250;
+  --c-ink: 30 41 59;
+  --c-ink-muted: 100 116 139;
+  --c-ink-faint: 148 163 184;
+  --c-surface: 247 248 250;
+  --c-card: 255 255 255;
+  --c-line: 229 231 235;
+  --c-brand: 30 58 138;
+  --c-brand-dark: 23 44 105;
+  --c-brand-deep: 15 31 77;
+  --c-brand-soft: 238 242 250;
+  --c-brand-line: 201 212 238;
+  --c-on-brand: 255 255 255;
+  --c-ok: 21 128 61;
+  --c-ok-soft: 236 253 243;
+  --c-danger: 180 35 24;
+  --c-danger-dark: 145 32 24;
+  --c-danger-soft: 254 243 242;
+  --c-danger-line: 254 205 202;
+  --c-warn: 146 64 14;
+  --c-warn-soft: 254 243 199;
+  color-scheme: light;
+}
+
 html,
 body {
-  background: #f7f8fa;
-  color: #1e293b;
+  background: rgb(var(--c-page));
+  color: rgb(var(--c-ink));
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -99,4 +152,10 @@ body {
 /* Home: the outer ring around "your line" turns slowly. */
 @keyframes daveup-orbit {
   to { transform: rotate(360deg); }
+}
+
+/* Sheets slide up. */
+@keyframes sheet-up {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: none; opacity: 1; }
 }

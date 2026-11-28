@@ -152,10 +152,10 @@ function Decision({ onApprove, onDecline, disabled }: { onApprove: () => void; o
   const base = "min-h-[44px] flex-1 rounded-xl px-4 text-[15px] font-bold disabled:opacity-50 md:min-h-[38px] md:flex-none md:text-[14px]";
   return (
     <div className="mt-2 flex gap-2 md:mt-0">
-      <button disabled={disabled} onClick={onApprove} className={`${base} bg-brand text-white hover:bg-brand-dark`}>
+      <button disabled={disabled} onClick={onApprove} className={`${base} bg-brand text-on-brand hover:bg-brand-dark`}>
         Approve
       </button>
-      <button disabled={disabled} onClick={onDecline} className={`${base} border border-surface-line bg-white text-ink hover:bg-surface`}>
+      <button disabled={disabled} onClick={onDecline} className={`${base} border border-surface-line bg-card text-ink hover:bg-surface`}>
         Decline
       </button>
     </div>

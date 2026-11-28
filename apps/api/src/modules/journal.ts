@@ -5,7 +5,9 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { JOURNAL_PAGE, JournalEntrySchema, JournalShareSchema, type JournalEntryDto, type JournalListDto, type SharedJournalEntryDto } from "@daveup/shared";
+import { sql } from "kysely";
 import { ownerDb } from "../db/pool";
+import { config } from "../config";
 import { requireAuth } from "../lib/context";
 import { badRequest, forbidden, notFound, parse } from "../lib/errors";
 
@@ -20,7 +22,7 @@ function entryQuery() {
     .selectFrom("journal_entry as j")
     .leftJoin("relationship as r", (j) => j.onRef("r.id", "=", "j.shared_relationship_id").on("r.status", "in", OPEN))
     .leftJoin("person as d", "d.id", "r.discipler_id")
-    .select(["j.id", "j.title", "j.body", "j.created_at", "j.updated_at", "j.shared_at", "r.id as rel_id", "d.full_name as discipler_name"]);
+    .select(["j.id", "j.kind", "j.about_faith", "j.about_impact", "j.title", "j.body", "j.created_at", "j.updated_at", "j.shared_at", "r.id as rel_id", "d.full_name as discipler_name"]);
 }
 
 type EntryRow = Awaited<ReturnType<ReturnType<typeof entryQuery>["executeTakeFirstOrThrow"]>>;
@@ -28,12 +30,51 @@ type EntryRow = Awaited<ReturnType<ReturnType<typeof entryQuery>["executeTakeFir
 function toDto(e: EntryRow): JournalEntryDto {
   return {
     id: e.id,
+    kind: e.kind,
+    aboutFaith: e.about_faith,
+    aboutImpact: e.about_impact,
     title: e.title,
     body: e.body,
     createdAt: e.created_at.toISOString(),
     updatedAt: e.updated_at.toISOString(),
     sharedWith: e.rel_id && e.shared_at ? { relationshipId: e.rel_id, disciplerName: e.discipler_name ?? "Your discipler", sharedAt: e.shared_at.toISOString() } : null,
   };
+}
+
+/** The writing streak, entries this month and the last seven days, in the app's time zone. */
+async function journalStats(personId: string): Promise<{ streak: number; thisMonth: number; lastSeven: boolean[] }> {
+  const tz = config.timeZone;
+  const days = await sql<{ d: string }>`
+    select distinct to_char((created_at at time zone ${tz})::date, 'YYYY-MM-DD') as d
+    from journal_entry where person_id = ${personId} and created_at > now() - interval '400 days'
+    order by d desc`.execute(ownerDb);
+  const today = await sql<{ d: string; m: string }>`select to_char((now() at time zone ${tz})::date, 'YYYY-MM-DD') as d, to_char((now() at time zone ${tz})::date, 'YYYY-MM') as m`.execute(ownerDb);
+  const set = new Set(days.rows.map((r) => r.d));
+  const todayStr = today.rows[0]!.d;
+  const shift = (iso: string, n: number) => {
+    const t = new Date(`${iso}T12:00:00Z`);
+    t.setUTCDate(t.getUTCDate() + n);
+    return t.toISOString().slice(0, 10);
+  };
+  // Count back from today, or from yesterday if nothing is written yet today.
+  let day = set.has(todayStr) ? todayStr : shift(todayStr, -1);
+  let streak = 0;
+  while (set.has(day)) {
+    streak++;
+    day = shift(day, -1);
+  }
+  const month = await sql<{ n: string }>`
+    select count(*) as n from journal_entry
+    where person_id = ${personId} and to_char((created_at at time zone ${tz})::date, 'YYYY-MM') = ${today.rows[0]!.m}`.execute(ownerDb);
+  const lastSeven = Array.from({ length: 7 }, (_, i) => set.has(shift(todayStr, i - 6)));
+  return { streak, thisMonth: Number(month.rows[0]!.n), lastSeven };
+}
+
+/** Check a relationship can receive shared entries from this person. */
+async function assertShareTarget(personId: string, relationshipId: string) {
+  const r = await ownerDb.selectFrom("relationship").select(["disciple_id", "status"]).where("id", "=", relationshipId).executeTakeFirst();
+  if (!r || r.disciple_id !== personId) throw badRequest("NOT_YOUR_DISCIPLER", "You can share entries only with your own discipler");
+  if (!(OPEN as readonly string[]).includes(r.status)) throw badRequest("RELATIONSHIP_CLOSED", "That discipleship relationship is not active");
 }
 
 async function ownEntry(personId: string, id: string): Promise<EntryRow> {
@@ -64,16 +105,27 @@ export async function journalRoutes(app: FastifyInstance) {
     return {
       entries: page.map(toDto),
       nextBefore: more ? page.at(-1)!.created_at.toISOString() : null,
+      stats: await journalStats(personId),
       shareTargets: targets.map((t) => ({ relationshipId: t.id, disciplerName: t.full_name ?? "Your discipler", churchName: t.name })),
     };
   });
 
   app.post("/journal", async (req, reply): Promise<JournalEntryDto> => {
     const { personId } = requireAuth(req);
-    const { title, body } = parse(JournalEntrySchema, req.body);
+    const { title, body, kind, aboutFaith, aboutImpact, shareWith } = parse(JournalEntrySchema, req.body);
+    if (shareWith) await assertShareTarget(personId, shareWith);
     const { id } = await ownerDb
       .insertInto("journal_entry")
-      .values({ person_id: personId, title: title || null, body })
+      .values({
+        person_id: personId,
+        title: title || null,
+        body,
+        kind,
+        about_faith: aboutFaith,
+        about_impact: aboutImpact,
+        shared_relationship_id: shareWith ?? null,
+        shared_at: shareWith ? new Date() : null,
+      })
       .returning("id")
       .executeTakeFirstOrThrow();
     reply.code(201);
@@ -83,9 +135,9 @@ export async function journalRoutes(app: FastifyInstance) {
   app.put("/journal/:id", async (req): Promise<JournalEntryDto> => {
     const { personId } = requireAuth(req);
     const { id } = parse(IdParam, req.params);
-    const { title, body } = parse(JournalEntrySchema, req.body);
+    const { title, body, kind, aboutFaith, aboutImpact } = parse(JournalEntrySchema, req.body);
     await ownEntry(personId, id);
-    await ownerDb.updateTable("journal_entry").set({ title: title || null, body, updated_at: new Date() }).where("id", "=", id).where("person_id", "=", personId).execute();
+    await ownerDb.updateTable("journal_entry").set({ title: title || null, body, kind, about_faith: aboutFaith, about_impact: aboutImpact, updated_at: new Date() }).where("id", "=", id).where("person_id", "=", personId).execute();
     return toDto(await ownEntry(personId, id));
   });
 
@@ -103,11 +155,7 @@ export async function journalRoutes(app: FastifyInstance) {
     const { id } = parse(IdParam, req.params);
     const { relationshipId } = parse(JournalShareSchema, req.body);
     await ownEntry(personId, id);
-    if (relationshipId) {
-      const r = await ownerDb.selectFrom("relationship").select(["disciple_id", "status"]).where("id", "=", relationshipId).executeTakeFirst();
-      if (!r || r.disciple_id !== personId) throw badRequest("NOT_YOUR_DISCIPLER", "You can share entries only with your own discipler");
-      if (!(OPEN as readonly string[]).includes(r.status)) throw badRequest("RELATIONSHIP_CLOSED", "That discipleship relationship is not active");
-    }
+    if (relationshipId) await assertShareTarget(personId, relationshipId);
     await ownerDb
       .updateTable("journal_entry")
       .set({ shared_relationship_id: relationshipId, shared_at: relationshipId ? new Date() : null })

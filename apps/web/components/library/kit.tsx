@@ -103,7 +103,7 @@ export function VideoEmbed({ url, title }: { url: string; title: string }): Reac
   const src = embedUrl(url);
   if (!src) {
     return (
-      <a href={url} target="_blank" rel="noopener noreferrer" className="flex aspect-video w-full items-center justify-center rounded-2xl bg-brand-deep text-[16px] font-bold text-white hover:bg-brand">
+      <a href={url} target="_blank" rel="noopener noreferrer" className="flex aspect-video w-full items-center justify-center rounded-2xl bg-brand-deep text-[16px] font-bold text-on-brand hover:bg-brand">
         Watch the video ↗
       </a>
     );

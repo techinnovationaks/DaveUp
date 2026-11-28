@@ -39,7 +39,7 @@ export default function StaffChurches() {
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center">
         <div className="flex gap-1 rounded-xl bg-surface-line/60 p-1">
           {FILTERS.map((f) => (
-            <button key={f.key} onClick={() => setStatus(f.key)} className={`rounded-lg px-3 py-2 text-[14px] font-semibold ${status === f.key ? "bg-white text-ink shadow-sm" : "text-ink-muted"}`}>
+            <button key={f.key} onClick={() => setStatus(f.key)} className={`rounded-lg px-3 py-2 text-[14px] font-semibold ${status === f.key ? "bg-card text-ink shadow-sm" : "text-ink-muted"}`}>
               {f.label}
             </button>
           ))}

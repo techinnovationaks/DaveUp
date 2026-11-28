@@ -195,7 +195,7 @@ export default function AssessmentFlow({ params }: { params: Promise<{ id: strin
       <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8 xl:grid-cols-[240px_minmax(0,1fr)_300px]">
         {/* Desktop: all 12 areas, jump to any. */}
         <nav aria-label="Areas" className="hidden lg:block">
-          <div className="sticky top-24 rounded-card border border-surface-line bg-white p-3">
+          <div className="sticky top-24 rounded-card border border-surface-line bg-card p-3">
             {AREAS.map((x) => {
               const items = questions.filter((y) => y.area === x.number);
               const n = items.filter((y) => done.has(y.id)).length;
@@ -209,7 +209,7 @@ export default function AssessmentFlow({ params }: { params: Promise<{ id: strin
                 >
                   <span
                     className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold ${
-                      current ? "bg-brand text-white" : n === perArea ? "bg-ok-soft text-ok" : "bg-surface text-ink-muted"
+                      current ? "bg-brand text-on-brand" : n === perArea ? "bg-ok-soft text-ok" : "bg-surface text-ink-muted"
                     }`}
                   >
                     {n === perArea && !current ? "✓" : x.number}
@@ -225,7 +225,7 @@ export default function AssessmentFlow({ params }: { params: Promise<{ id: strin
         <div className="min-w-0">
           {/* Mobile header */}
           <div className="mb-3 flex items-center gap-3 lg:hidden">
-            <button aria-label="Back" onClick={goBack} className="flex h-11 w-11 items-center justify-center rounded-full border border-surface-line bg-white">
+            <button aria-label="Back" onClick={goBack} className="flex h-11 w-11 items-center justify-center rounded-full border border-surface-line bg-card">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M15 18l-6-6 6-6" /></svg>
             </button>
             <p className="flex-1 truncate text-center text-[15px] font-semibold text-ink">{aboutSelf ? "About you" : `About ${a.subject.fullName}`}</p>
@@ -243,7 +243,7 @@ export default function AssessmentFlow({ params }: { params: Promise<{ id: strin
             <p className="text-[14px] text-ink-muted">
               Area {q.area} of 12 · {isCheck ? "Monthly check" : `Question ${q.index} of 5`} · {testLabel}
             </p>
-            <button onClick={() => router.push("/assessments")} className="rounded-xl px-3 py-2 text-[14px] font-semibold text-ink-muted hover:bg-white hover:text-ink">
+            <button onClick={() => router.push("/assessments")} className="rounded-xl px-3 py-2 text-[14px] font-semibold text-ink-muted hover:bg-card hover:text-ink">
               Save and exit
             </button>
           </div>
@@ -276,9 +276,9 @@ export default function AssessmentFlow({ params }: { params: Promise<{ id: strin
                   role="radio"
                   aria-checked={on}
                   onClick={() => setDraft({ value: s.value, noOccasion: false })}
-                  className={`flex min-h-[56px] w-full items-center gap-4 rounded-2xl border px-4 text-left transition-colors ${on ? "border-brand bg-brand-soft ring-1 ring-brand" : "border-surface-line bg-white hover:border-ink-faint"}`}
+                  className={`flex min-h-[56px] w-full items-center gap-4 rounded-2xl border px-4 text-left transition-colors ${on ? "border-brand bg-brand-soft ring-1 ring-brand" : "border-surface-line bg-card hover:border-ink-faint"}`}
                 >
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[15px] font-bold ${on ? "bg-brand text-white" : "bg-surface text-ink"}`}>{s.value}</span>
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[15px] font-bold ${on ? "bg-brand text-on-brand" : "bg-surface text-ink"}`}>{s.value}</span>
                   <span className="text-[17px] font-semibold text-ink">{s.label}</span>
                 </button>
               );
@@ -289,18 +289,18 @@ export default function AssessmentFlow({ params }: { params: Promise<{ id: strin
             <button
               onClick={() => setDraft({ noOccasion: !draft.noOccasion, value: null })}
               aria-pressed={draft.noOccasion}
-              className={`min-h-[48px] rounded-2xl border border-dashed text-[15px] font-semibold ${draft.noOccasion ? "border-brand bg-brand-soft text-brand" : "border-surface-line bg-white text-ink hover:border-ink-faint"}`}
+              className={`min-h-[48px] rounded-2xl border border-dashed text-[15px] font-semibold ${draft.noOccasion ? "border-brand bg-brand-soft text-brand" : "border-surface-line bg-card text-ink hover:border-ink-faint"}`}
             >
               No occasion yet
             </button>
-            <button onClick={() => setShowEvidence((v) => !v)} className="min-h-[48px] rounded-2xl border border-surface-line bg-white text-[15px] font-semibold text-ink hover:border-ink-faint">
+            <button onClick={() => setShowEvidence((v) => !v)} className="min-h-[48px] rounded-2xl border border-surface-line bg-card text-[15px] font-semibold text-ink hover:border-ink-faint">
               {draft.evidence ? "Edit evidence" : "Add evidence"}
             </button>
           </div>
 
           {(showEvidence || (draft.value === 4 && !draft.noOccasion)) && (
             <textarea
-              className="mb-4 w-full rounded-2xl border border-surface-line bg-white p-3 text-[15px] outline-none focus:border-brand"
+              className="mb-4 w-full rounded-2xl border border-surface-line bg-card p-3 text-[15px] outline-none focus:border-brand"
               rows={3}
               maxLength={1000}
               placeholder={draft.value === 4 ? "Consistently: give one concrete example you can point to." : "A concrete example (optional). Only you can see this."}

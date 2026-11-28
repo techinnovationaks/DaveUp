@@ -105,7 +105,7 @@ export function Modal({ title, onClose, children, footer, wide }: { title: strin
         aria-modal
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className={`flex max-h-[92dvh] w-full flex-col rounded-t-card bg-white shadow-2xl md:rounded-card ${wide ? "md:max-w-2xl" : "md:max-w-lg"}`}
+        className={`flex max-h-[92dvh] w-full flex-col rounded-t-card bg-card shadow-2xl md:rounded-card ${wide ? "md:max-w-2xl" : "md:max-w-lg"}`}
       >
         <div className="flex items-center justify-between border-b border-surface-line px-5 py-4">
           <p className="text-[18px] font-extrabold text-ink">{title}</p>
@@ -186,7 +186,7 @@ export function PeoplePicker({
                 <span className="block truncate text-[13px] text-ink-muted">{[p.department, p.isAdmin ? "Administrator" : null].filter(Boolean).join(" · ") || "Member"}</span>
               </span>
               {multiple && (
-                <span className={`flex h-6 w-6 items-center justify-center rounded-md border-2 ${chosen.has(p.personId) ? "border-brand bg-brand text-white" : "border-surface-line"}`} aria-hidden>
+                <span className={`flex h-6 w-6 items-center justify-center rounded-md border-2 ${chosen.has(p.personId) ? "border-brand bg-brand text-on-brand" : "border-surface-line"}`} aria-hidden>
                   {chosen.has(p.personId) && "✓"}
                 </span>
               )}
@@ -200,7 +200,7 @@ export function PeoplePicker({
 
 export function CellGlyph({ size = 48 }: { size?: number }) {
   return (
-    <span style={{ width: size, height: size }} className="flex shrink-0 items-center justify-center rounded-2xl bg-brand text-white">
+    <span style={{ width: size, height: size }} className="flex shrink-0 items-center justify-center rounded-2xl bg-brand text-on-brand">
       <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M18 14a6 6 0 0 1 4 7" />
       </svg>

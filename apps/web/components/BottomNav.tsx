@@ -12,7 +12,7 @@ export function BottomNav() {
   const { unread } = useRealtime();
   const items = bottomNav(me);
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-surface-line bg-white/95 backdrop-blur md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-surface-line bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
       <div className="mx-auto flex max-w-md">
         {items.map((it) => {
           const active = isActive(path, it);
@@ -22,7 +22,7 @@ export function BottomNav() {
               <span className="relative">
                 <Icon size={26}>{it.icon}</Icon>
                 {it.href === "/messages" && unread > 0 && (
-                  <span className="absolute -right-2.5 -top-1.5 min-w-[18px] rounded-full bg-danger px-1 text-center text-[11px] font-bold leading-[18px] text-white">{unread > 99 ? "99+" : unread}</span>
+                  <span className="absolute -right-2.5 -top-1.5 min-w-[20px] rounded-full bg-brand px-1 text-center text-[11px] font-extrabold leading-[20px] text-on-brand ring-2 ring-card">{unread > 99 ? "99+" : unread}</span>
                 )}
               </span>
               {it.short}

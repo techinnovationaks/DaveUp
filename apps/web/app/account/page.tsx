@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { Button, Card, H1, Loading, Row, Screen } from "@/components/ui";
+import { Button, Card, Loading, Row, Screen, TopBar } from "@/components/ui";
 import { api, useAction, useApi } from "@/lib/api";
 import type { BlockedPersonDto, MeDto } from "@daveup/shared";
 import { switchOrganization } from "@/components/OrgSwitcher";
@@ -89,7 +89,27 @@ export default function Account() {
 
   return (
     <Screen nav narrow>
-      <H1>Account settings</H1>
+      <TopBar back="/tools" title="Account" />
+      <div className="mb-5 flex items-center gap-4">
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-soft font-display text-[22px] font-extrabold text-ink">
+          {(me.person.fullName ?? "?")
+            .split(/\s+/)
+            .slice(0, 2)
+            .map((w) => w[0]?.toUpperCase())
+            .join("")}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate font-display text-[28px] font-extrabold leading-tight text-ink">{me.person.fullName}</p>
+          <p className="truncate text-[16px] text-ink-muted">{m.churchName}</p>
+        </div>
+      </div>
+      <div className="mb-5 flex flex-wrap gap-2">
+        {[m.isAdmin ? "Administrator" : null, me.disciplerStatus === "approved" ? "Discipler" : "Disciple", m.department].filter(Boolean).map((t) => (
+          <span key={t as string} className="rounded-xl bg-brand-soft px-3 py-1.5 text-[15px] font-bold text-ink">
+            {t}
+          </span>
+        ))}
+      </div>
       <Card className="mb-4">
         <div className="divide-y divide-surface-line">
           <Row href="/profile" title={me.person.fullName} sub={contactsOf(me.person) || "Add an email in your profile"} />

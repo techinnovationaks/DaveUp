@@ -23,7 +23,7 @@ const NAV = [
   { href: "/staff/people", label: "People & staff", icon: icons.people },
   { href: "/staff/activity", label: "Activity", icon: icons.activity },
   { href: "/training", label: "Training", icon: <path d="M22 9 12 4 2 9l10 5 10-5zM6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5" /> },
-  { href: "/resources", label: "Resource Centre", icon: <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" /> },
+  { href: "/library", label: "Library", icon: <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" /> },
 ];
 
 const isOn = (path: string, href: string) => path === href || (href !== "/staff" && path.startsWith(href + "/"));
@@ -80,12 +80,12 @@ export function StaffScreen({ children, title }: { children: ReactNode; title?: 
             </Link>
           )}
         </header>
-        <header className="sticky top-0 z-10 hidden h-16 items-center border-b border-surface-line bg-white/90 px-8 backdrop-blur md:flex">
+        <header className="sticky top-0 z-10 hidden h-16 items-center border-b border-surface-line bg-page/90 px-8 backdrop-blur md:flex">
           <p className="text-[17px] font-bold text-ink">{current}</p>
         </header>
         <main className="mx-auto w-full max-w-md px-4 pb-28 pt-6 md:max-w-none md:px-8 md:pb-12 md:pt-8 lg:max-w-[80vw]">{children}</main>
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-surface-line bg-white/95 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-surface-line bg-page/95 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-md">
           {NAV.map((it) => (
             <Link key={it.href} href={it.href} className={`flex flex-1 flex-col items-center gap-1 pb-4 pt-2.5 text-[12px] font-semibold ${isOn(path, it.href) ? "text-brand" : "text-ink-muted"}`}>

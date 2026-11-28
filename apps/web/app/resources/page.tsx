@@ -1,239 +1,145 @@
 "use client";
-// Resource Centre: documents, videos and links from DaveUp and your organization.
-import { useMemo, useState } from "react";
-import { RESOURCE_CATEGORIES, type LibraryFileDto, type LibraryScope, type ResourceDto, type ResourceKind, type ResourceListDto } from "@daveup/shared";
-import { Screen, Button, Card, ErrorText, Field, H1, Loading, Segmented, inputClass } from "@/components/ui";
-import { Modal } from "@/components/chat/kit";
-import { FilePicker, ScopeBadge, ScopePicker, VideoEmbed, defaultScope, sizeLabel } from "@/components/library/kit";
-import { api, useAction, useApi } from "@/lib/api";
+// Resources (N design 205): what is for you now, then the Bible, Trainings,
+// Sermon packs and the Library. Real data only; parts not built yet say so.
+import Link from "next/link";
+import { useState, type ReactNode } from "react";
+import type { CourseListDto, ResourceListDto } from "@daveup/shared";
+import { Loading, Screen } from "@/components/ui";
+import { useApi } from "@/lib/api";
 import { useGuard } from "@/lib/session";
 
-const KIND_LABEL: Record<ResourceKind, string> = { file: "Document", video: "Video", link: "Link" };
+type Tab = "for-you" | "bible" | "trainings" | "packs" | "library";
 
-function KindIcon({ kind }: { kind: ResourceKind }) {
-  const d =
-    kind === "video"
-      ? "M23 7l-7 5 7 5V7zM3 5h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"
-      : kind === "link"
-        ? "M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"
-        : "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 2v6h6M8 13h8M8 17h5";
-  return (
-    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d={d} />
-      </svg>
-    </span>
+const I = ({ d }: { d: string }) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d={d} />
+  </svg>
+);
+const ICON = {
+  bible: "M5 4a2 2 0 0 1 2-2h11v18H7a2 2 0 0 0-2 2V4zM9 7h5",
+  training: "M22 9 12 4 2 9l10 5 10-5zM6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5",
+  packs: "M6 2h12v20H6zM9 7h6M9 11h6M9 15h3",
+  library: "M2 5c3-1.5 6-1.5 10 1 4-2.5 7-2.5 10-1v14c-3-1.5-6-1.5-10 1-4-2.5-7-2.5-10-1zM12 6v14",
+};
+
+function Tile({ href, icon, title, soon }: { href?: string; icon: string; title: string; soon?: boolean }) {
+  const body = (
+    <>
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+        <I d={icon} />
+      </span>
+      <span className="mt-5 block font-display text-[20px] font-extrabold text-ink">{title}</span>
+      {soon && <span className="mt-1 block text-[13px] font-semibold text-ink-muted">Coming soon</span>}
+    </>
+  );
+  const cls = "block rounded-[28px] border border-surface-line bg-card p-5 transition-colors";
+  return href ? (
+    <Link href={href} className={`${cls} hover:border-brand-line`}>
+      {body}
+    </Link>
+  ) : (
+    <div className={`${cls} opacity-70`}>{body}</div>
   );
 }
 
-function ResourceForm({ list, editing, onClose, onSaved }: { list: ResourceListDto; editing: ResourceDto | null; onClose: () => void; onSaved: (r: ResourceDto) => void }) {
-  const [scope, setScope] = useState<LibraryScope>(editing?.scope ?? defaultScope(list.rights));
-  const [kind, setKind] = useState<ResourceKind>(editing?.kind ?? "file");
-  const [title, setTitle] = useState(editing?.title ?? "");
-  const [description, setDescription] = useState(editing?.description ?? "");
-  const [category, setCategory] = useState(editing?.category ?? "General");
-  const [url, setUrl] = useState(editing?.url ?? "");
-  const [file, setFile] = useState<LibraryFileDto | null>(editing?.file ?? null);
-  const { busy, error, run } = useAction();
-  const ready = title.trim() && (kind === "file" ? !!file : url.trim());
-  const save = () =>
-    run(async () => {
-      const body = { title, description: description || null, category, kind, url: kind === "file" ? null : url.trim(), fileId: kind === "file" ? file?.id : null, scope };
-      onSaved(editing ? await api<ResourceDto>(`/resources/${editing.id}`, { method: "PUT", body }) : await api<ResourceDto>("/resources", { method: "POST", body }));
-    });
+function Row({ href, icon, title, sub, trailing }: { href: string; icon: string; title: string; sub: string; trailing?: ReactNode }) {
   return (
-    <Modal
-      title={editing ? "Edit resource" : "Add a resource"}
-      onClose={onClose}
-      footer={
-        <div className="flex gap-2">
-          <Button disabled={busy || !ready} onClick={() => void save()}>
-            {busy ? "Saving…" : editing ? "Save changes" : "Add resource"}
-          </Button>
-          <Button variant="ghost" onClick={onClose}>
-            Cancel
-          </Button>
-        </div>
-      }
-    >
-      {!editing && <ScopePicker rights={list.rights} value={scope} onChange={setScope} />}
-      <Segmented<ResourceKind>
-        value={kind}
-        onChange={setKind}
-        options={[
-          { value: "file", label: "Document" },
-          { value: "video", label: "Video" },
-          { value: "link", label: "Link" },
-        ]}
-      />
-      <Field label="Title">
-        <input className={inputClass} value={title} maxLength={160} onChange={(e) => setTitle(e.target.value)} />
-      </Field>
-      {kind === "file" ? (
-        <div className="mb-4">
-          <p className="mb-1.5 text-[14px] font-semibold text-ink">File</p>
-          <FilePicker scope={editing?.scope ?? scope} value={file} onChange={setFile} />
-        </div>
-      ) : (
-        <Field label={kind === "video" ? "Video address" : "Web address"} hint={kind === "video" ? "YouTube and Vimeo videos play inside DaveUp." : undefined}>
-          <input className={inputClass} type="url" inputMode="url" placeholder="https://" value={url} onChange={(e) => setUrl(e.target.value)} />
-        </Field>
-      )}
-      <Field label="Category">
-        <select className={inputClass} value={category} onChange={(e) => setCategory(e.target.value)}>
-          {[...new Set([...RESOURCE_CATEGORIES, category])].map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
-      </Field>
-      <Field label="Description (optional)">
-        <textarea className={`${inputClass} min-h-[90px] py-3`} value={description} maxLength={2000} onChange={(e) => setDescription(e.target.value)} />
-      </Field>
-      <ErrorText>{error}</ErrorText>
-    </Modal>
-  );
-}
-
-function Item({ r, orgName, onWatch, onEdit, onDelete }: { r: ResourceDto; orgName: string | null; onWatch: () => void; onEdit: () => void; onDelete: () => void }) {
-  const [confirm, setConfirm] = useState(false);
-  const open =
-    r.kind === "file" && r.file ? (
-      <a href={`${r.file.url}?inline=1`} target="_blank" rel="noopener" className="rounded-xl bg-brand px-4 py-2 text-[14px] font-bold text-white hover:bg-brand-dark">
-        Open
-      </a>
-    ) : r.kind === "video" ? (
-      <button onClick={onWatch} className="rounded-xl bg-brand px-4 py-2 text-[14px] font-bold text-white hover:bg-brand-dark">
-        Watch
-      </button>
-    ) : (
-      <a href={r.url!} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-brand px-4 py-2 text-[14px] font-bold text-white hover:bg-brand-dark">
-        Visit ↗
-      </a>
-    );
-  return (
-    <Card className="flex flex-col">
-      <div className="flex items-start gap-3">
-        <KindIcon kind={r.kind} />
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-2">
-            <ScopeBadge scope={r.scope} orgName={orgName} />
-            <span className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
-              {KIND_LABEL[r.kind]}
-              {r.file ? ` · ${sizeLabel(r.file.size)}` : ""}
-            </span>
-          </div>
-          <h3 className="text-[17px] font-bold leading-snug text-ink">{r.title}</h3>
-          {r.description && <p className="mt-1 line-clamp-3 text-[14px] text-ink-muted">{r.description}</p>}
-        </div>
-      </div>
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        {open}
-        {r.kind === "file" && r.file && (
-          <a href={r.file.url} className="rounded-xl px-3 py-2 text-[14px] font-semibold text-brand hover:bg-brand-soft">
-            Download
-          </a>
-        )}
-        <span className="flex-1" />
-        {r.canEdit &&
-          (confirm ? (
-            <>
-              <button onClick={onDelete} className="rounded-xl px-3 py-2 text-[14px] font-bold text-danger hover:bg-danger-soft">
-                Remove
-              </button>
-              <button onClick={() => setConfirm(false)} className="rounded-xl px-3 py-2 text-[14px] font-semibold text-ink-muted hover:bg-surface">
-                Keep
-              </button>
-            </>
-          ) : (
-            <>
-              <button onClick={onEdit} className="rounded-xl px-3 py-2 text-[14px] font-semibold text-ink-muted hover:bg-surface">
-                Edit
-              </button>
-              <button onClick={() => setConfirm(true)} className="rounded-xl px-3 py-2 text-[14px] font-semibold text-ink-muted hover:bg-surface">
-                Remove
-              </button>
-            </>
-          ))}
-      </div>
-    </Card>
+    <Link href={href} className="flex items-center gap-4 rounded-[28px] border border-surface-line bg-card p-4 transition-colors hover:border-brand-line">
+      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-ok-soft text-brand">
+        <I d={icon} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-display text-[19px] font-extrabold text-ink">{title}</span>
+        <span className="block text-[14px] text-ink-muted">{sub}</span>
+      </span>
+      {trailing}
+    </Link>
   );
 }
 
 export default function Resources() {
   const { ready } = useGuard("library");
-  const list = useApi<ResourceListDto>(ready ? "/resources" : null);
-  const [q, setQ] = useState("");
-  const [cat, setCat] = useState<string | null>(null);
-  const [form, setForm] = useState<{ editing: ResourceDto | null } | null>(null);
-  const [watching, setWatching] = useState<ResourceDto | null>(null);
-  const { error, run } = useAction();
+  const courses = useApi<CourseListDto>(ready ? "/training" : null);
+  const library = useApi<ResourceListDto>(ready ? "/resources" : null);
+  const [tab, setTab] = useState<Tab>("for-you");
+  if (!ready || courses.loading || library.loading) return <Loading />;
 
-  const data = list.data;
-  const categories = useMemo(() => [...new Set((data?.resources ?? []).map((r) => r.category))].sort(), [data]);
-  if (!ready || list.loading || !data) return <Loading />;
+  const inProgress = (courses.data?.courses ?? []).filter((c) => c.completedCount > 0 && c.completedCount < c.lessonCount);
+  const fresh = (courses.data?.courses ?? []).filter((c) => c.published && c.completedCount === 0 && c.lessonCount > 0).slice(0, 2);
+  const newest = (library.data?.resources ?? []).slice(0, 2);
 
-  const term = q.trim().toLowerCase();
-  const shown = data.resources.filter((r) => (!cat || r.category === cat) && (!term || `${r.title} ${r.description ?? ""} ${r.category}`.toLowerCase().includes(term)));
-  const grouped = new Map<string, ResourceDto[]>();
-  for (const r of shown) grouped.set(r.category, [...(grouped.get(r.category) ?? []), r]);
-  const canAdd = data.rights.org || data.rights.daveup;
-
-  const saved = (r: ResourceDto) => {
-    const exists = data.resources.some((x) => x.id === r.id);
-    list.setData({ ...data, resources: exists ? data.resources.map((x) => (x.id === r.id ? r : x)) : [r, ...data.resources] });
-    setForm(null);
-  };
-  const remove = (r: ResourceDto) =>
-    run(async () => {
-      await api(`/resources/${r.id}`, { method: "DELETE" });
-      list.setData({ ...data, resources: data.resources.filter((x) => x.id !== r.id) });
-    });
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "for-you", label: "For you" },
+    { id: "bible", label: "Bible" },
+    { id: "trainings", label: "Trainings" },
+    { id: "packs", label: "Packs" },
+    { id: "library", label: "Library" },
+  ];
 
   return (
     <Screen nav>
-      <div className="mb-2 flex flex-wrap items-start justify-between gap-3">
-        <H1 sub="Studies, guides, videos and links from DaveUp and your organization.">Resource Centre</H1>
-        {canAdd && <Button onClick={() => setForm({ editing: null })}>Add resource</Button>}
-      </div>
-      <input className={`${inputClass} mb-3`} type="search" placeholder="Search resources" value={q} onChange={(e) => setQ(e.target.value)} />
-      {categories.length > 1 && (
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
-          {[null, ...categories].map((c) => (
+      <h1 className="mb-5 font-display text-[40px] font-extrabold leading-tight tracking-tight text-ink">Resources</h1>
+      <div className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1">
+        {tabs.map((t) =>
+          t.id === "trainings" || t.id === "library" ? (
+            <Link key={t.id} href={t.id === "trainings" ? "/training" : "/library"} className="shrink-0 rounded-full border border-surface-line bg-card px-5 py-2.5 text-[16px] font-bold text-ink hover:border-brand-line">
+              {t.label}
+            </Link>
+          ) : (
             <button
-              key={c ?? "all"}
-              onClick={() => setCat(c)}
-              className={`shrink-0 rounded-full px-4 py-2 text-[14px] font-semibold ${cat === c ? "bg-brand text-white" : "border border-surface-line bg-white text-ink hover:border-brand-line"}`}
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`shrink-0 rounded-full px-5 py-2.5 text-[16px] font-bold ${tab === t.id ? "bg-brand text-on-brand" : "border border-surface-line bg-card text-ink"}`}
             >
-              {c ?? "All"}
+              {t.label}
             </button>
+          ),
+        )}
+      </div>
+
+      {tab === "for-you" && (
+        <div className="space-y-4">
+          <div className="rounded-[32px] bg-brand-soft p-6">
+            <p className="text-[13px] font-extrabold tracking-[0.14em] text-[#9DB8FF]">YOUR VERSE TODAY</p>
+            <p className="mt-2 font-display text-[26px] font-extrabold leading-snug text-ink">Trust in the Lord with all your heart; and lean not unto thine own understanding.</p>
+            <p className="mt-2 text-[15px] text-ink-muted">Proverbs 3:5, KJV</p>
+            <p className="mt-4 text-[13px] text-ink-muted">The Bible reader and verses chosen for you are coming soon.</p>
+          </div>
+          {inProgress.map((c) => (
+            <Row
+              key={c.id}
+              href={`/training/${c.id}`}
+              icon={ICON.training}
+              title={c.title}
+              sub={`Lesson ${c.completedCount + 1} of ${c.lessonCount}`}
+              trailing={
+                <span className="h-2 w-24 shrink-0 overflow-hidden rounded-full bg-surface-line">
+                  <span className="block h-full rounded-full bg-ok" style={{ width: `${Math.round((c.completedCount / c.lessonCount) * 100)}%` }} />
+                </span>
+              }
+            />
           ))}
+          {fresh.map((c) => (
+            <Row key={c.id} href={`/training/${c.id}`} icon={ICON.training} title={c.title} sub={`${c.lessonCount} ${c.lessonCount === 1 ? "lesson" : "lessons"}`} trailing={<span className="rounded-lg bg-warn-soft px-2.5 py-1 text-[12px] font-extrabold text-warn">NEW</span>} />
+          ))}
+          {newest.map((r) => (
+            <Row key={r.id} href="/library" icon={ICON.library} title={r.title} sub={`${r.category} · ${r.kind === "file" ? "Document" : r.kind === "video" ? "Video" : "Link"}`} />
+          ))}
+          <div className="grid grid-cols-2 gap-4">
+            <Tile icon={ICON.bible} title="Bible" soon />
+            <Tile href="/training" icon={ICON.training} title="Trainings" />
+            <Tile icon={ICON.packs} title="Sermon packs" soon />
+            <Tile href="/library" icon={ICON.library} title="Library" />
+          </div>
         </div>
       )}
-      <ErrorText>{error}</ErrorText>
-      {data.resources.length === 0 ? (
-        <Card tone="soft">
-          <p className="text-[16px] text-ink">{canAdd ? "Nothing here yet. Add the first study guide, video or link for your people." : "Resources from DaveUp and your organization will appear here."}</p>
-        </Card>
-      ) : shown.length === 0 ? (
-        <p className="py-6 text-center text-[15px] text-ink-muted">Nothing matches your search.</p>
-      ) : (
-        [...grouped].map(([c, items]) => (
-          <section key={c} className="mb-8">
-            <h2 className="mb-3 text-[18px] font-extrabold text-ink">{c}</h2>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {items.map((r) => (
-                <Item key={r.id} r={r} orgName={data.rights.orgName} onWatch={() => setWatching(r)} onEdit={() => setForm({ editing: r })} onDelete={() => void remove(r)} />
-              ))}
-            </div>
-          </section>
-        ))
-      )}
-      {form && <ResourceForm list={data} editing={form.editing} onClose={() => setForm(null)} onSaved={saved} />}
-      {watching && (
-        <Modal title={watching.title} onClose={() => setWatching(null)} wide>
-          <VideoEmbed url={watching.url!} title={watching.title} />
-          {watching.description && <p className="mt-4 text-[15px] text-ink">{watching.description}</p>}
-        </Modal>
+      {(tab === "bible" || tab === "packs") && (
+        <div className="rounded-[28px] border border-dashed border-surface-line p-8 text-center">
+          <p className="font-display text-[22px] font-extrabold text-ink">{tab === "bible" ? "The Bible is coming soon" : "Sermon packs are coming soon"}</p>
+          <p className="mt-2 text-[15px] text-ink-muted">
+            {tab === "bible" ? "Read, search and get passages assigned by your discipler, right here." : "Turn each Sunday's message into a week of reading, questions and practice."}
+          </p>
+        </div>
       )}
     </Screen>
   );

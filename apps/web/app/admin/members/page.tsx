@@ -114,11 +114,11 @@ export default function Members() {
                 aria-selected={on}
                 onClick={() => setFilter(f.key)}
                 className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-[14px] font-semibold transition-colors ${
-                  on ? "border-ink bg-ink text-white" : "border-surface-line bg-white text-ink hover:border-ink-faint"
+                  on ? "border-ink bg-ink text-white" : "border-surface-line bg-card text-ink hover:border-ink-faint"
                 }`}
               >
                 {f.label}
-                <span className={`rounded-full px-1.5 text-[12px] ${on ? "bg-white/20" : f.key === "pending" && counts.pending > 0 ? "bg-brand text-white" : "bg-surface text-ink-muted"}`}>{counts[f.key]}</span>
+                <span className={`rounded-full px-1.5 text-[12px] ${on ? "bg-white/20" : f.key === "pending" && counts.pending > 0 ? "bg-brand text-on-brand" : "bg-surface text-ink-muted"}`}>{counts[f.key]}</span>
               </button>
             );
           })}

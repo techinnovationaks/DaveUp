@@ -107,7 +107,7 @@ function CreateCell({ onCancel, onCreated }: { onCancel: () => void; onCreated: 
       {ids.map((id) => (
         <span key={id} className="flex items-center gap-1.5 rounded-full bg-brand-soft py-1 pl-3 pr-1.5 text-[14px] font-semibold text-brand">
           {nameOf(id)}
-          <button onClick={() => remove(id)} aria-label={`Remove ${nameOf(id)}`} className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-white">
+          <button onClick={() => remove(id)} aria-label={`Remove ${nameOf(id)}`} className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-card">
             ✕
           </button>
         </span>

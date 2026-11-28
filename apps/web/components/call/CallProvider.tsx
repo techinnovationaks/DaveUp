@@ -203,7 +203,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
 
 function Toast({ children, onClose, tone = "dark" }: { children: ReactNode; onClose?: () => void; tone?: "dark" | "danger" }) {
   return (
-    <div role="status" className={`fixed bottom-24 left-1/2 z-[70] flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-2xl px-4 py-3 text-[14px] font-semibold text-white shadow-lg md:bottom-8 ${tone === "danger" ? "bg-danger" : "bg-ink"}`}>
+    <div role="status" className={`fixed bottom-24 left-1/2 z-[70] flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-2xl px-4 py-3 text-[14px] font-semibold text-on-brand shadow-lg md:bottom-8 ${tone === "danger" ? "bg-danger" : "bg-ink"}`}>
       {children}
       {onClose && (
         <button onClick={onClose} aria-label="Dismiss" className="ml-1 rounded-full px-1 text-white/80 hover:text-white">
